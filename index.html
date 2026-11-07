@@ -607,6 +607,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
         <div class="field"><label for="range-to">To</label><input class="input" type="date" id="range-to"></div>
       </div>
       <div class="xs muted" id="range-label"></div>
+      <div class="xs" id="range-note" style="color: var(--warn)" hidden></div>
       <details id="cat-filter-details">
         <summary class="small" style="cursor:pointer;font-weight:600;color:var(--accent)">Filter categories</summary>
         <div class="chips" id="cat-filter" style="margin-top: var(--sp-2)" role="group" aria-label="Spending categories to include"></div>
@@ -808,6 +809,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
             <option value="simple">Simple interest on the original balance</option>
             <option value="none">No interest (0% promo / interest-free)</option>
           </select><span class="help" id="d-compound-help">Monthly interest = balance × APR ÷ 12.</span></div>
+          <div class="field span2"><label class="check" for="d-surplus"><input type="checkbox" id="d-surplus"> Payments aren’t logged as spending</label><span class="help">Tick this for a credit card whose purchases you track instead. Its payment then comes out of your monthly surplus in the projection, so nothing is counted twice.</span></div>
           <div class="field span2"><label for="d-payment">Monthly payment</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-payment" type="number" inputmode="decimal" min="0" step="0.01" required></div><div class="error" id="d-error" role="alert"></div></div>
         </div>
         <div class="row"><button type="button" class="btn ghost" id="d-cancel">Cancel</button><button type="submit" class="btn primary grow" id="d-save">Save debt</button></div>
@@ -1052,7 +1054,9 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   function num(v, fallback) { var n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? fallback : n; }
   function normalizeDebt(d) {
     d = d || {};
-    return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))), compounding: COMPOUNDING.indexOf(d.compounding) >= 0 ? d.compounding : 'monthly' };
+    return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))), compounding: COMPOUNDING.indexOf(d.compounding) >= 0 ? d.compounding : 'monthly',
+      // true when the payments are not logged as spending (a credit card whose purchases are tracked instead)
+      paidFromSurplus: d.paidFromSurplus === true, tag: typeof d.tag === 'string' ? normTag(d.tag) : '' };
   }
   function normalizePaycheck(p) {
     p = (p && typeof p === 'object') ? p : {};
@@ -1297,16 +1301,19 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var cm = 0, cx = 0;
     return buckets.map(function (b) { cm += toCents(b.k401Mine); cx += toCents(b.k401Match); return { key: b.key, mine: b.k401Mine, match: b.k401Match, cumMine: fromCents(cm), cumMatch: fromCents(cx), cumTotal: fromCents(cm + cx) }; });
   }
-  /** Months you actually tracked: with income or something you logged yourself (not only auto-filled recurring
-   *  history). The current, unfinished month is left out when finished months exist. Falls back to any month. */
+  /** Months you actually tracked. Preference order: months with a paycheck logged (so months that only hold, say,
+   *  credit card history don't read as months with no income), then months with any income or something you logged
+   *  yourself, then any month. The current, unfinished month is left out when finished months exist. */
   function trackedMonths(entries, today) {
-    var tracked = {}, any = {};
-    entries.forEach(function (e) { var k = monthKey(e.date); any[k] = true; if (!e.recurring || e.type === 'income') tracked[k] = true; });
-    var months = Object.assign({}, Object.keys(tracked).length ? tracked : any);
+    var paid = {}, tracked = {}, any = {};
+    entries.forEach(function (e) { var k = monthKey(e.date); any[k] = true; if (e.type === 'income' && e.cat === 'Paycheck') paid[k] = true; if (!e.recurring || e.type === 'income') tracked[k] = true; });
+    var months = Object.assign({}, Object.keys(paid).length ? paid : Object.keys(tracked).length ? tracked : any);
     var cur = today ? monthKey(today) : null;
     if (cur && months[cur] && Object.keys(months).length > 1) delete months[cur];
     return months;
   }
+  /** Months that have a paycheck logged. A savings rate only means something in those months. */
+  function paidMonths(entries) { var m = {}; entries.forEach(function (e) { if (e.type === 'income' && e.cat === 'Paycheck') m[monthKey(e.date)] = true; }); return m; }
   function averages(entries, today) {
     // Average per month over the months you actually tracked: ones with income or something you logged yourself.
     // A month holding only auto-filled recurring history (e.g. two years of a $12 subscription) would otherwise
@@ -1380,7 +1387,10 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
 
     var monthsToTargetAge = Math.max(0, Math.round((targetAge - age) * 12));
     var horizon = Math.min(MAX_MONTHS, Math.max(monthsToTargetAge, (100 - age) * 12));
-    var sim = simulate(assets, debts, contribution, mr, horizon, target);
+    // Payments of debts that aren't in spending still come out of the monthly surplus until the debt is paid off
+    // (simulate adds every payment back to contributions at payoff).
+    var fromSurplus = 0; debts.forEach(function (d) { if (d.paidFromSurplus && d.balance > 0) fromSurplus += d.payment; });
+    var sim = simulate(assets, debts, contribution - fromSurplus, mr, horizon, target);
     var reached = sim.reached;
     var yearsToTarget = reached === null ? null : reached / 12;
     var ageAtTarget = reached === null ? null : age + reached / 12;
@@ -1466,6 +1476,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var horizon = Math.min(MAX_MONTHS, Math.max(mTarget, Math.round((100 - age) * 12)));
     var runs = Math.max(1, Math.round(num(opts.runs, 400))), rnd = mulberry32(num(opts.seed, 11));
     var debts0 = (inp.debts || []).map(normalizeDebt), contrib0 = num(inp.monthlyContribution, 0), target = base.target;
+    debts0.forEach(function (d) { if (d.paidFromSurplus && d.balance > 0) contrib0 -= d.payment; });
     var yearly = []; for (var y = 0; y <= chartYears; y++) yearly.push([]);
     var reach = [], okByTarget = 0;
     for (var k = 0; k < runs; k++) {
@@ -1529,6 +1540,11 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     debts.forEach(function (d) {
       var base = debtPayoff(d, today);
       if (base.neverPaysOff && d.rate > 0) tips.push({ id: 'debt-stuck-' + d.id, kind: 'debt', icon: '⚠️', priority: 100, title: 'Your ' + d.name + ' payment doesn’t cover the interest', detail: 'At ' + d.rate + '% the balance grows every month. You need more than ' + $(Math.ceil(d.balance * monthlyDebtRate(d))) + '/mo just to keep it level.', yearly: null, action: { view: 'retirement', label: 'Edit debts' } });
+    });
+    debts.forEach(function (d) {
+      if (!d.tag || d.rate < 8) return;
+      var lastMonth = addMonths(mk, -1), charged = sumAmounts(st.entries.filter(function (e) { return e.type === 'expense' && monthKey(e.date) === lastMonth && (e.tags || []).indexOf(d.tag) >= 0 && (e.tags || []).indexOf('interest') < 0; }));
+      if (charged >= 25) tips.push({ id: 'card-new-' + d.id, kind: 'debt', icon: '🛑', priority: 60, title: 'Stop new purchases on your ' + d.name, detail: 'You charged ' + $(charged) + ' to it last month while it carries ' + $(d.balance) + ' at ' + d.rate + '%. Interest starts on those right away; use a card you pay in full, so all of your ' + $(d.payment) + ' goes to the balance.', yearly: null, action: { view: 'retirement', label: 'See debt payoff' } });
     });
     var worst = debts.filter(function (d) { return d.rate >= 8 && d.compounding !== 'none' && !debtPayoff(d, today).neverPaysOff; })[0];
     if (worst) {
@@ -1620,12 +1636,23 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
    */
   function mergeImport(state, file, today) {
     var st = JSON.parse(JSON.stringify(state)), u = (file && file.updates) || {}, sum = { added: 0, skipped: 0, removedSamples: 0, rulesUpdated: 0, rulesAdded: 0, filledIn: 0, debtsUpdated: 0, debtsAdded: 0, paycheck: false, balances: [], from: null, to: null };
+    var removeIds = Array.isArray(u.removeEntries) ? u.removeEntries : [], removeRules = Array.isArray(u.removeRecurring) ? u.removeRecurring : [];
+    if (removeIds.length || removeRules.length) {
+      var n0 = st.entries.length, r0 = st.recurring.length;
+      st.entries = st.entries.filter(function (e) { return !(e.importId && removeIds.indexOf(e.importId) >= 0) && !(removeRules.indexOf(e.recurring) >= 0 && !e.importId); });
+      st.recurring = st.recurring.filter(function (r) { return removeRules.indexOf(r.id) < 0; });
+      sum.removedEntries = n0 - st.entries.length; sum.rulesRemoved = r0 - st.recurring.length;
+    }
     if (file && file.clearSamples) { var before = st.entries.length; st.entries = st.entries.filter(function (e) { return !e.sample; }); sum.removedSamples = before - st.entries.length; }
     (Array.isArray(u.debts) ? u.debts : []).forEach(function (d) {
       var i = st.debts.findIndex(function (x) { return x.id === d.id; });
       if (i >= 0) { st.debts[i] = normalizeDebt(Object.assign({}, st.debts[i], d)); sum.debtsUpdated++; } else { st.debts.push(normalizeDebt(d)); sum.debtsAdded++; }
     });
     var touched = [];
+    // Real payments in the file replace the app's own estimates for the same bill: drop a rule's estimated entries
+    // (no importId) from the first real payment onward, before adding the file's entries.
+    var firstReal = {};
+    (Array.isArray(file && file.entries) ? file.entries : []).forEach(function (e) { if (e && e.recurring && e.importId && e.recurring !== 'paycheck' && isValidISO(e.date) && (!firstReal[e.recurring] || e.date < firstReal[e.recurring])) firstReal[e.recurring] = e.date; });
     (Array.isArray(u.recurring) ? u.recurring : []).forEach(function (r) {
       var i = st.recurring.findIndex(function (x) { return x.id === r.id; });
       var base = i >= 0 ? st.recurring[i] : {};
@@ -1633,6 +1660,11 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       var rule = normalizeRule(Object.assign({}, base, r, { nextDate: start, anchorDay: r.anchorDay || (start ? +start.slice(8) : base.anchorDay) }), today);
       if (i >= 0) { st.recurring[i] = rule; sum.rulesUpdated++; } else { st.recurring.push(rule); sum.rulesAdded++; }
       touched.push(rule.id);
+      if (firstReal[rule.id]) {
+        var cutoff = addDays(firstReal[rule.id], -(MATCH_DAYS[rule.frequency] || 14)), before = st.entries.length;
+        st.entries = st.entries.filter(function (e) { return !(e.recurring === rule.id && !e.importId && e.date >= cutoff); });
+        sum.replacedEstimates = (sum.replacedEstimates || 0) + before - st.entries.length;
+      }
     });
     if (u.paycheck && typeof u.paycheck === 'object') { st.paycheck = normalizePaycheck(Object.assign({}, st.paycheck, u.paycheck)); sum.paycheck = true; }
     var b = u.balances || {};
@@ -1818,7 +1850,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
-    retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths,
+    retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths, paidMonths: paidMonths,
     FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
@@ -2009,8 +2041,10 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     setText('summary-count', t.count.all === 0 ? '' : t.count.expense + (t.count.expense === 1 ? ' purchase' : ' purchases') + ' · ' + t.count.all + (t.count.all === 1 ? ' entry' : ' entries'));
     setText('sum-income', tileMoney(t.income)); setText('sum-expense', tileMoney(t.expense)); setText('sum-k401', tileMoney(t.k401)); setText('sum-net', tileMoney(t.net));
     $('sum-net').className = 'value num ' + (t.net < 0 ? 'danger-text' : t.net > 0 ? 'income-text' : '');
-    setText('sum-rate', C.fmtPct(t.savingsRate));
-    $('sum-rate').className = 'hero num ' + (t.savingsRate === null ? 'muted' : t.savingsRate < 0 ? 'danger-text' : '');
+    var paidAll = C.paidMonths(state.entries), noPay = Object.keys(paidAll).length > 0 && !paidAll[ui.month];
+    setText('sum-rate', noPay ? '—' : C.fmtPct(t.savingsRate));
+    $('sum-rate').title = noPay ? 'No paycheck logged this month' : '';
+    $('sum-rate').className = 'hero num ' + (noPay || t.savingsRate === null ? 'muted' : t.savingsRate < 0 ? 'danger-text' : '');
 
     // budget
     if (document.activeElement !== $('budget-input')) $('budget-input').value = state.budget;
@@ -2339,10 +2373,12 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   function startMerge(file) {
     var res = C.mergeImport(state, file, today()), m = res.summary;
     var same = function (a) { var c = Object.assign({}, a); delete c.updatedAt; delete c.theme; return JSON.stringify(c); };
-    if (!m.added && same(res.state) === same(C.normalizeState(state, today()))) { toast('Nothing new: everything in that file is already here.'); return; }
+    if (!m.added && !m.removedEntries && !m.rulesRemoved && same(res.state) === same(C.normalizeState(state, today()))) { toast('Nothing new: everything in that file is already here.'); return; }
     var parts = [];
-    if (m.added) parts.push('Adds ' + plural(m.added, 'transaction', 'transactions') + ' (' + C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) + ')' + (m.skipped ? ', skipping ' + m.skipped + ' already here' : '') + '.');
+    var span = m.from.slice(0, 4) === m.to.slice(0, 4) ? C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) : C.fmtDateShort(m.from) + ', ' + m.from.slice(0, 4) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4);
+    if (m.added) parts.push('Adds ' + plural(m.added, 'transaction', 'transactions') + ' (' + span + ')' + (m.skipped ? ', skipping ' + m.skipped + ' already here' : '') + '.');
     if (m.removedSamples) parts.push('Removes the ' + m.removedSamples + ' sample entries.');
+    if (m.removedEntries || m.rulesRemoved) parts.push('Removes ' + [m.removedEntries ? plural(m.removedEntries, 'entry', 'entries') : '', m.rulesRemoved ? plural(m.rulesRemoved, 'bill', 'bills') : ''].filter(Boolean).join(' and ') + ' the file replaces.');
     var rules = m.rulesUpdated + m.rulesAdded;
     if (rules) parts.push('Updates ' + plural(rules, 'bill', 'bills') + ' to match your statements' + (m.filledIn ? ' and logs ' + plural(m.filledIn, 'payment', 'payments') + ' due since' : '') + '.');
     if (m.debtsUpdated + m.debtsAdded) parts.push('Updates ' + plural(m.debtsUpdated + m.debtsAdded, 'debt', 'debts') + '.');
@@ -2721,7 +2757,12 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var tot = C.totals(filtered);
     A.setText('rt-income', A.tileMoney(tot.income)); A.setText('rt-expense', A.tileMoney(tot.expense)); A.setText('rt-net', A.tileMoney(tot.net)); A.setText('rt-k401', A.tileMoney(tot.k401));
     $('rt-net').className = 'value num ' + (tot.net < 0 ? 'danger-text' : tot.net > 0 ? 'income-text' : '');
-    A.setText('rt-rate', tot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(tot.savingsRate));
+    var paidSet = C.paidMonths(st.entries), hasPaid = Object.keys(paidSet).length > 0;
+    var rateTot = hasPaid ? C.totals(filtered.filter(function (e) { return paidSet[C.monthKey(e.date)]; })) : tot;
+    A.setText('rt-rate', rateTot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(rateTot.savingsRate) + (hasPaid && rateTot.count.all !== tot.count.all ? ' in months with pay' : ''));
+    var gap = hasPaid ? C.monthsList(C.monthKey(r.from), C.monthKey(r.to)).filter(function (k) { return !paidSet[k] && C.entriesInMonth(filtered, k).some(function (e) { return e.type === 'expense'; }); }).length : 0;
+    $('range-note').hidden = !gap;
+    $('range-note').textContent = gap ? gap + (gap === 1 ? ' month' : ' months') + ' in this range ' + (gap === 1 ? 'has' : 'have') + ' spending but no paycheck logged (for example card history without bank history), so income and net look low here.' : '';
     $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = (sel || tsel) ? 'Spending (filtered)' : 'Spending';
 
     var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--chart-accent');
@@ -2767,7 +2808,8 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
 
     // c. savings rate by month (always monthly, unfiltered)
     var mb = C.bucketize(inRange, C.monthStart(C.monthKey(r.from)), r.to, 'month');
-    var rates = mb.map(function (b) { return b.savingsRate; });
+    var paid = C.paidMonths(st.entries), anyPaid = Object.keys(paid).length > 0;
+    var rates = mb.map(function (b) { return anyPaid && !paid[b.key] ? null : b.savingsRate; }); // no paycheck logged: no meaningful rate
     var tblC = { caption: 'Savings rate by month', columns: ['Month', 'Income', 'Spending', '401k', 'Savings rate'], rows: mb.map(function (b) { return [C.fmtMonthShort(b.key), money(b.income), money(b.expense), money(b.k401), C.fmtPct(b.savingsRate)]; }) };
     if (!rates.some(function (v) { return v !== null; })) Charts.emptyChart($('chart-rate'), 'Savings rate needs at least one month with income or 401k contributions.', tblC, 'ch3');
     else draw($('chart-rate'), {
@@ -2895,14 +2937,14 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
         setTimeout(function () { if (ui.debtArmed === d.id) { ui.debtArmed = null; A.render(); } }, 3500);
       });
       box.appendChild(h('div', { class: 'debt-row' }, [
-        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.compounding === 'none' ? 'no interest' : d.rate + '% APR · ' + COMP_LABEL[d.compounding] }), h('span', { text: money(d.payment) + '/mo' }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
+        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.compounding === 'none' ? 'no interest' : d.rate + '% APR · ' + COMP_LABEL[d.compounding] }), h('span', { text: money(d.payment) + '/mo' + (d.paidFromSurplus ? ' from surplus' : '') }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
         h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openDebtForm(d); } }), del])
       ]));
     });
   }
   function openDebtForm(d) {
     ui.debtEditing = d ? d.id : 'new';
-    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : ''; $('d-compound').value = d ? d.compounding : 'monthly'; syncCompoundHelp();
+    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : ''; $('d-compound').value = d ? d.compounding : 'monthly'; $('d-surplus').checked = !!(d && d.paidFromSurplus); syncCompoundHelp();
     $('d-error').style.display = 'none'; $('debt-form').hidden = false; $('d-add').hidden = true; A.setText('d-save', d ? 'Save changes' : 'Add debt');
     $('d-name').focus();
   }
@@ -2922,7 +2964,8 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     else if (!($('d-payment').value !== '' && isFinite(payment) && payment >= 0)) err = 'Monthly payment must be 0 or more.';
     if (err) { var e = $('d-error'); e.textContent = err; e.style.display = 'block'; return; }
     var st = A.state; var id = $('d-id').value;
-    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment, compounding: compounding });
+    var prevDebt = st.debts.find(function (x) { return x.id === id; });
+    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment, compounding: compounding, paidFromSurplus: $('d-surplus').checked, tag: prevDebt ? prevDebt.tag : '' });
     var i = st.debts.findIndex(function (x) { return x.id === id; });
     if (i >= 0) st.debts[i] = debt; else st.debts.push(debt);
     closeDebtForm(); A.commit();

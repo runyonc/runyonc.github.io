@@ -156,8 +156,8 @@ test('cumulative 401k stacks mine and match', () => {
   assert.strictEqual(c[2].cumTotal, 250);
 });
 test('averages over months with data', () => {
-  const a = C.averages([E('expense', '2026-09-01', 1000), E('expense', '2026-11-01', 2000), E('income', '2026-11-02', 4500), E('k401', '2026-11-03', 300)], '2026-12-15');
-  assert.strictEqual(a.months, 2); assert.strictEqual(a.expense, 1500); assert.strictEqual(a.income, 2250); assert.strictEqual(a.k401, 150); assert.strictEqual(a.net, 750);
+  const a = C.averages([E('expense', '2026-09-01', 1000), E('income', '2026-09-28', 4500, 'Paycheck'), E('expense', '2026-11-01', 2000), E('income', '2026-11-02', 4500, 'Paycheck'), E('k401', '2026-11-03', 300)], '2026-12-15');
+  assert.strictEqual(a.months, 2); assert.strictEqual(a.expense, 1500); assert.strictEqual(a.income, 4500); assert.strictEqual(a.k401, 150); assert.strictEqual(a.net, 3000);
   assert.strictEqual(C.averages([], TODAY).months, 0);
 });
 test('averages leave out the current, unfinished month when finished months exist', () => {
@@ -753,6 +753,48 @@ test('tips use tracked months only, and delivery means restaurant delivery', () 
   const tips = C.insights({ state: st, today: TODAY });
   assert.strictEqual(tips.find(t => t.id === 'delivery').yearly, 720, 'grocery delivery is not counted');
   assert.ok(!tips.some(t => t.id === 'negative'), 'no false overspending warning');
+});
+test('averages and tips ignore months with spending but no paycheck (e.g. card history without bank history)', () => {
+  const es = [E('expense', '2025-03-10', 900, 'Shopping'), E('expense', '2025-04-10', 800, 'Dining'),
+    E('income', '2026-10-28', 6000, 'Paycheck'), E('expense', '2026-10-05', 3000, 'Housing')];
+  const a = C.averages(es, TODAY);
+  assert.deepStrictEqual([a.months, a.income, a.expense], [1, 6000, 3000]);
+});
+test('real payments in a file replace the app’s estimates for that bill', () => {
+  const base = C.normalizeState({ schema: 5, recurring: [{ id: 'yt', name: 'YouTube TV', cat: 'Streaming', amount: 60.21, startDate: '2026-08-30', nextDate: '2026-11-30', anchorDay: 30 }],
+    entries: [{ id: 'est1', date: '2026-08-30', amount: 60.21, cat: 'Streaming', note: 'YouTube TV', recurring: 'yt' }, { id: 'est2', date: '2026-09-30', amount: 60.21, cat: 'Streaming', note: 'YouTube TV', recurring: 'yt' },
+      { id: 'real3', importId: 'c3', date: '2026-10-30', amount: 60.21, cat: 'Streaming', note: 'YouTube TV', recurring: 'yt' }] }, TODAY);
+  const file = { kind: 'transactions', entries: [{ importId: 'c1', type: 'expense', date: '2026-08-31', amount: 60.21, cat: 'Streaming', note: 'YouTube TV', recurring: 'yt' }, { importId: 'c2', type: 'expense', date: '2026-09-30', amount: 60.21, cat: 'Streaming', note: 'YouTube TV', recurring: 'yt' }],
+    updates: { recurring: [{ id: 'yt', startDate: '2026-08-31' }] } };
+  const { state: st, summary } = C.mergeImport(base, file, TODAY);
+  const yt = st.entries.filter(e => e.recurring === 'yt').map(e => e.date + (e.importId ? '' : '*')).sort();
+  assert.deepStrictEqual(yt, ['2026-08-31', '2026-09-30', '2026-10-30'], 'one charge a month, all real');
+  assert.strictEqual(summary.replacedEstimates, 2); assert.strictEqual(summary.added, 2);
+});
+test('a debt paid from surplus is not counted twice in the projection', () => {
+  // $1,000/mo surplus, a card with $3,000 at 0% paid $1,000/mo from that surplus: assets get nothing for 3 months, then $1,000/mo.
+  const inp = Object.assign({}, base, { returnRate: 0, annualSpending: 480, monthlyContribution: 1000, debts: [{ name: 'Card', balance: 3000, rate: 0, payment: 1000, paidFromSurplus: true }] });
+  const r = C.retirementCalc(inp);
+  assert.strictEqual(r.projection[0].netWorth, -3000);
+  assert.strictEqual(r.monthsToTarget, 15, '3 months clearing the card, then 12 months to reach $12,000');
+  const logged = C.retirementCalc(Object.assign({}, inp, { debts: [{ name: 'Card', balance: 3000, rate: 0, payment: 1000 }] }));
+  assert.ok(logged.monthsToTarget < r.monthsToTarget, 'without the flag the payment is assumed to be in spending already');
+  const odds = C.retirementOdds(inp, { returns: [0], inflation: 0, runs: 3 });
+  close(odds.reachAge.p50, r.ageAtTarget, 1e-9);
+  assert.strictEqual(C.normalizeDebt({ paidFromSurplus: true, tag: '#Citi' }).tag, 'citi');
+});
+test('mergeImport can remove entries and bills that a file replaces', () => {
+  const st0 = C.normalizeState({ schema: 5, recurring: [{ id: 'cc', name: 'Card payment', cat: 'Debt payments', amount: 1000, startDate: '2026-10-01', nextDate: '2026-12-01' }],
+    entries: [{ id: 'p1', importId: 'chk-1', date: '2026-10-01', amount: 1000, cat: 'Debt payments', note: 'Card payment', recurring: 'cc' }, { id: 'p2', date: '2026-11-01', amount: 1000, cat: 'Debt payments', note: 'Card payment', recurring: 'cc' }, { id: 'keep', date: '2026-10-05', amount: 9, cat: 'Dining', note: 'Coffee' }] }, TODAY);
+  const { state: st, summary } = C.mergeImport(st0, { kind: 'transactions', entries: [], updates: { removeEntries: ['chk-1'], removeRecurring: ['cc'] } }, TODAY);
+  assert.deepStrictEqual(st.entries.map(e => e.id), ['keep']); assert.strictEqual(st.recurring.length, 0);
+  assert.deepStrictEqual([summary.removedEntries, summary.rulesRemoved], [2, 1]);
+});
+test('tip: stop new purchases on a card that carries a balance', () => {
+  const st = tipState({ debts: [{ id: 'citi', name: 'Citi card', balance: 7000, rate: 23, payment: 1000, paidFromSurplus: true, tag: 'citi' }] });
+  st.entries.push({ id: 'c1', type: 'expense', date: '2026-10-12', amount: 300, cat: 'Shopping', note: 'Amazon', tags: ['citi'] }, { id: 'c2', type: 'expense', date: '2026-10-27', amount: 140, cat: 'Debt payments', note: 'Card interest', tags: ['citi', 'interest'] });
+  const tip = C.insights({ state: st, today: TODAY }).find(t => t.id === 'card-new-citi');
+  assert.ok(tip && tip.detail.startsWith('You charged $300 to it last month'), tip && tip.detail);
 });
 test('mergeImport never mutates the state it is given', () => {
   const base = mergeBase(); const before = JSON.stringify(base);

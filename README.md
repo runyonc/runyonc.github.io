@@ -106,6 +106,19 @@ File shape (`kind: "transactions"`):
                "debts": [{ "id": "debt-car", "balance": 18000 }], "paycheck": {}, "balances": { "savingsBalance": 3000 } } }
 ```
 
+`updates` can also carry `removeEntries` (import ids) and `removeRecurring`
+(bill ids, with their estimated entries) for things a newer file replaces. A
+bill's real payments in a file replace the app's own estimates from the first
+real payment on.
+
+Credit cards whose purchases you import are treated as transfers: purchases and
+interest are spending, payments are not. Mark such a card's debt "payments
+aren't logged as spending" (`paidFromSurplus`); the projection then takes its
+payment out of the monthly surplus until it's paid off, so nothing is counted
+twice. Averages and tips use months with a paycheck logged, so months that only
+hold card history don't read as months with no income; savings rates are only
+shown for those months.
+
 Transaction files made from real statements are personal; keep them out of
 this repository.
 
