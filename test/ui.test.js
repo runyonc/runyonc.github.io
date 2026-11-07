@@ -522,7 +522,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(next > await page.evaluate(() => App.today()));
     await page.reload(); await page.waitForTimeout(150);
     assert.strictEqual(await page.evaluate(() => App.state.entries.length), 3, 'not logged twice');
-    assert.ok((await text(page, '#entries')).includes('auto'), 'auto tag shown');
+    assert.ok(await page.$('#entries .entry .rep'), 'recurring marker shown');
     await page.evaluate(() => { localStorage.clear(); });
   });
   await test('paycheck setup estimates taxes, logs a paycheck with 401k entries, and auto-logs on pay day', O, async (page) => {
@@ -602,6 +602,29 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   const dumpCloud = (page) => page.evaluate(() => Object.fromEntries(window.__cloud));
   const ROOT = 'data/users/u_test/state';
 
+
+
+  console.log('tips & defaults');
+  await test('Tips card shows the top three, expands to all, and each action opens the right screen', O, async (page) => {
+    assert.ok(await page.isVisible('#tips-card'));
+    const all = await page.evaluate(() => FinanceCore.insights({ state: App.state, today: App.today() }));
+    assert.ok(all.length > 3);
+    assert.strictEqual(await page.$$eval('#tips .tip', els => els.length), 3);
+    assert.strictEqual(await text(page, '#tips .tip .tt span'), all[0].title);
+    await page.click('#tips-more'); await page.waitForTimeout(50);
+    assert.strictEqual(await page.$$eval('#tips .tip', els => els.length), all.length);
+    assert.strictEqual(await page.getAttribute('#tips-more', 'aria-expanded'), 'true');
+    const withSave = all.find(t => t.yearly);
+    assert.ok((await text(page, '#tips')).includes('+' + FinanceCore_fmt(withSave.yearly).replace(/\.\d\d$/, '') + '/yr'));
+    const debtTip = page.locator('#tips .tip:has-text("Credit card") .ta');
+    await debtTip.click(); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.ui.view), 'retirement');
+  });
+  await test('current age defaults to 33', O, async (page) => {
+    await tab(page, 'retirement');
+    assert.strictEqual(await page.inputValue('#r-age'), '33');
+    assert.strictEqual(await text(page, '#ret-years'), '32 years to go');
+  });
 
   console.log('categories & recurring history');
   await test('new categories are on the Add form and the seed bills use them', O, async (page) => {

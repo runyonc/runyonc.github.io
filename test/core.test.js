@@ -161,6 +161,15 @@ test('averages over months with data', () => {
   assert.strictEqual(C.averages([], TODAY).months, 0);
 });
 
+test('averages ignore months that only hold auto-filled recurring history', () => {
+  const es = [E('expense', '2024-12-07', 12, 'Streaming', { recurring: 'yt' }), E('expense', '2025-06-07', 12, 'Streaming', { recurring: 'yt' }),
+    E('income', '2026-10-01', 4600, 'Paycheck', { recurring: 'paycheck' }), E('expense', '2026-10-01', 1900, 'Housing', { recurring: 'rent' }), E('expense', '2026-10-07', 12, 'Streaming', { recurring: 'yt' }), E('expense', '2026-10-12', 88, 'Groceries')];
+  const a = C.averages(es, TODAY);
+  assert.strictEqual(a.months, 1); assert.strictEqual(a.expense, 2000); assert.strictEqual(a.income, 4600);
+  const onlyAuto = C.averages([E('expense', '2026-09-01', 50, 'Utilities', { recurring: 'x' }), E('expense', '2026-10-01', 50, 'Utilities', { recurring: 'x' })], TODAY);
+  assert.strictEqual(onlyAuto.months, 2, 'falls back to any month when nothing else is logged');
+});
+
 console.log('debt');
 test('zero-interest payoff', () => {
   const p = C.debtPayoff({ balance: 1000, rate: 0, payment: 100 }, '2026-11-07');
@@ -482,7 +491,7 @@ test('schema 1 data is re-categorized once by keyword; schema 2 data is left alo
   const st = C.normalizeState(raw, TODAY);
   assert.deepStrictEqual(st.entries.map(e => e.cat), ['Streaming', 'Food delivery', 'Gaming', 'Streaming', 'Recreation', 'Groceries']);
   assert.deepStrictEqual(st.recurring.map(r => r.cat), ['Streaming', 'Insurance', 'Debt payments', 'Utilities']);
-  assert.strictEqual(st.schema, 4);
+  assert.strictEqual(st.schema, 5);
   const again = C.normalizeState(Object.assign({}, st, { entries: [{ id: 'z', date: TODAY, amount: 15.99, cat: 'Utilities', note: 'Netflix', tags: ['bills'] }] }), TODAY);
   assert.strictEqual(again.entries[0].cat, 'Utilities', 'a choice made after the migration sticks');
 });
@@ -598,6 +607,79 @@ test('schema 3 data swaps the sample $90 TV bill for the three streaming subscri
   assert.strictEqual(again.entries.length, st.entries.length, 'no second swap');
   const mine = C.normalizeState({ schema: 3, recurring: [{ id: 'abc', name: 'TV', amount: 90, nextDate: TODAY }] }, TODAY);
   assert.deepStrictEqual(mine.recurring.map(r => r.name), ['TV'], 'a TV bill you made yourself is left alone');
+});
+
+
+console.log('age default & tips');
+test('current age defaults to 33; data still on the old default of 30 follows it once', () => {
+  assert.strictEqual(C.normalizeState({}, TODAY).retirement.age, 33);
+  assert.strictEqual(C.normalizeState({ schema: 4, retirement: { age: 30 } }, TODAY).retirement.age, 33);
+  assert.strictEqual(C.normalizeState({ schema: 4, retirement: { age: 41 } }, TODAY).retirement.age, 41);
+  assert.strictEqual(C.normalizeState({ schema: 5, retirement: { age: 30 } }, TODAY).retirement.age, 30, 'a 30 chosen after the change stays');
+});
+test('projectionReturn uses fund history unless overridden', () => {
+  const st = C.normalizeState({ k401Fund: 'FXAIX', inflation: 3 }, TODAY);
+  const nominal = Math.round(C.seriesStats(C.fundBasisSeries('FXAIX')).cagr * 10) / 10;
+  assert.strictEqual(C.projectionReturn(st), Math.round(C.realRate(nominal, 3) * 10) / 10);
+  st.retirement.returnFromFund = false; st.retirement.returnRate = 4.5;
+  assert.strictEqual(C.projectionReturn(st), 4.5);
+});
+// A realistic three months: $4,600 take-home, rent and bills, delivery, streaming, a 17% card.
+function tipState(extra) {
+  const entries = [];
+  let id = 0;
+  const add = (type, date, amount, cat, note, more) => entries.push(Object.assign({ id: 'e' + (++id), type, date, amount, cat, note }, more || {}));
+  for (const mk of ['2026-08', '2026-09', '2026-10']) {
+    add('income', mk + '-01', 4600, 'Paycheck', 'Pay');
+    add('k401', mk + '-01', 360, 'My contribution', '');
+    add('expense', mk + '-01', 1900, 'Housing', 'Rent', { recurring: 'rent' });
+    add('expense', mk + '-01', 250, 'Debt payments', 'Card', { recurring: 'card' });
+    add('expense', mk + '-05', 60, 'Streaming', 'YouTube TV', { recurring: 'yttv', tags: ['streaming', 'subscription'] });
+    add('expense', mk + '-05', 12, 'Streaming', 'YouTube Premium Lite', { recurring: 'ytl', tags: ['streaming', 'subscription'] });
+    for (const d of ['08', '15', '22']) add('expense', mk + '-' + d, 40, 'Food delivery', 'DoorDash', { tags: ['food', 'doordash'] });
+    add('expense', mk + '-12', 300, 'Dining', 'Dinner out');
+  }
+  return C.normalizeState(Object.assign({
+    schema: 5, budget: 4500, savingsBalance: 0, k401Fund: 'FXAIX',
+    paycheck: { gross: 6000, frequency: 'monthly', k401Pct: 6, matchPct: 50, matchCapPct: 6, k401Type: 'roth' },
+    debts: [{ id: 'card', name: 'Credit card', balance: 7000, rate: 17, payment: 250 }, { id: 'car', name: 'Car loan', balance: 22000, rate: 6.5, payment: 430 }],
+    recurring: [
+      { id: 'yttv', name: 'YouTube TV', cat: 'Streaming', amount: 60, startDate: '2026-08-05', nextDate: '2026-12-05', endDate: '2027-03-31', tags: ['streaming', 'subscription'] },
+      { id: 'ytl', name: 'YouTube Premium Lite', cat: 'Streaming', amount: 12, startDate: '2026-08-05', nextDate: '2026-12-05', tags: ['streaming', 'subscription'] }],
+    entries
+  }, extra || {}), TODAY);
+}
+test('tips: debt, emergency fund, delivery, subscriptions, trim, invest, with numbers worked out', () => {
+  const tips = C.insights({ state: tipState(), today: TODAY });
+  const ids = tips.map(t => t.id);
+  for (const id of ['debt-extra', 'emergency', 'delivery', 'subs', 'trim-Dining', 'invest-surplus', 'match-ok']) assert.ok(ids.includes(id), id + ' in ' + ids.join(','));
+  const debt = tips.find(t => t.id === 'debt-extra');
+  const base = C.debtPayoff({ balance: 7000, rate: 17, payment: 250 }), fast = C.debtPayoff({ balance: 7000, rate: 17, payment: 350 });
+  assert.ok(debt.detail.includes(C.fmtMoney(base.interest - fast.interest, { whole: true })), debt.detail);
+  assert.ok(debt.detail.includes('Car loan'), 'rolls the payment onto the next debt');
+  const del = tips.find(t => t.id === 'delivery');
+  assert.strictEqual(del.yearly, 720); // $120/mo, halved, times 12
+  const subs = tips.find(t => t.id === 'subs');
+  assert.strictEqual(subs.yearly, 144); // keep YouTube TV ($60), drop $12
+  assert.ok(subs.detail.includes('When YouTube TV ends in Mar 2027'), subs.detail);
+  const trim = tips.find(t => t.id === 'trim-Dining');
+  assert.strictEqual(trim.yearly, 720); // 20% of $300 x 12
+  const em = tips.find(t => t.id === 'emergency');
+  assert.ok(em.title.includes(C.fmtMoney((1900 + 250 + 72 + 120 + 300) * 3, { whole: true })), em.title);
+  assert.ok(em.detail.startsWith('Three months of spending. $975/mo gets you there in 9 months'), em.detail); // half the $1,958 surplus beats a 12-month pace of $660
+  assert.strictEqual(tips[tips.length - 1].kind, 'good', 'good news goes last');
+  assert.ok(tips.indexOf(tips.find(t => t.id === 'emergency')) < tips.indexOf(del), 'emergency fund ranks above savings tips');
+  assert.ok(tips.every(t => t.title && t.detail));
+});
+test('tips: missed match, never-paying debt, overspending, and nothing silly on an empty account', () => {
+  const low = C.insights({ state: tipState({ paycheck: { gross: 6000, frequency: 'monthly', k401Pct: 2, matchPct: 50, matchCapPct: 6 } }), today: TODAY });
+  const match = low.find(t => t.id === 'match');
+  assert.strictEqual(match.yearly, 1440); // 4% of 6000 x 50% x 12
+  const stuck = C.insights({ state: tipState({ debts: [{ id: 'x', name: 'Store card', balance: 10000, rate: 25, payment: 100 }] }), today: TODAY });
+  assert.strictEqual(stuck[0].id, 'debt-stuck-x');
+  const broke = tipState(); broke.entries.push({ id: 'big', type: 'expense', date: '2026-10-20', amount: 9000, cat: 'Shopping', note: 'Oops' });
+  assert.ok(C.insights({ state: broke, today: TODAY }).some(t => t.id === 'negative'));
+  assert.deepStrictEqual(C.insights({ state: C.normalizeState({}, TODAY), today: TODAY }), []);
 });
 
 console.log('formatting');

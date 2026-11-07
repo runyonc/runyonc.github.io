@@ -22,6 +22,15 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
   overlap, get their own "Spending by tag" totals and chart filter, and can be
   removed everywhere from Settings. Older data is moved into the new categories
   and given starter tags once, on first load.
+- **Tips** — on Overview, suggestions worked out from your own numbers and
+  ranked by what they're worth: a payment that doesn't cover a debt's
+  interest, an emergency fund, going over budget this month, investing your
+  monthly surplus (with the usual order: 401k match, debt over ~8%, emergency
+  fund, Roth IRA at the 2026 $7,500 limit, more 401k), paying extra on
+  high-interest debt, the full 401k match, food delivery, stacked streaming
+  subscriptions, your biggest flexible category, and a category running hot
+  this month. Each shows the yearly saving where there is one and links to the
+  screen to act on it.
 - **Recurring** — a paycheck model and a list of bills & subscriptions.
   - **Paycheck**: enter gross pay, pay frequency, next pay date, 401k %,
     employer match, health/HSA and other deductions straight off a pay stub.
@@ -65,9 +74,9 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
     counted in full at retirement; a traditional one comes out before tax and
     is reduced by the withdrawal tax rate.
 
-The design is a dark, glassy "HUD" look by default (light theme available in
-Settings), with monospace figures and a validated colour-blind-safe chart
-palette in both themes.
+The design is deliberately plain: flat cards, sentence-case labels, dark by
+default with a light theme in Settings, and a validated colour-blind-safe chart
+palette in both themes. Current age defaults to 33.
 
 Sample entries are seeded on first run (flagged `sample: true`) and can be
 cleared with one tap. The sample bills include three streaming subscriptions:
