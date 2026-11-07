@@ -715,6 +715,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
         <div class="field" id="p-man-ss" hidden><label for="p-ss">Social Security</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-ss" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
         <div class="field" id="p-man-med" hidden><label for="p-medicare">Medicare</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-medicare" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
       </div>
+      <div class="row wrap" style="margin-top: var(--sp-3)" id="pay-reset-row" hidden><button type="button" class="btn sm" id="p-reset">Restore pay stub defaults</button><span class="xs muted" id="pay-reset-note"></span></div>
       <p class="xs muted" style="margin-top: var(--sp-3)" id="pay-note">Federal withholding is estimated from the 2026 IRS brackets and standard deduction with no other W-4 adjustments; Social Security 6.2% up to the wage base and Medicare 1.45% are applied to wages after health/HSA. A Roth 401k comes out after tax; a traditional one before. Employer match is shown separately and never comes out of your pay. Your real stub can differ, so switch to “Type from pay stub” to enter the exact lines.</p>
     </details>
 
@@ -1938,6 +1939,27 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   function commit() { saveState(); render(); }
   function renderStorageStatus() { $('page-sub').textContent = storageOK ? '' : 'Not saving — storage blocked'; }
 
+  // ---------- personal pay defaults ----------
+  // A private build can set window.MONEY_PAY_DEFAULTS (pay setup fields plus an optional payDay, the day of the
+  // month pay lands). They become the pay setup on a fresh start or after "Delete all data", and "Restore pay stub
+  // defaults" brings them back. The public build has none, so it keeps the generic sample.
+  var PAY_DEFAULTS = (window.MONEY_PAY_DEFAULTS && typeof window.MONEY_PAY_DEFAULTS === 'object') ? window.MONEY_PAY_DEFAULTS : null;
+  var PAY_FIELDS_COMPARED = ['gross', 'frequency', 'k401Type', 'k401Pct', 'k401Fixed', 'matchPct', 'matchCapPct', 'health', 'hsa', 'otherPretax', 'roth', 'otherPosttax', 'filingStatus', 'stateRate', 'extraWithholding', 'taxMode', 'federalManual', 'stateManual', 'ssManual', 'medicareManual'];
+  function nextPayDay(day) {
+    var t = today(), mk = C.monthKey(t), end = +C.monthEnd(mk).slice(8);
+    var d = mk + '-' + String(Math.min(day, end)).padStart(2, '0');
+    if (d > t) return d;
+    var nk = C.addMonths(mk, 1), nend = +C.monthEnd(nk).slice(8);
+    return nk + '-' + String(Math.min(day, nend)).padStart(2, '0');
+  }
+  function defaultPaycheck() {
+    if (!PAY_DEFAULTS) return null;
+    var p = C.normalizePaycheck(PAY_DEFAULTS);
+    if (PAY_DEFAULTS.payDay) p.nextPayDate = nextPayDay(Math.min(31, Math.max(1, Math.round(PAY_DEFAULTS.payDay))));
+    return p;
+  }
+  function payMatchesDefaults(p) { var d = defaultPaycheck(); return !d || PAY_FIELDS_COMPARED.every(function (k) { return d[k] === p[k]; }); }
+
   // ---------- first-run sample data ----------
   // A realistic starting point: $125k in a 401k, $6,000/month gross pay run through the paycheck model,
   // six monthly bills as recurring items, and six months of history. Entries are flagged sample:true.
@@ -1947,7 +1969,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var debts = [C.normalizeDebt({ id: 'debt-car', name: 'Car loan', balance: 22000, rate: 6.5, payment: 430, compounding: 'monthly' }), C.normalizeDebt({ id: 'debt-card', name: 'Credit card', balance: 7000, rate: 17, payment: 250, compounding: 'monthly' })];
     var firstMonth = C.monthStart(C.addMonths(mk, -5));
     var rules = bills.map(function (b) { return C.normalizeRule({ id: b[0], name: b[1], type: 'expense', cat: b[3], amount: b[2], frequency: 'monthly', startDate: firstMonth, nextDate: nextFirst, anchorDay: 1, note: b[1], tags: C.suggestTags(b[1], b[3]) }, t); });
-    var paycheck = C.normalizePaycheck({ gross: 6000, frequency: 'monthly', nextPayDate: nextFirst, autoLog: true, k401Pct: 6, matchPct: 50, matchCapPct: 6, k401Type: 'roth' });
+    var paycheck = defaultPaycheck() || C.normalizePaycheck({ gross: 6000, frequency: 'monthly', nextPayDate: nextFirst, autoLog: true, k401Pct: 6, matchPct: 50, matchCapPct: 6, k401Type: 'roth' });
     var seed = 11; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
     function pick(a) { return a[Math.floor(rnd() * a.length)]; }
     function amt(lo, hi) { return C.round2(lo + rnd() * (hi - lo)); }
@@ -2513,14 +2535,14 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     confirmDialog('Delete everything?', 'All ' + state.entries.length + ' entries, balances, debts and settings will be erased' + (App.cloudActive ? ' from this device and your Claude account' : ' from this browser') + '. Export a backup first if you might want it back.', 'Delete all data').then(function (ok) {
       if (!ok) return;
       stashBackup(); var prev = state;
-      state = C.normalizeState({ theme: prev.theme }, today()); ui.month = C.monthKey(today()); resetForm(); commit();
+      state = C.normalizeState({ theme: prev.theme }, today()); if (defaultPaycheck()) state.paycheck = defaultPaycheck(); ui.month = C.monthKey(today()); resetForm(); commit();
       $('settings-dialog').close();
       toast('All data deleted', { action: 'Undo', onAction: function () { state = prev; commit(); }, duration: 8000 });
     });
   });
 
   // ---------- expose for charts/retirement modules & tests ----------
-  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, tagPicker: tagPicker, tagBars: tagBars, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
+  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, defaultPaycheck: defaultPaycheck, payMatchesDefaults: payMatchesDefaults, tagPicker: tagPicker, tagBars: tagBars, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
 
   // ---------- post due recurring items ----------
   function postDueItems() {
@@ -3239,8 +3261,18 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     A.toast('Logged paycheck: +' + money(es[0].amount) + (es.length > 1 ? ' and 401k' : ''), { action: 'Undo', onAction: function () { A.state.entries = A.state.entries.filter(function (e) { return ids.indexOf(e.id) < 0; }); A.commit(); } });
   });
 
+  $('p-reset').addEventListener('click', function () {
+    var d = A.defaultPaycheck(); if (!d) return;
+    var prev = JSON.parse(JSON.stringify(A.state.paycheck));
+    d.nextPayDate = prev.nextPayDate || d.nextPayDate; d.autoLog = prev.autoLog; // keep where you are in the pay cycle
+    A.state.paycheck = d; A.commit();
+    A.toast('Pay setup restored to your pay stub', { action: 'Undo', onAction: function () { A.state.paycheck = prev; A.commit(); } });
+  });
   function renderPayInputs() {
     var p = A.state.paycheck;
+    var hasDefaults = !!A.defaultPaycheck();
+    $('pay-reset-row').hidden = !hasDefaults;
+    if (hasDefaults) { var same = A.payMatchesDefaults(p); $('p-reset').disabled = same; A.setText('pay-reset-note', same ? 'Matches your pay stub.' : 'Some fields differ from your pay stub.'); }
     Object.keys(PAY_FIELDS).forEach(function (id) { var v = p[PAY_FIELDS[id]]; setIf(id, v === 0 && id !== 'p-k401pct' && id !== 'p-matchpct' && id !== 'p-matchcap' ? '' : v); });
     if (document.activeElement !== $('p-freq')) $('p-freq').value = p.frequency;
     if (document.activeElement !== $('p-status')) $('p-status').value = p.filingStatus;

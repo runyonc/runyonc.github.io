@@ -647,6 +647,26 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await tab(page, 'retirement');
     assert.ok((await text(page, '#r-contrib-help')).includes('+ $400 HSA'));
   });
+  const payDefaults = () => { window.MONEY_PAY_DEFAULTS = { gross: 8000, frequency: 'monthly', payDay: 28, k401Type: 'roth', k401Pct: 0, k401Fixed: 1200, matchPct: 50, matchCapPct: 6, health: 30, hsa: 300, otherPosttax: 4, filingStatus: 'single', stateRate: 0, taxMode: 'manual', federalManual: 1000, stateManual: 0, ssManual: 480, medicareManual: 110 }; };
+  await test('pay stub defaults: used on a fresh start, restorable, and kept after deleting all data', { browser, init: payDefaults }, async (page) => {
+    const p = await page.evaluate(() => App.state.paycheck);
+    assert.deepStrictEqual([p.gross, p.k401Fixed, p.hsa, p.taxMode, p.federalManual], [8000, 1200, 300, 'manual', 1000]);
+    assert.ok(p.nextPayDate.endsWith('-28') && p.nextPayDate > await page.evaluate(() => App.today()));
+    await tab(page, 'recurring');
+    assert.ok(await page.isVisible('#p-reset')); assert.ok(await page.isDisabled('#p-reset'));
+    assert.strictEqual(await text(page, '#pay-reset-note'), 'Matches your pay stub.');
+    await page.fill('#p-gross', '9000'); await page.press('#p-gross', 'Tab'); await page.waitForTimeout(80);
+    assert.ok(!(await page.isDisabled('#p-reset')));
+    await page.click('#p-reset'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.paycheck.gross), 8000);
+    assert.strictEqual(await text(page, '#toast-msg'), 'Pay setup restored to your pay stub');
+    await page.click('#btn-settings'); await page.click('#btn-wipe'); await page.waitForTimeout(50); await page.click('#confirm-ok'); await page.waitForTimeout(80);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.paycheck.gross, App.state.entries.length]), [8000, 0]);
+  });
+  await test('without pay defaults the restore button stays hidden', O, async (page) => {
+    await tab(page, 'recurring');
+    assert.ok(await page.isHidden('#pay-reset-row'));
+  });
   await test('current age defaults to 33', O, async (page) => {
     await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#r-age'), '33');
