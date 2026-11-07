@@ -40,14 +40,17 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
   - **Debts** carry an interest option: compounds monthly (loans), compounds
     daily (credit cards), simple interest on the original balance, or no
     interest (0% promo).
-  - **401k fund & forecast** — pick FXAIX (Fidelity 500 Index) or LFIKX (MFS
-    Lifetime 2055 R6), or a custom rate. The file stores the S&P 500's annual
-    total returns for 1928–2025 and each fund's calendar-year returns, shows
-    CAGR / best / worst / volatility / expense ratio, charts the returns on
-    record, and forecasts your 401k balance to your target age: an expected
-    path at the long-run return plus a 10th–90th percentile band from
-    resampling the historical years 1,000 times. One tap applies the fund's
-    real return (after your inflation assumption) to the retirement projection.
+  - **401k & forecast** — choose Roth or traditional, and the fund it's in:
+    FXAIX (Fidelity 500 Index), LFIKX (MFS Lifetime 2055 R6) or a custom rate.
+    The file stores the S&P 500's annual total returns for 1928–2025 and each
+    fund's calendar-year returns, and uses them (rather than displaying them)
+    to set the projection's default return and to replay history: the
+    retirement projection shows a weak-to-strong-markets band and the share of
+    400 replays that reach your target by your target age, and the 401k card
+    forecasts the balance itself with a 10th–90th percentile range.
+  - **Roth vs traditional**: a Roth 401k comes out of pay after tax and is
+    counted in full at retirement; a traditional one comes out before tax and
+    is reduced by the withdrawal tax rate.
 
 The design is a dark, glassy "HUD" look by default (light theme available in
 Settings), with monospace figures and a validated colour-blind-safe chart
@@ -55,6 +58,20 @@ palette in both themes.
 
 Sample entries are seeded on first run (flagged `sample: true`) and can be
 cleared with one tap.
+
+## Where data is saved
+
+- **On GitHub Pages or as a local file**: in that browser's `localStorage`
+  only. Clearing site data, a private window, or another device starts fresh,
+  so use Export/Import to move or back it up.
+- **As a Claude artifact**: also in your Claude account, through the artifact
+  `db` capability, under `data/users/<your id>/`, a folder that only you can
+  read (not even the artifact's owner can see someone else's). Settings live in
+  one document and entries in one document per month, so years of history fit.
+  Open the artifact signed in on any device and your history is there; changes
+  from another open device arrive live. On first open on a new device the
+  account copy wins; after that the most recent save wins. The header shows
+  Synced / Saving / Offline.
 
 ## Data format
 
@@ -102,6 +119,10 @@ and is DOM-free so it can be unit-tested. Amounts are summed in integer cents.
 - Recurring: monthly rules keep their original day of month (a 31st falls on
   the 28th/30th in short months and returns to the 31st); every missed
   occurrence up to today is logged once, then the rule's next date advances.
+- Historical odds: each of 400 runs draws one basis year per projection year,
+  converts it to a real return with your inflation assumption, and applies it
+  month by month to the same assets, contributions and debt payoffs as the
+  main projection (fixed seed, so results are stable between renders).
 - 401k forecast: the fund's long-run basis is its own calendar-year returns
   where recorded and, for earlier years, S&P 500 total return × beta −
   expense ratio (FXAIX: beta 1, 0.015%; LFIKX: beta 0.85, 0.40%). The

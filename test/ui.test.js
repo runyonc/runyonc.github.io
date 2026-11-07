@@ -16,7 +16,7 @@ async function withPage(opts, fn) {
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  if (opts.init) await page.addInitScript(opts.init);
+  if (opts.init) await page.addInitScript(opts.init, opts.initArg);
   await page.goto(URL);
   await page.waitForTimeout(100);
   try { await fn(page, errors, context); assert.deepStrictEqual(errors, [], 'no console/page errors'); }
@@ -337,17 +337,29 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   });
 
   console.log('retirement');
-  await test('tiles, progress and plain-language line agree with FinanceCore', O, async (page) => {
+  await test('tiles, progress, odds and plain-language line agree with FinanceCore', O, async (page) => {
     await tab(page, 'retirement');
     await page.fill('#r-roth', '50000'); await page.fill('#r-savings', '10000'); await page.waitForTimeout(100);
-    const calc = await page.evaluate(() => { const s = App.state, r = s.retirement, a = FinanceCore.averages(s.entries, App.today()); return FinanceCore.retirementCalc({ age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: r.returnRate, taxRate: r.taxRate, annualSpending: a.expense * 12, monthlyContribution: a.k401 + a.net, k401Balance: s.k401Balance, rothBalance: s.rothBalance, savingsBalance: s.savingsBalance, otherInvestments: s.otherInvestments, debts: s.debts, today: App.today() }); });
-    assert.strictEqual(await text(page, '#rt-networth'), await page.evaluate(() => FinanceCore.fmtMoney(FinanceCore.round2(App.state.k401Balance * 0.85 + 60000 - FinanceCore.totalDebt(App.state.debts)), { compact: true, whole: true })));
-    assert.strictEqual(await text(page, '#rt-progress'), (calc.progress < 0.1 ? (calc.progress * 100).toFixed(1) : Math.round(calc.progress * 100)) + '%');
-    assert.strictEqual(await text(page, '#rt-age'), 'Age ' + Math.ceil(calc.ageAtTarget));
+    const d = await page.evaluate(() => { const d = App.retirementDerived(); return { calc: d.calc, odds: d.odds, inputs: d.inputs }; });
+    assert.strictEqual(d.inputs.k401Type, 'roth');
+    assert.strictEqual(d.calc.assets, await page.evaluate(() => App.state.k401Balance + 60000), 'Roth 401k counted in full');
+    assert.strictEqual(await text(page, '#rt-networth'), await page.evaluate((nw) => FinanceCore.fmtMoney(nw, { compact: true, whole: true }), d.calc.netWorth));
+    assert.strictEqual(await text(page, '#rt-progress'), (d.calc.progress < 0.1 ? (d.calc.progress * 100).toFixed(1) : Math.round(d.calc.progress * 100)) + '%');
+    assert.strictEqual(await text(page, '#rt-age'), 'Age ' + Math.ceil(d.calc.ageAtTarget));
     const plain = await text(page, '#rt-plain');
-    assert.ok(plain.includes('by age ' + Math.ceil(calc.ageAtTarget)), plain);
-    assert.ok(Math.abs(parseFloat(await page.$eval('#rt-fill', el => el.style.width)) - Math.min(100, calc.progress * 100)) < 0.01, 'meter width');
+    assert.ok(plain.includes('by age ' + Math.ceil(d.calc.ageAtTarget)), plain);
+    assert.ok(Math.abs(parseFloat(await page.$eval('#rt-fill', el => el.style.width)) - Math.min(100, d.calc.progress * 100)) < 0.01, 'meter width');
     assert.ok(await page.$('#chart-proj svg'));
+    assert.ok(await page.$('#chart-proj svg .band'), 'historical range band on the projection');
+    const odds = await text(page, '#rt-odds');
+    assert.ok(odds.includes('FXAIX') && odds.includes(Math.round(d.odds.probByTargetAge * 100) + '%'), odds);
+    // the projection's return comes from fund history by default
+    const real = await page.evaluate(() => Math.round(FinanceCore.realRate(Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('FXAIX')).cagr * 10) / 10, 3) * 10) / 10);
+    assert.strictEqual(d.inputs.returnRate, real);
+    await page.click('details:has(#r-return) summary');
+    assert.strictEqual(parseFloat(await page.inputValue('#r-return')), real);
+    assert.ok(await page.isDisabled('#r-tax'), 'tax rate unused for a Roth 401k');
+    assert.ok((await text(page, '#r-tax-help')).includes('Roth'));
   });
   await test('spending and contribution overrides, reset to tracker average', O, async (page) => {
     await tab(page, 'retirement');
@@ -364,8 +376,11 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('details:has(#r-wr) summary'); await page.fill('#r-wr', '3'); await page.waitForTimeout(80);
     const t3 = await page.evaluate(() => FinanceCore.averages(App.state.entries, App.today()).expense * 12 / 0.03);
     assert.ok((await text(page, '#rt-target-sub')).includes('÷ 3%'));
+    await page.fill('#r-return', '4'); await page.waitForTimeout(80);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.retirement.returnRate, App.state.retirement.returnFromFund]), [4, false]);
+    assert.ok(await page.isVisible('#r-return-reset'));
     await page.click('#r-assume-reset'); await page.waitForTimeout(50);
-    assert.deepStrictEqual(await page.evaluate(() => { const r = App.state.retirement; return [r.withdrawalRate, r.returnRate, r.taxRate]; }), [4, 6, 15]);
+    assert.deepStrictEqual(await page.evaluate(() => { const r = App.state.retirement; return [r.withdrawalRate, r.returnFromFund, r.taxRate]; }), [4, true, 15]);
     await page.reload(); await page.waitForTimeout(100); await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#r-contrib'), '0', 'override persisted');
   });
@@ -425,48 +440,52 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.reload(); await page.waitForTimeout(100);
     assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'daily');
   });
-  await test('401k fund selector shows FXAIX/LFIKX history, forecast band, and feeds the projection', O, async (page) => {
-    await page.fill('#k401-balance', '20000'); await page.click('#k401-save'); await page.waitForTimeout(50);
+  await test('401k card: Roth/traditional switch, fund choice drives the forecast and projection, no history display', O, async (page) => {
     await tab(page, 'retirement');
+    assert.strictEqual(await page.inputValue('#r-k401type'), 'roth');
     assert.strictEqual(await page.inputValue('#k-fund'), 'FXAIX');
+    assert.ok(!(await page.$('#chart-fund-hist')), 'annual-returns chart removed');
+    assert.ok(!(await page.$('#k-facts')), 'history stats removed');
+    assert.ok(await page.$('#chart-fund-forecast svg .band'), 'forecast range band');
+    assert.ok((await text(page, '#k-summary')).includes('Roth · FXAIX'));
     const fx = parseFloat(await page.inputValue('#k-return'));
-    const expectedFx = await page.evaluate(() => Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('FXAIX')).cagr * 10) / 10);
-    assert.strictEqual(fx, expectedFx);
-    assert.ok(await page.$('#chart-fund-hist svg'), 'history chart'); assert.ok(await page.$('#chart-fund-forecast svg'), 'forecast chart');
-    assert.ok(await page.$('#chart-fund-forecast svg .band'), 'percentile band drawn');
-    assert.strictEqual(await page.$$eval('#chart-fund-hist svg .bar', b => b.length), 14, 'one bar per FXAIX year');
-    assert.ok((await text(page, '#k-facts')).includes('0.015%'));
-    await page.selectOption('#k-fund', 'LFIKX'); await page.waitForTimeout(120);
-    const lf = parseFloat(await page.inputValue('#k-return'));
-    assert.ok(lf < fx, 'LFIKX long-run estimate is lower than FXAIX');
-    assert.strictEqual(await page.$$eval('#chart-fund-hist svg .bar', b => b.length), 10, 'one bar per LFIKX year');
-    assert.ok((await text(page, '#k-basis')).includes('beta 0.85'));
+    assert.strictEqual(fx, await page.evaluate(() => Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('FXAIX')).cagr * 10) / 10));
+    const nwRoth = await page.evaluate(() => App.retirementDerived().calc.netWorth);
+    await page.selectOption('#r-k401type', 'traditional'); await page.waitForTimeout(100);
+    const nwTrad = await page.evaluate(() => App.retirementDerived().calc.netWorth);
+    assert.strictEqual(Math.round(nwRoth - nwTrad), Math.round(await page.evaluate(() => App.state.k401Balance * 0.15)), 'traditional loses 15% to tax');
+    assert.strictEqual(await page.evaluate(() => App.state.paycheck.k401Type), 'traditional', 'same setting as Pay setup');
+    assert.ok(!(await page.isDisabled('#r-tax')));
+    await page.selectOption('#r-k401type', 'roth'); await page.waitForTimeout(80);
+    const realFx = await page.evaluate(() => App.retirementDerived().inputs.returnRate);
+    await page.selectOption('#k-fund', 'LFIKX'); await page.waitForTimeout(150);
+    assert.ok(parseFloat(await page.inputValue('#k-return')) < fx, 'LFIKX long-run estimate is lower');
+    assert.ok(await page.evaluate(() => App.retirementDerived().inputs.returnRate) < realFx, 'projection follows the fund');
+    assert.ok((await text(page, '#rt-odds')).includes('LFIKX'));
     assert.ok((await text(page, '#k-forecast-line')).includes('LFIKX'));
-    // tooltip on the history chart shows the exact stored value for 2022
-    const svg = page.locator('#chart-fund-hist svg'); await svg.focus();
-    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft');
-    assert.ok((await text(page, '#chart-fund-hist .tooltip')).includes('-15.44%'));
-    // apply real return to the projection
-    const before = await page.evaluate(() => App.state.retirement.returnRate);
-    await page.click('#k-apply'); await page.waitForTimeout(80);
-    const after = await page.evaluate(() => App.state.retirement.returnRate);
-    assert.notStrictEqual(before, after);
-    const real = await page.evaluate(() => Math.round(FinanceCore.realRate(Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('LFIKX')).cagr * 10) / 10, 3) * 10) / 10);
-    assert.strictEqual(after, real);
-    assert.ok(await page.isDisabled('#k-apply'));
-    // override and reset
     await page.fill('#k-return', '5'); await page.waitForTimeout(80);
     assert.strictEqual(await page.evaluate(() => App.state.k401ReturnOverride), 5);
-    assert.ok(await page.isVisible('#k-return-reset'));
     await page.click('#k-return-reset'); await page.waitForTimeout(80);
     assert.strictEqual(await page.evaluate(() => App.state.k401ReturnOverride), null);
     await page.selectOption('#k-fund', 'custom'); await page.waitForTimeout(80);
     assert.strictEqual(await page.inputValue('#k-return'), '7');
-    assert.ok((await text(page, '#chart-fund-hist')).includes('No historical data'));
+    assert.ok((await text(page, '#rt-odds')).includes('Pick FXAIX or LFIKX'));
     await page.reload(); await page.waitForTimeout(100); await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#k-fund'), 'custom', 'fund choice persisted');
   });
-
+  await test('Roth 401k on the paycheck comes out after tax', O, async (page) => {
+    await tab(page, 'recurring');
+    assert.strictEqual(await page.inputValue('#p-k401type'), 'roth');
+    const lines = await text(page, '#pay-lines');
+    assert.ok(lines.includes('After-tax deductions') && lines.includes('Roth 401k (6%)'), lines);
+    assert.ok(!lines.includes('Pre-tax deductions'), 'nothing pre-tax in the seed');
+    const roth = await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck));
+    assert.strictEqual(roth.taxableWages, 6000);
+    await page.selectOption('#p-k401type', 'traditional'); await page.waitForTimeout(80);
+    const trad = await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck));
+    assert.strictEqual(trad.taxableWages, 5640); assert.ok(trad.net > roth.net);
+    assert.ok((await text(page, '#pay-lines')).includes('Pre-tax deductions'));
+  });
 
   console.log('recurring & paycheck');
   await test('Repeat on the Add form creates a rule and logs the entry; the rule shows on Recurring and Overview', O, async (page) => {
@@ -554,6 +573,76 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(!(await page.evaluate(() => App.state.recurring.some(r => r.name === 'Spotify'))));
     await page.click('#toast-action'); await page.waitForTimeout(50);
     assert.ok(await page.evaluate(() => App.state.recurring.some(r => r.name === 'Spotify')), 'undo restores the rule');
+  });
+
+
+  // A stand-in for the Claude viewer runtime: an in-memory db shaped like the real one.
+  const fakeRuntime = (seed) => {
+    const store = new Map(Object.entries(seed || {}));
+    window.__cloud = store; window.__cloudWrites = 0;
+    const listeners = [];
+    const clone = (x) => JSON.parse(JSON.stringify(x));
+    const snapOf = (path) => { const d = store.get(path); return { id: path.split('/').pop(), exists: !!d, data: () => (d ? clone(d) : undefined), metadata: { fromCache: false, hasPendingWrites: false } }; };
+    const notify = (path) => listeners.filter((l) => l.path === path).forEach((l) => setTimeout(() => l.fn(snapOf(path)), 0));
+    const docRef = (path) => ({ id: path.split('/').pop(), path,
+      get: async () => snapOf(path),
+      set: async (data) => { window.__cloudWrites++; store.set(path, clone(data)); notify(path); },
+      update: async (data) => { store.set(path, Object.assign(clone(store.get(path) || {}), clone(data))); notify(path); },
+      delete: async () => { store.delete(path); notify(path); },
+      onSnapshot: (fn) => { listeners.push({ path, fn }); setTimeout(() => fn(snapOf(path)), 0); return () => {}; },
+      collection: (sub) => colRef(path + '/' + sub) });
+    const colRef = (path) => ({ path, doc: (id) => docRef(path + '/' + id),
+      get: async () => { const depth = path.split('/').length + 1; const docs = [...store.keys()].filter((k) => k.startsWith(path + '/') && k.split('/').length === depth).sort().map(snapOf); return { docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: { fromCache: false, hasPendingWrites: false } }; } });
+    const db = { doc: docRef, collection: colRef };
+    const user = { id: async () => 'u_test', isOwner: async () => true, canEdit: async () => true, can: async () => true, me: async () => ({ id: 'u_test' }) };
+    window.__setRemote = (path, data) => { store.set(path, data); notify(path); };
+    window.claude = { use: (name) => new Promise((r) => setTimeout(() => r(name === 'db' ? db : name === 'user' ? user : null), 30)) };
+  };
+  const dumpCloud = (page) => page.evaluate(() => Object.fromEntries(window.__cloud));
+  const ROOT = 'data/users/u_test/state';
+
+  console.log('account sync');
+  let cloudAfterA = null;
+  await test('first device with an empty account uploads its data, then syncs each change', { browser, init: fakeRuntime, initArg: {} }, async (page) => {
+    await page.waitForTimeout(1500);
+    let cloud = await dumpCloud(page);
+    assert.ok(cloud[ROOT], 'settings document written');
+    assert.strictEqual(cloud[ROOT].state.k401Balance, 125000);
+    assert.strictEqual(cloud[ROOT].state.paycheck.k401Type, 'roth');
+    const monthKeys = Object.keys(cloud).filter((k) => k.startsWith(ROOT + '/months/'));
+    const total = monthKeys.reduce((n, k) => n + cloud[k].entries.length, 0);
+    assert.strictEqual(total, await page.evaluate(() => App.state.entries.length), 'every entry uploaded');
+    assert.deepStrictEqual(cloud[ROOT].months, monthKeys.map((k) => k.split('/').pop()).sort());
+    assert.strictEqual(await text(page, '#sync-chip'), 'Synced');
+    await addEntry(page, { amount: '42.42', cat: 'Fun', note: 'SyncMe' });
+    await page.waitForTimeout(1800);
+    cloud = await dumpCloud(page);
+    const mk = await page.evaluate(() => App.today().slice(0, 7));
+    assert.ok(cloud[ROOT + '/months/' + mk].entries.some((e) => e.note === 'SyncMe' && e.amount === 42.42), 'new entry reached the account');
+    const writes = await page.evaluate(() => window.__cloudWrites);
+    assert.ok(writes <= monthKeys.length + 4, 'only changed months rewritten (' + writes + ' writes)');
+    cloudAfterA = cloud;
+  });
+  await test('a fresh device adopts the account data exactly', { browser, init: fakeRuntime, initArg: cloudAfterA }, async (page) => {
+    await page.waitForTimeout(800);
+    const notes = await page.evaluate(() => App.state.entries.filter((e) => e.note === 'SyncMe').length);
+    assert.strictEqual(notes, 1, 'history from the other device is here');
+    const cloudTotal = Object.keys(cloudAfterA).filter((k) => k.startsWith(ROOT + '/months/')).reduce((n, k) => n + cloudAfterA[k].entries.length, 0);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), cloudTotal, 'no duplicates, nothing lost');
+    assert.strictEqual(await text(page, '#sync-chip'), 'Synced');
+    await page.click('#btn-settings');
+    assert.ok((await text(page, '#sync-status')).includes('Saved to your Claude account'));
+    await page.click('#settings-close');
+    // a change made on the other device arrives live
+    const remote = JSON.parse(JSON.stringify(cloudAfterA[ROOT])); remote.state.k401Balance = 130000; remote.updatedAt = Date.now() + 1000; remote.writer = 'other-device';
+    await page.evaluate(([path, data]) => window.__setRemote(path, data), [ROOT, remote]);
+    await page.waitForTimeout(400);
+    assert.strictEqual(await page.evaluate(() => App.state.k401Balance), 130000);
+    assert.ok((await text(page, '#toast-msg')).includes('another device'));
+  });
+  await test('without the Claude runtime the app stays local and shows no sync chip', O, async (page) => {
+    assert.ok(await page.isHidden('#sync-chip'));
+    assert.strictEqual(await page.evaluate(() => App.cloudActive), false);
   });
 
   console.log('accessibility');

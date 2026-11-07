@@ -412,6 +412,56 @@ test('normalizeRule and normalizePaycheck repair bad input', () => {
   const st = C.normalizeState({}, TODAY); assert.deepStrictEqual(st.recurring, []); assert.strictEqual(st.paycheck.matchPct, 50);
 });
 
+
+console.log('roth 401k & odds');
+test('Roth 401k is after-tax: taxable wages keep the contribution, take-home drops by the tax on it', () => {
+  const trad = C.paycheckBreakdown({ gross: 6000, frequency: 'monthly', k401Pct: 6, k401Type: 'traditional' });
+  const roth = C.paycheckBreakdown({ gross: 6000, frequency: 'monthly', k401Pct: 6, k401Type: 'roth' });
+  assert.strictEqual(trad.taxableWages, 5640); assert.strictEqual(roth.taxableWages, 6000);
+  assert.strictEqual(roth.k401, 360); assert.strictEqual(roth.pretax, 0); assert.strictEqual(roth.posttax, 360);
+  assert.ok(roth.federal > trad.federal, 'more federal tax on Roth');
+  assert.strictEqual(roth.socialSecurity, trad.socialSecurity, 'FICA is the same either way');
+  close(trad.net - roth.net, roth.federal - trad.federal, 0.011);
+  assert.strictEqual(C.paycheckEntries({ gross: 6000, frequency: 'monthly', k401Pct: 6, k401Type: 'roth' }, '2026-12-01')[1].amount, 360);
+  assert.strictEqual(C.normalizePaycheck({}).k401Type, 'traditional'); assert.strictEqual(C.normalizePaycheck({ k401Type: 'roth' }).k401Type, 'roth');
+});
+test('Roth 401k balance is not reduced by the withdrawal tax rate', () => {
+  const t = C.retirementCalc(Object.assign({}, base, { k401Balance: 100000, taxRate: 15 }));
+  const r = C.retirementCalc(Object.assign({}, base, { k401Balance: 100000, taxRate: 15, k401Type: 'roth' }));
+  assert.strictEqual(t.assets, 85000); assert.strictEqual(r.assets, 100000); assert.strictEqual(r.k401Type, 'roth');
+});
+test('simulate accepts a per-month rate function', () => {
+  const s = C.simulate(1000, [], 0, (m) => (m === 1 ? 0.1 : 0), 2, 1e9);
+  close(s.path[1].assets, 1100); close(s.path[2].assets, 1100);
+});
+test('retirementOdds: constant history matches the deterministic projection', () => {
+  // 6% nominal every year with 0% inflation must equal retirementCalc at a 6% real return.
+  const inp = Object.assign({}, base, { rothBalance: 100000, monthlyContribution: 1000, annualSpending: 40000, returnRate: 6 });
+  const det = C.retirementCalc(inp);
+  const odds = C.retirementOdds(inp, { returns: [6], inflation: 0, runs: 5 });
+  assert.strictEqual(odds.years.length, det.projection.length);
+  odds.years.forEach((y, i) => { close(y.p50, det.projection[i].netWorth, 0.05); close(y.p10, y.p90, 0.05); });
+  close(odds.reachAge.p50, det.ageAtTarget, 1e-9);
+  assert.strictEqual(odds.probByTargetAge, det.ageAtTarget <= inp.targetAge ? 1 : 0);
+});
+test('retirementOdds on real S&P history: ordered percentiles, deterministic, sane probability', () => {
+  const inp = Object.assign({}, base, { age: 30, targetAge: 65, k401Balance: 125000, k401Type: 'roth', monthlyContribution: 1200, annualSpending: 50000, debts: [{ name: 'Car', balance: 22000, rate: 6.5, payment: 430 }] });
+  const a = C.retirementOdds(inp, { returns: C.SP500.returns, inflation: 3, runs: 300 });
+  const b = C.retirementOdds(inp, { returns: C.SP500.returns, inflation: 3, runs: 300 });
+  assert.deepStrictEqual(a, b);
+  a.years.forEach(y => assert.ok(y.p10 <= y.p50 && y.p50 <= y.p90));
+  assert.ok(a.years[0].p10 === a.years[0].p90, 'year 0 is known');
+  assert.ok(a.probByTargetAge > 0.5 && a.probByTargetAge <= 1, 'prob ' + a.probByTargetAge);
+  assert.ok(a.reachAge.p10 <= a.reachAge.p50 && a.reachAge.p50 <= a.reachAge.p90);
+  assert.strictEqual(C.retirementOdds(inp, { returns: [] }), null);
+  assert.strictEqual(C.retirementOdds(Object.assign({}, inp, { withdrawalRate: 0 }), { returns: [5] }), null);
+});
+test('normalizeState keeps updatedAt and returnFromFund', () => {
+  const s = C.normalizeState({ updatedAt: 123, retirement: { returnFromFund: false } }, TODAY);
+  assert.strictEqual(s.updatedAt, 123); assert.strictEqual(s.retirement.returnFromFund, false);
+  const d = C.normalizeState({}, TODAY); assert.strictEqual(d.updatedAt, 0); assert.strictEqual(d.retirement.returnFromFund, true);
+});
+
 console.log('formatting');
 test('money formats', () => {
   assert.strictEqual(C.fmtMoney(1234.5), '$1,234.50');
