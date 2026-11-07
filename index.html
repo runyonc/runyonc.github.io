@@ -624,6 +624,14 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
 .chart .band { opacity: 0.14; }
 .chart .band-edge { fill: none; stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.8; }
 @media (forced-colors: active) { .card::before, .card::after { display: none; } }
+.chip.tag-chip { font-family: var(--font-mono); text-transform: none; letter-spacing: 0; }
+.entry .tag { font-family: var(--font-mono); font-size: 11px; color: var(--accent); flex: none; }
+.entry .note .meta-cat { flex: none; }
+.entry .note { overflow: hidden; }
+.tag-add { display: flex; gap: 6px; margin-top: 6px; }
+.tag-add .input { min-height: 36px; font-size: 15px; }
+.tag-manage .chip { gap: 8px; }
+.tag-manage .chip .n { color: var(--muted); font-size: 11px; }
 .sync-chip { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .sync-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
 .sync-chip[data-s="synced"]::before { background: var(--good); box-shadow: 0 0 6px var(--good); }
@@ -720,6 +728,11 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       <div id="breakdown"></div>
     </section>
 
+    <section class="card" id="tag-card" aria-labelledby="tagcard-h" hidden>
+      <div class="card-head"><h2 id="tagcard-h">Spending by tag</h2><span class="hint">tags can overlap</span></div>
+      <div id="tag-breakdown"></div>
+    </section>
+
     <section class="card" aria-labelledby="k401-h">
       <div class="card-head"><h2 id="k401-h">401k balance</h2><span class="hint" id="k401-updated"></span></div>
       <div class="row">
@@ -759,6 +772,12 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
         <div class="chips" id="cat-chips" role="radiogroup" aria-labelledby="cat-label"></div>
       </div>
 
+      <div class="field">
+        <span class="label" id="tag-label">Tags <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">(pick any)</span></span>
+        <div class="chips" id="tag-chips" role="group" aria-labelledby="tag-label"></div>
+        <div class="tag-add"><input class="input" id="f-newtag" type="text" maxlength="24" placeholder="New tag, e.g. date night" aria-label="New tag" enterkeyhint="done" autocomplete="off"><button type="button" class="btn sm" id="f-addtag">Add tag</button></div>
+      </div>
+
       <div class="form-grid tight">
         <div class="field span2">
           <label for="f-note">Note <span class="muted" style="font-weight:400">(optional)</span></label>
@@ -776,7 +795,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
         <div class="field span2" id="repeat-fieldwrap">
           <label for="f-repeat">Repeat</label>
           <select class="input" id="f-repeat"><option value="">Doesn’t repeat</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
-          <span class="help" id="repeat-help">Creates a recurring item that is logged automatically on each due date.</span>
+          <span class="help" id="repeat-help">Creates a recurring item starting on this date. A past date fills in the payments since then.</span>
         </div>
       </div>
 
@@ -817,6 +836,11 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
         <div class="chips" id="cat-filter" style="margin-top: var(--sp-2)" role="group" aria-label="Spending categories to include"></div>
         <div class="xs muted" style="margin-top:6px">Applies to the income vs. spending and category charts.</div>
       </details>
+      <details id="tag-filter-details">
+        <summary class="small" style="cursor:pointer;font-weight:600;color:var(--accent)">Filter tags</summary>
+        <div class="chips" id="tag-filter" style="margin-top: var(--sp-2)" role="group" aria-label="Only include spending with these tags"></div>
+        <div class="xs muted" style="margin-top:6px">Keeps spending that has any of the selected tags. Applies to the income vs. spending, category and tag charts.</div>
+      </details>
     </div>
 
     <div class="tiles four" id="range-totals">
@@ -833,6 +857,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     <section class="card chart-card" aria-labelledby="ch2-h">
       <div class="card-head"><h2 id="ch2-h">Spending by category</h2><button class="table-toggle" data-table="ch2" aria-expanded="false">Table</button></div>
       <div class="chart" id="chart-cats"></div>
+    </section>
+    <section class="card chart-card" aria-labelledby="ch8-h">
+      <div class="card-head"><h2 id="ch8-h">Spending by tag</h2><button class="table-toggle" data-table="ch8" aria-expanded="false">Table</button></div>
+      <div class="chart" id="chart-tags"></div>
     </section>
     <section class="card chart-card" aria-labelledby="ch3-h">
       <div class="card-head"><h2 id="ch3-h">Savings rate by month</h2><button class="table-toggle" data-table="ch3" aria-expanded="false">Table</button></div>
@@ -900,9 +928,13 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
           <div class="field span2"><label for="u-name">Name</label><input class="input" id="u-name" type="text" maxlength="40" placeholder="e.g. Netflix" required></div>
           <div class="field"><label for="u-amount">Amount</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="u-amount" type="number" inputmode="decimal" min="0" step="0.01" required></div></div>
           <div class="field"><label for="u-freq">Repeats</label><select class="input" id="u-freq"><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div>
-          <div class="field"><label for="u-next">Next due</label><input class="input" id="u-next" type="date" required></div>
+          <div class="field"><label for="u-start">Start date</label><input class="input" id="u-start" type="date" required aria-describedby="u-start-help"><span class="help" id="u-start-help">first payment; a past date fills in history</span></div>
+          <div class="field"><label for="u-end">End date <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input class="input" id="u-end" type="date"><span class="help">e.g. last loan payment</span></div>
           <div class="field"><label for="u-cat">Category</label><select class="input" id="u-cat"></select></div>
-          <div class="field span2"><div class="error" id="u-error" role="alert"></div></div>
+          <div class="field span2"><span class="label" id="u-tag-label">Tags</span><div class="chips" id="u-tag-chips" role="group" aria-labelledby="u-tag-label"></div>
+            <div class="tag-add"><input class="input" id="u-newtag" type="text" maxlength="24" placeholder="New tag" aria-label="New tag for this item" enterkeyhint="done" autocomplete="off"><button type="button" class="btn sm" id="u-addtag">Add tag</button></div>
+            <span class="help">Applied to every payment from this item, past ones included.</span></div>
+          <div class="field span2"><p class="small text-2" id="u-preview" aria-live="polite"></p><div class="error" id="u-error" role="alert"></div></div>
         </div>
         <div class="row"><button type="button" class="btn ghost" id="u-cancel">Cancel</button><button type="submit" class="btn primary grow" id="u-save">Save</button></div>
       </form>
@@ -1077,6 +1109,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       <div><div class="lbl">Sample entries</div><div class="sub" id="samples-sub"></div></div>
       <button class="btn sm" id="btn-clear-samples-2">Clear samples</button>
     </div>
+    <div class="settings-row" style="flex-wrap:wrap">
+      <div><div class="lbl">Tags</div><div class="sub">Tap a tag to remove it from every entry and bill.</div></div>
+      <div class="chips tag-manage" id="tag-manage" style="width:100%"></div>
+    </div>
     <div class="settings-row">
       <div><div class="lbl danger-text">Delete all data</div><div class="sub">Entries, balances, debts and settings.</div></div>
       <button class="btn sm danger" id="btn-wipe">Delete…</button>
@@ -1113,7 +1149,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
 
   var TYPES = ['expense', 'income', 'k401'];
   var CATS = {
-    expense: ['Housing', 'Groceries', 'Dining', 'Transport', 'Bills', 'Shopping', 'Fun', 'Health', 'Other'],
+    expense: ['Groceries', 'Dining', 'Food delivery', 'Housing', 'Utilities', 'Streaming', 'Transport', 'Gaming', 'Recreation', 'Shopping', 'Health', 'Insurance', 'Debt payments', 'Other'],
     income: ['Paycheck', 'Side work', 'Interest', 'Other income'],
     k401: ['My contribution', 'Employer match']
   };
@@ -1122,6 +1158,45 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     retirement: { age: 30, targetAge: 65, spendingOverride: null, withdrawalRate: 4, returnRate: 6, taxRate: 15, contributionOverride: null }
   };
   var MAX_MONTHS = 1200; // 100 years
+  var SCHEMA = 3;
+  // Renamed categories: older entries are mapped on load.
+  var CAT_ALIASES = { Bills: 'Utilities', Fun: 'Recreation' };
+  // One-time re-categorization (schema 1 -> 2) by keyword in the note or name.
+  var CAT_KEYWORDS = [
+    ['Streaming', /netflix|hulu|spotify|disney|hbo|\bmax\b|youtube|peacock|paramount|apple ?tv|sling|fubo|crunchyroll|pandora|sirius|\btv\b/i],
+    ['Food delivery', /door ?dash|uber ?eats|grubhub|postmates|caviar|seamless/i],
+    ['Gaming', /steam|xbox|playstation|\bpsn\b|nintendo|game ?pass|twitch|\bgames?\b/i],
+    ['Insurance', /insurance|geico|progressive|state farm|allstate/i],
+    ['Debt payments', /loan payment|card payment|credit card|student loan/i]
+  ];
+  var MIGRATABLE = { Utilities: 1, Recreation: 1, Dining: 1, Other: 1, Shopping: 1, Transport: 1 };
+  // ---------- tags ----------
+  // Tags sit alongside the single category: any number per entry, free to create, and they can overlap.
+  var DEFAULT_TAGS = ['food', 'groceries', 'doordash', 'streaming', 'subscription', 'gaming', 'recreational'];
+  var CAT_TAGS = { Groceries: ['groceries'], Dining: ['food'], 'Food delivery': ['food'], Streaming: ['streaming'], Gaming: ['gaming'], Recreation: ['recreational'] };
+  var TAG_RULES = [
+    [/netflix|hulu|spotify|disney|hbo|\bmax\b|youtube|peacock|paramount|apple ?tv|sling|fubo|crunchyroll|pandora|sirius|\btv\b/i, ['streaming', 'subscription']],
+    [/door ?dash/i, ['doordash', 'food']],
+    [/uber ?eats|grubhub|postmates|caviar|seamless/i, ['food']],
+    [/game ?pass|xbox live|ps plus|playstation plus|nintendo online/i, ['gaming', 'subscription']],
+    [/steam|xbox|playstation|\bpsn\b|nintendo|twitch|\bgames?\b/i, ['gaming']]
+  ];
+  function normTag(t) { return String(t == null ? '' : t).trim().replace(/^#+/, '').replace(/\s+/g, ' ').toLowerCase().slice(0, 24); }
+  function normalizeTags(arr) {
+    var out = [], list = Array.isArray(arr) ? arr : typeof arr === 'string' ? arr.split(',') : [];
+    list.forEach(function (t) { var n = normTag(t); if (n && out.indexOf(n) < 0 && out.length < 8) out.push(n); });
+    return out;
+  }
+  function suggestTags(text, cat) {
+    var out = (CAT_TAGS[cat] || []).slice();
+    TAG_RULES.forEach(function (r) { if (r[0].test(text || '')) r[1].forEach(function (t) { if (out.indexOf(t) < 0) out.push(t); }); });
+    return out;
+  }
+  function recategorize(cat, text) {
+    if (!MIGRATABLE[cat]) return cat;
+    for (var i = 0; i < CAT_KEYWORDS.length; i++) if (CAT_KEYWORDS[i][1].test(text || '')) return CAT_KEYWORDS[i][0];
+    return cat;
+  }
   var COMPOUNDING = ['monthly', 'daily', 'simple', 'none'];
   var FREQS = { weekly: 52, biweekly: 26, semimonthly: 24, monthly: 12, yearly: 1 };
   var FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Every 2 weeks', semimonthly: 'Twice a month', monthly: 'Monthly', yearly: 'Yearly' };
@@ -1183,12 +1258,14 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     e = e || {};
     var type = TYPES.indexOf(e.type) >= 0 ? e.type : 'expense';
     var cats = CATS[type];
-    var cat = cats.indexOf(e.cat) >= 0 ? e.cat : cats[cats.length - 1];
+    var rawCat = CAT_ALIASES[e.cat] || e.cat;
+    var cat = cats.indexOf(rawCat) >= 0 ? rawCat : cats[cats.length - 1];
     var amount = Math.abs(round2(e.amount));
     var date = isValidISO(e.date) ? e.date : today;
     var out = { id: typeof e.id === 'string' && e.id ? e.id : uid(), type: type, date: date, amount: amount, cat: cat, note: typeof e.note === 'string' ? e.note.slice(0, 120) : '' };
     if (e.sample) out.sample = true;
     if (typeof e.recurring === 'string' && e.recurring) out.recurring = e.recurring;
+    var tags = normalizeTags(e.tags); if (tags.length) out.tags = tags;
     return out;
   }
   function num(v, fallback) { var n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? fallback : n; }
@@ -1211,7 +1288,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     r = (r && typeof r === 'object') ? r : {};
     var type = TYPES.indexOf(r.type) >= 0 ? r.type : 'expense'; var cats = CATS[type];
     var next = isValidISO(r.nextDate) ? r.nextDate : today;
-    return { id: typeof r.id === 'string' && r.id ? r.id : uid(), name: typeof r.name === 'string' && r.name ? r.name.slice(0, 40) : 'Recurring', type: type, cat: cats.indexOf(r.cat) >= 0 ? r.cat : cats[cats.length - 1],
+    var start = isValidISO(r.startDate) ? r.startDate : next;
+    var end = isValidISO(r.endDate) && r.endDate >= start ? r.endDate : null;
+    var rcat = CAT_ALIASES[r.cat] || r.cat;
+    return { id: typeof r.id === 'string' && r.id ? r.id : uid(), name: typeof r.name === 'string' && r.name ? r.name.slice(0, 40) : 'Recurring', type: type, cat: cats.indexOf(rcat) >= 0 ? rcat : cats[cats.length - 1], startDate: start, endDate: end, tags: normalizeTags(r.tags),
       amount: Math.max(0, round2(num(r.amount, 0))), frequency: FREQS[r.frequency] ? r.frequency : 'monthly', nextDate: next, anchorDay: Math.min(31, Math.max(1, Math.round(num(r.anchorDay, +next.slice(8))))), active: r.active !== false, note: typeof r.note === 'string' ? r.note.slice(0, 120) : '' };
   }
   /** Effective interest charged per month, as a fraction of the balance (or of the original balance for simple interest). */
@@ -1225,11 +1305,12 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   }
   function normalizeState(raw, today) {
     raw = (raw && typeof raw === 'object') ? raw : {};
+    var fromSchema = num(raw.schema, 1);
     var r = (raw.retirement && typeof raw.retirement === 'object') ? raw.retirement : {};
     var rd = DEFAULTS.retirement;
     var entries = Array.isArray(raw.entries) ? raw.entries.map(function (e) { return normalizeEntry(e, today); }) : [];
     var seen = {}; entries = entries.filter(function (e) { if (seen[e.id]) return false; seen[e.id] = true; return true; });
-    return {
+    return migrateTags(migrateCategories({
       budget: Math.max(0, round2(num(raw.budget, DEFAULTS.budget))),
       k401Balance: Math.max(0, round2(num(raw.k401Balance, 0))),
       k401UpdatedAt: isValidISO(raw.k401UpdatedAt) ? raw.k401UpdatedAt : null,
@@ -1254,8 +1335,35 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       },
       entries: entries,
       theme: ['system', 'light', 'dark'].indexOf(raw.theme) >= 0 ? raw.theme : 'dark',
-      updatedAt: Math.max(0, num(raw.updatedAt, 0))
-    };
+      updatedAt: Math.max(0, num(raw.updatedAt, 0)),
+      schema: SCHEMA
+    }, fromSchema), fromSchema);
+  }
+
+  /** Schema 1 -> 2: move bills, subscriptions and the like into the new categories. Runs once. */
+  function migrateCategories(st, fromSchema) {
+    if (fromSchema >= 2) return st;
+    var ruleCat = {};
+    st.recurring.forEach(function (r) { if (r.type === 'expense') { r.cat = recategorize(r.cat, r.name + ' ' + (r.note || '')); ruleCat[r.id] = r.cat; } });
+    st.entries.forEach(function (e) {
+      if (e.type !== 'expense') return;
+      if (e.recurring && ruleCat[e.recurring]) e.cat = ruleCat[e.recurring];
+      else e.cat = recategorize(e.cat, e.note);
+    });
+    return st;
+  }
+
+  /** Schema 2 -> 3: give existing spending and recurring bills starter tags. Runs once. */
+  function migrateTags(st, fromSchema) {
+    if (fromSchema >= 3) return st;
+    var ruleTags = {};
+    st.recurring.forEach(function (r) { if (!r.tags.length && r.type === 'expense') r.tags = suggestTags(r.name + ' ' + (r.note || ''), r.cat); ruleTags[r.id] = r.tags; });
+    st.entries.forEach(function (e) {
+      if (e.type !== 'expense' || e.tags) return;
+      var t = e.recurring && ruleTags[e.recurring] ? ruleTags[e.recurring] : suggestTags(e.note, e.cat);
+      if (t.length) e.tags = t.slice();
+    });
+    return st;
   }
 
   // ---------- selection ----------
@@ -1291,6 +1399,25 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     return Object.keys(map).map(function (cat) { return { cat: cat, total: fromCents(map[cat]), share: total > 0 ? map[cat] / total : 0 }; })
       .sort(function (a, b) { return b.total - a.total || (a.cat < b.cat ? -1 : 1); });
   }
+  /** Spending per tag. An entry with two tags counts toward both, so shares can add up to more than 100%. */
+  function tagBreakdown(entries) {
+    var map = {}, n = {}, total = 0, untagged = 0;
+    entries.forEach(function (e) {
+      if (e.type !== 'expense') return; var c = toCents(e.amount); total += c;
+      if (!e.tags || !e.tags.length) { untagged += c; return; }
+      e.tags.forEach(function (t) { map[t] = (map[t] || 0) + c; n[t] = (n[t] || 0) + 1; });
+    });
+    return { tags: Object.keys(map).map(function (t) { return { tag: t, total: fromCents(map[t]), count: n[t], share: total > 0 ? map[t] / total : 0 }; }).sort(function (a, b) { return b.total - a.total || (a.tag < b.tag ? -1 : 1); }), untagged: fromCents(untagged), total: fromCents(total) };
+  }
+  /** Tags in use (most used first), then the starter tags nobody has used yet. */
+  function knownTags(state) {
+    var n = {};
+    (state.entries || []).forEach(function (e) { (e.tags || []).forEach(function (t) { n[t] = (n[t] || 0) + 1; }); });
+    (state.recurring || []).forEach(function (r) { (r.tags || []).forEach(function (t) { n[t] = (n[t] || 0) + 1; }); });
+    var used = Object.keys(n).sort(function (a, b) { return n[b] - n[a] || (a < b ? -1 : 1); });
+    return used.map(function (t) { return { tag: t, count: n[t] }; }).concat(DEFAULT_TAGS.filter(function (t) { return !n[t]; }).map(function (t) { return { tag: t, count: 0 }; }));
+  }
+  function hasAnyTag(e, tags) { return !!e.tags && e.tags.some(function (t) { return tags.indexOf(t) >= 0; }); }
   function groupByDay(entries) {
     var sorted = sortNewest(entries); var groups = []; var cur = null;
     sorted.forEach(function (e) {
@@ -1302,8 +1429,8 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   }
   function csvEscape(v) { var s = String(v == null ? '' : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
   function toCSV(entries) {
-    var rows = [['date', 'type', 'category', 'amount', 'note']];
-    sortNewest(entries).slice().reverse().forEach(function (e) { rows.push([e.date, e.type, e.cat, (e.type === 'expense' ? '-' : '') + round2(e.amount).toFixed(2), e.note || '']); });
+    var rows = [['date', 'type', 'category', 'amount', 'note', 'tags']];
+    sortNewest(entries).slice().reverse().forEach(function (e) { rows.push([e.date, e.type, e.cat, (e.type === 'expense' ? '-' : '') + round2(e.amount).toFixed(2), e.note || '', (e.tags || []).join(';')]); });
     return rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\n');
   }
 
@@ -1598,7 +1725,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   /** Occurrences of a rule that are due on or before `today`; returns dates and the new nextDate. */
   function dueDates(rule, today, cap) {
     var dates = []; var next = rule.nextDate; var guard = 0;
-    while (next <= today && guard++ < (cap || 120)) { dates.push(next); next = advanceDate(next, rule.frequency, rule.anchorDay); }
+    while (next <= today && (!rule.endDate || next <= rule.endDate) && guard++ < (cap || 1200)) { dates.push(next); next = advanceDate(next, rule.frequency, rule.anchorDay); }
     return { dates: dates, nextDate: next };
   }
   /** Pure: given state and today, compute entries to add and updated rules/paycheck. Does not mutate. */
@@ -1607,7 +1734,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     (state.recurring || []).forEach(function (r) {
       if (!r.active || r.amount <= 0) { rules.push(r); return; }
       var d = dueDates(r, today);
-      d.dates.forEach(function (date) { var e = normalizeEntry({ type: r.type, cat: r.cat, amount: r.amount, date: date, note: r.note || r.name }, date); e.recurring = r.id; entries.push(e); });
+      d.dates.forEach(function (date) { var e = normalizeEntry({ type: r.type, cat: r.cat, amount: r.amount, date: date, note: r.note || r.name, tags: r.tags }, date); e.recurring = r.id; entries.push(e); });
       if (d.dates.length) { changed = true; rules.push(Object.assign({}, r, { nextDate: d.nextDate })); } else rules.push(r);
     });
     var pc = state.paycheck; var paycheck = pc;
@@ -1620,12 +1747,38 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   }
   function upcoming(state, today, days) {
     var to = addDays(today, days || 30); var out = [];
-    (state.recurring || []).forEach(function (r) { if (!r.active) return; var next = r.nextDate; var guard = 0; while (next <= to && guard++ < 40) { if (next >= today) out.push({ date: next, name: r.name, amount: r.amount, type: r.type, cat: r.cat, id: r.id }); next = advanceDate(next, r.frequency, r.anchorDay); } });
+    (state.recurring || []).forEach(function (r) { if (!r.active) return; var next = r.nextDate; var guard = 0; while (next <= to && (!r.endDate || next <= r.endDate) && guard++ < 40) { if (next >= today) out.push({ date: next, name: r.name, amount: r.amount, type: r.type, cat: r.cat, id: r.id }); next = advanceDate(next, r.frequency, r.anchorDay); } });
     var pc = state.paycheck;
     if (pc && pc.gross > 0 && pc.nextPayDate) { var b = paycheckBreakdown(pc); var n = pc.nextPayDate, g = 0; while (n <= to && g++ < 10) { if (n >= today) out.push({ date: n, name: 'Paycheck', amount: b.net, type: 'income', cat: 'Paycheck', id: 'paycheck' }); n = advanceDate(n, pc.frequency); } }
     return out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   }
-  function recurringMonthlyTotal(rules, type) { var c = 0; (rules || []).forEach(function (r) { if (r.active && (!type || r.type === type)) c += toCents(monthlyize(r.amount, r.frequency)); }); return fromCents(c); }
+  function ruleEnded(r, today) { return !!r.endDate && (r.endDate < today || r.nextDate > r.endDate); }
+  function recurringMonthlyTotal(rules, type, today) { var c = 0; (rules || []).forEach(function (r) { if (r.active && (!type || r.type === type) && !(today && ruleEnded(r, today))) c += toCents(monthlyize(r.amount, r.frequency)); }); return fromCents(c); }
+  var MATCH_DAYS = { weekly: 3, biweekly: 6, semimonthly: 6, monthly: 14, yearly: 180 };
+  /** Every date a rule falls on from its start date to `to` (inclusive), respecting its end date. */
+  function occurrences(rule, to) {
+    var out = [], d = rule.startDate, guard = 0, stop = rule.endDate && rule.endDate < to ? rule.endDate : to;
+    while (d <= stop && guard++ < 2400) { out.push(d); d = advanceDate(d, rule.frequency, rule.anchorDay); }
+    return out;
+  }
+  /**
+   * Bring a rule's logged history in line with its start/end dates: entries to add for every past
+   * occurrence not already logged (matched within half a period, so nothing doubles up), entries
+   * to remove that fall outside the dates, and the next date to post. Pure.
+   */
+  function reconcileRule(rule, entries, today) {
+    var mine = (entries || []).filter(function (e) { return e.recurring === rule.id; });
+    var tol = MATCH_DAYS[rule.frequency] || 14;
+    var remove = mine.filter(function (e) { return e.date < rule.startDate || (rule.endDate && e.date > rule.endDate); }).map(function (e) { return e.id; });
+    var kept = mine.filter(function (e) { return remove.indexOf(e.id) < 0; });
+    var dates = rule.active === false ? [] : occurrences(rule, today);
+    var add = dates.filter(function (d) { return !kept.some(function (e) { return Math.abs(daysBetween(e.date, d)) <= tol; }); }).map(function (d) {
+      var e = normalizeEntry({ type: rule.type, cat: rule.cat, amount: rule.amount, date: d, note: rule.note || rule.name, tags: rule.tags }, d); e.recurring = rule.id; return e;
+    });
+    var next = rule.startDate, guard = 0;
+    while (next <= today && guard++ < 2400) next = advanceDate(next, rule.frequency, rule.anchorDay);
+    return { add: add, remove: remove, nextDate: next, ended: !!rule.endDate && next > rule.endDate };
+  }
 
   // ---------- formatting (pure) ----------
   function fmtMoney(x, opts) {
@@ -1670,8 +1823,8 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
-    retirementOdds: retirementOdds, quantile: quantile,
-    FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal,
+    retirementOdds: retirementOdds, quantile: quantile, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag,
+    FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
   };
@@ -1691,7 +1844,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   var UI_KEY = 'money-tracker-ui';
   var today = function () { return C.isoDate(new Date()); };
 
-  var ICONS = { Housing: '🏠', Groceries: '🛒', Dining: '🍽️', Transport: '🚗', Bills: '🧾', Shopping: '🛍️', Fun: '🎉', Health: '💊', Other: '📦', Paycheck: '💼', 'Side work': '🛠️', Interest: '🏦', 'Other income': '💵', 'My contribution': '📈', 'Employer match': '🤝' };
+  var ICONS = { Housing: '🏠', Groceries: '🛒', Dining: '🍽️', 'Food delivery': '🛵', Utilities: '💡', Streaming: '📺', Transport: '🚗', Gaming: '🎮', Recreation: '🎳', Shopping: '🛍️', Health: '💊', Insurance: '🛡️', 'Debt payments': '💳', Other: '📦', Paycheck: '💼', 'Side work': '🛠️', Interest: '🏦', 'Other income': '💵', 'My contribution': '📈', 'Employer match': '🤝' };
   var TYPE_LABEL = { expense: 'spending', income: 'income', k401: '401k contribution' };
 
   // ---------- state ----------
@@ -1708,6 +1861,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     state = C.normalizeState(parsed || {}, today());
     if (fresh) { var sd = makeSeed(); state.entries = sd.entries; state.recurring = sd.recurring; state.paycheck = sd.paycheck; state.k401Balance = sd.k401Balance; state.k401UpdatedAt = sd.k401UpdatedAt; state.budget = sd.budget; state.debts = sd.debts; saveState({ keepTime: true }); state.updatedAt = 0; }
     try { var u = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); if (u && typeof u === 'object') { if (u.preset) ui.preset = u.preset; if (u.from) ui.from = u.from; if (u.to) ui.to = u.to; if (u.cat) ui.cat = Object.assign(ui.cat, u.cat); } } catch (e) {}
+    C.TYPES.forEach(function (t) { var c = C.CAT_ALIASES[ui.cat[t]] || ui.cat[t]; ui.cat[t] = C.CATS[t].indexOf(c) >= 0 ? c : C.CATS[t][0]; });
     try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); } catch (e) { storageOK = false; }
   }
   function saveState(opts) {
@@ -1727,15 +1881,16 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   // six monthly bills as recurring items, and six months of history. Entries are flagged sample:true.
   function makeSeed() {
     var t = today(), mk = C.monthKey(t); var nextFirst = C.monthStart(C.addMonths(mk, 1));
-    var bills = [['TV', 90, 'Bills'], ['Internet', 70, 'Bills'], ['Power', 150, 'Bills'], ['Water', 60, 'Bills'], ['Car insurance', 400, 'Transport'], ['Rent', 1900, 'Housing'], ['Car loan payment', 430, 'Transport'], ['Credit card payment', 250, 'Bills']];
+    var bills = [['TV', 90, 'Streaming'], ['Internet', 70, 'Utilities'], ['Power', 150, 'Utilities'], ['Water', 60, 'Utilities'], ['Car insurance', 400, 'Insurance'], ['Rent', 1900, 'Housing'], ['Car loan payment', 430, 'Debt payments'], ['Credit card payment', 250, 'Debt payments']];
     var debts = [C.normalizeDebt({ id: 'debt-car', name: 'Car loan', balance: 22000, rate: 6.5, payment: 430, compounding: 'monthly' }), C.normalizeDebt({ id: 'debt-card', name: 'Credit card', balance: 7000, rate: 17, payment: 250, compounding: 'monthly' })];
-    var rules = bills.map(function (b, i) { return C.normalizeRule({ id: 'rule-' + (i + 1), name: b[0], type: 'expense', cat: b[2], amount: b[1], frequency: 'monthly', nextDate: nextFirst, anchorDay: 1, note: b[0] }, t); });
+    var firstMonth = C.monthStart(C.addMonths(mk, -5));
+    var rules = bills.map(function (b, i) { return C.normalizeRule({ id: 'rule-' + (i + 1), name: b[0], type: 'expense', cat: b[2], amount: b[1], frequency: 'monthly', startDate: firstMonth, nextDate: nextFirst, anchorDay: 1, note: b[0], tags: C.suggestTags(b[0], b[2]) }, t); });
     var paycheck = C.normalizePaycheck({ gross: 6000, frequency: 'monthly', nextPayDate: nextFirst, autoLog: true, k401Pct: 6, matchPct: 50, matchCapPct: 6, k401Type: 'roth' });
     var seed = 11; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
     function pick(a) { return a[Math.floor(rnd() * a.length)]; }
     function amt(lo, hi) { return C.round2(lo + rnd() * (hi - lo)); }
     var entries = []; var n = 0;
-    function push(type, date, amount, cat, note, recurring) { if (date > t) return; var e = C.normalizeEntry({ id: 'sample-' + (++n), type: type, date: date, amount: amount, cat: cat, note: note || '' }, t); e.sample = true; if (recurring) e.recurring = recurring; entries.push(e); }
+    function push(type, date, amount, cat, note, recurring) { if (date > t) return; var e = C.normalizeEntry({ id: 'sample-' + (++n), type: type, date: date, amount: amount, cat: cat, note: note || '', tags: type === 'expense' ? C.suggestTags(note, cat) : [] }, t); e.sample = true; if (recurring) e.recurring = recurring; entries.push(e); }
     for (var i = 5; i >= 0; i--) {
       var key = C.addMonths(mk, -i); var first = key + '-01'; var end = +C.monthEnd(key).slice(8);
       function d(day) { return key + '-' + (day < 10 ? '0' : '') + Math.min(day, end); }
@@ -1746,7 +1901,9 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       for (var j = 0; j < 4; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(60, 140), 'Groceries', pick(['Costco', 'Kroger', 'Trader Joe’s', 'Aldi', '']));
       for (j = 0; j < 3; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(14, 55), 'Dining', pick(['Lunch', 'Tacos', 'Coffee', 'Dinner out', '']));
       for (j = 0; j < 2; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(40, 65), 'Transport', 'Gas');
-      if (rnd() < 0.8) push('expense', d(Math.floor(2 + rnd() * 27)), amt(20, 80), 'Fun', pick(['Movies', 'Concert', 'Golf', 'Games']));
+      if (rnd() < 0.8) push('expense', d(Math.floor(2 + rnd() * 27)), amt(20, 80), 'Recreation', pick(['Movies', 'Concert', 'Golf', 'Bowling']));
+      for (j = 0; j < 2; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(22, 48), 'Food delivery', pick(['DoorDash', 'DoorDash', 'Uber Eats']));
+      if (rnd() < 0.6) push('expense', d(Math.floor(2 + rnd() * 27)), amt(10, 70), 'Gaming', pick(['Steam', 'PlayStation Store', 'Nintendo eShop']));
       if (rnd() < 0.6) push('expense', d(Math.floor(2 + rnd() * 27)), amt(30, 120), 'Shopping', pick(['Amazon', 'Clothes', 'Home Depot']));
       if (rnd() < 0.4) push('expense', d(Math.floor(2 + rnd() * 27)), amt(15, 60), 'Health', pick(['Pharmacy', 'Copay']));
     }
@@ -1876,7 +2033,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       var pb = C.paycheckBreakdown(state.paycheck);
       setText('ov-pay', state.paycheck.gross > 0 ? tileMoney(pb.monthly.net) : '—');
       setText('ov-pay-sub', state.paycheck.gross > 0 ? money(pb.net) + ' ' + C.FREQ_LABEL[state.paycheck.frequency].toLowerCase() + (state.paycheck.nextPayDate ? ' · next ' + C.fmtDateShort(state.paycheck.nextPayDate) : '') : 'set up on Recurring');
-      var bills = C.recurringMonthlyTotal(state.recurring, 'expense'); var nb = state.recurring.filter(function (r) { return r.active && r.type === 'expense'; }).length;
+      var bills = C.recurringMonthlyTotal(state.recurring, 'expense', t0); var nb = state.recurring.filter(function (r) { return r.active && r.type === 'expense' && !C.ruleEnded(r, t0); }).length;
       setText('ov-bills', tileMoney(bills)); setText('ov-bills-sub', nb + (nb === 1 ? ' active bill' : ' active bills') + (state.budget > 0 ? ' · ' + Math.round(bills / state.budget * 100) + '% of budget' : ''));
       var up = C.upcoming(state, t0, 14).slice(0, 4); var ub = $('ov-upcoming'); clear(ub);
       if (up.length) { ub.appendChild(h('div', { class: 'hud-label', style: 'margin-bottom:4px', text: 'Due in the next 14 days' })); up.forEach(function (u) { ub.appendChild(h('div', { class: 'upc' }, [h('span', { class: 'd', text: C.fmtDateShort(u.date) }), h('span', { class: 'n', text: u.name }), h('span', { class: 'num ' + (u.type === 'income' ? 'income-text' : ''), text: (u.type === 'income' ? '+' : '−') + money(u.amount) })])); }); }
@@ -1895,6 +2052,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       });
       box.appendChild(bars);
     }
+
+    // tags
+    var tb = C.tagBreakdown(entries); $('tag-card').hidden = !tb.tags.length;
+    var tbox = $('tag-breakdown'); clear(tbox); if (tb.tags.length) tagBars(tbox, tb);
 
     // 401k
     if (document.activeElement !== $('k401-balance')) $('k401-balance').value = state.k401Balance ? state.k401Balance : '';
@@ -1923,9 +2084,9 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var del = h('button', { class: 'btn icon sm del-btn', type: 'button', 'aria-label': 'Delete ' + e.cat + ' ' + money(e.amount), text: '✕' });
     var row = h('div', { class: 'entry' + (ui.editingId === e.id ? ' editing' : ''), 'data-id': e.id }, [
       h('div', { class: 'cat-icon ' + e.type, 'aria-hidden': 'true', text: ICONS[e.cat] || '•' }),
-      h('button', { class: 'body', type: 'button', style: 'text-align:left;display:block', 'aria-label': 'Edit ' + TYPE_LABEL[e.type] + ' ' + money(e.amount) + ' ' + e.cat + (e.note ? ', ' + e.note : ''), onclick: function () { startEdit(e.id); } }, [
-        h('div', { class: 'cat', text: e.cat }),
-        (e.note || e.sample || e.recurring) ? h('div', { class: 'note' }, [e.sample ? h('span', { class: 'sample-tag', text: 'sample' }) : null, e.recurring ? h('span', { class: 'sample-tag', text: 'auto' }) : null, e.note ? h('span', { text: e.note }) : null]) : null
+      h('button', { class: 'body', type: 'button', style: 'text-align:left;display:block', 'aria-label': 'Edit ' + TYPE_LABEL[e.type] + ' ' + money(e.amount) + ' ' + e.cat + (e.note ? ', ' + e.note : '') + (e.tags ? ', tagged ' + e.tags.join(', ') : ''), onclick: function () { startEdit(e.id); } }, [
+        h('div', { class: 'cat', text: e.note || e.cat }),
+        h('div', { class: 'note' }, [e.sample ? h('span', { class: 'sample-tag', text: 'sample' }) : null, e.recurring ? h('span', { class: 'sample-tag', text: 'auto' }) : null, e.note ? h('span', { class: 'meta-cat', text: e.cat }) : null].concat((e.tags || []).map(function (t) { return h('span', { class: 'tag', text: '#' + t }); })))
       ]),
       amt,
       h('div', { class: 'entry-actions' }, [del])
@@ -1979,6 +2140,46 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     try { var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); var ok = document.execCommand('copy'); document.body.removeChild(ta); return ok; } catch (e) { return false; }
   }
 
+  // ---------- tag picker (shared by the Add form and the recurring form) ----------
+  function tagPicker(o) {
+    function render() {
+      var box = $(o.chips); clear(box); var sel = o.get();
+      var known = C.knownTags(state).map(function (t) { return t.tag; });
+      var list = known.slice(0, 14); sel.forEach(function (t) { if (list.indexOf(t) < 0) list.push(t); });
+      list.forEach(function (t) {
+        var on = sel.indexOf(t) >= 0;
+        box.appendChild(h('button', { type: 'button', class: 'chip sm tag-chip', 'aria-pressed': String(on), 'aria-label': (on ? 'Remove tag ' : 'Add tag ') + t, text: '#' + t, onclick: function () {
+          var cur = o.get(); o.set(on ? cur.filter(function (x) { return x !== t; }) : cur.concat([t]).slice(0, 8)); o.touched(); render(); if (o.changed) o.changed();
+        } }));
+      });
+    }
+    function addNew() {
+      var t = C.normTag($(o.input).value); if (!t) { $(o.input).focus(); return; }
+      var cur = o.get();
+      if (cur.indexOf(t) < 0) { if (cur.length >= 8) { toast('Up to 8 tags per item.'); return; } o.set(cur.concat([t])); }
+      $(o.input).value = ''; o.touched(); render(); if (o.changed) o.changed();
+    }
+    $(o.add).addEventListener('click', addNew);
+    $(o.input).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addNew(); } });
+    return { render: render };
+  }
+  function tagBars(box, tb, color) {
+    var max = tb.tags.length ? tb.tags[0].total : 0, bars = h('div', { class: 'bars' });
+    tb.tags.forEach(function (row) {
+      bars.appendChild(h('div', { class: 'bar-row', title: '#' + row.tag + ': ' + money(row.total) }, [
+        h('span', { class: 'name num', text: '#' + row.tag }),
+        h('div', { class: 'track', role: 'img', 'aria-label': row.tag + ' ' + money(row.total) + ', ' + C.fmtPct(row.share) + ' of spending' }, [h('div', { class: 'fill', style: 'width:' + (max > 0 ? row.total / max * 100 : 0) + '%' + (color ? ';background:' + color : '') })]),
+        h('span', { class: 'val num' }, [money(row.total), h('span', { class: 'pct', text: C.fmtPct(row.share) })])
+      ]));
+    });
+    box.appendChild(bars);
+    if (tb.untagged > 0) box.appendChild(h('p', { class: 'xs muted', style: 'margin-top: var(--sp-2)', text: money(tb.untagged) + ' of spending has no tags.' }));
+  }
+  ui.formTags = []; ui.tagsTouched = false;
+  var formTagPicker = tagPicker({ chips: 'tag-chips', input: 'f-newtag', add: 'f-addtag', get: function () { return ui.formTags; }, set: function (v) { ui.formTags = v; }, touched: function () { ui.tagsTouched = true; } });
+  function autoTags() { if (!ui.tagsTouched && !ui.editingId) { ui.formTags = ui.type === 'expense' ? C.suggestTags($('f-note').value, ui.cat[ui.type]) : []; } formTagPicker.render(); }
+  $('f-note').addEventListener('input', autoTags);
+
   // ============================================================
   // ADD / EDIT
   // ============================================================
@@ -1986,20 +2187,20 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var box = $('cat-chips'); clear(box);
     C.CATS[ui.type].forEach(function (cat) {
       var on = ui.cat[ui.type] === cat;
-      box.appendChild(h('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': String(on), tabindex: on ? '0' : '-1', text: (ICONS[cat] ? ICONS[cat] + ' ' : '') + cat, onclick: function () { ui.cat[ui.type] = cat; saveUI(); renderChips(); } }));
+      box.appendChild(h('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': String(on), tabindex: on ? '0' : '-1', text: (ICONS[cat] ? ICONS[cat] + ' ' : '') + cat, onclick: function () { ui.cat[ui.type] = cat; saveUI(); renderChips(); autoTags(); } }));
     });
   }
   $('cat-chips').addEventListener('keydown', function (e) {
     if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].indexOf(e.key) < 0) return;
     var cats = C.CATS[ui.type]; var i = cats.indexOf(ui.cat[ui.type]); var d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
-    ui.cat[ui.type] = cats[(i + d + cats.length) % cats.length]; renderChips(); $('cat-chips').querySelector('[aria-checked="true"]').focus(); e.preventDefault();
+    ui.cat[ui.type] = cats[(i + d + cats.length) % cats.length]; renderChips(); autoTags(); $('cat-chips').querySelector('[aria-checked="true"]').focus(); e.preventDefault();
   });
   function setType(type) {
     ui.type = type;
     Array.prototype.forEach.call($('type-seg').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-type') === type)); });
     $('f-submit').textContent = 'Add ' + TYPE_LABEL[type];
     $('repeat-fieldwrap').hidden = !!ui.editingId || type === 'k401';
-    renderChips();
+    renderChips(); autoTags();
   }
   $('type-seg').addEventListener('click', function (e) { var b = e.target.closest('button[data-type]'); if (b) setType(b.getAttribute('data-type')); });
   Array.prototype.forEach.call(document.querySelectorAll('[data-quick]'), function (b) { b.addEventListener('click', function () { $('f-date').value = C.addDays(today(), Number(b.getAttribute('data-quick'))); }); });
@@ -2011,14 +2212,14 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     $('repeat-fieldwrap').hidden = !!ui.editingId || ui.type === 'k401';
   };
   function resetForm() {
-    ui.editingId = null; $('f-id').value = ''; $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today();
+    ui.editingId = null; $('f-id').value = ''; $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today(); $('f-newtag').value = ''; ui.tagsTouched = false; ui.formTags = [];
     $('amount-fieldwrap').classList.remove('invalid'); $('date-fieldwrap').classList.remove('invalid');
     var d = $('f-delete'); d.textContent = 'Delete'; d.classList.remove('confirm');
     setText('page-title', TITLES[ui.view]);
   }
   function startEdit(id) {
     var e = state.entries.find(function (x) { return x.id === id; }); if (!e) return;
-    ui.editingId = id; ui.type = e.type; ui.cat[e.type] = e.cat;
+    ui.editingId = id; ui.type = e.type; ui.cat[e.type] = e.cat; ui.formTags = (e.tags || []).slice(); ui.tagsTouched = true;
     $('f-id').value = id; $('f-amount').value = e.amount; $('f-note').value = e.note || ''; $('f-date').value = e.date;
     showView('add'); setText('page-title', 'Edit entry');
     $('f-amount').focus();
@@ -2039,21 +2240,22 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var note = $('f-note').value.trim();
     if (ui.editingId) {
       var e = state.entries.find(function (x) { return x.id === ui.editingId; });
-      if (e) { var before = JSON.stringify(e); e.type = ui.type; e.cat = ui.cat[ui.type]; e.amount = v.amount; e.date = v.date; e.note = note; delete e.sample; var after = e;
+      if (e) { var before = JSON.stringify(e); e.type = ui.type; e.cat = ui.cat[ui.type]; e.amount = v.amount; e.date = v.date; e.note = note; delete e.sample; var nt = C.normalizeTags(ui.formTags); if (nt.length) e.tags = nt; else delete e.tags; var after = e;
         resetForm(); ui.month = C.monthKey(after.date); commit(); showView('overview');
         toast('Saved changes', { action: 'Undo', onAction: function () { var i = state.entries.findIndex(function (x) { return x.id === after.id; }); if (i >= 0) state.entries[i] = JSON.parse(before); commit(); } }); }
       return;
     }
-    var entry = C.normalizeEntry({ type: ui.type, cat: ui.cat[ui.type], amount: v.amount, date: v.date, note: note }, today());
+    var entry = C.normalizeEntry({ type: ui.type, cat: ui.cat[ui.type], amount: v.amount, date: v.date, note: note, tags: ui.formTags }, today());
     var repeat = $('f-repeat').value; var rule = null;
     if (repeat && ui.type !== 'k401') {
-      rule = C.normalizeRule({ name: note || ui.cat[ui.type], type: ui.type, cat: ui.cat[ui.type], amount: v.amount, frequency: repeat, nextDate: C.advanceDate(v.date, repeat, +v.date.slice(8)), anchorDay: +v.date.slice(8), note: note }, today());
+      rule = C.normalizeRule({ name: note || ui.cat[ui.type], type: ui.type, cat: ui.cat[ui.type], amount: v.amount, frequency: repeat, startDate: v.date, nextDate: C.advanceDate(v.date, repeat, +v.date.slice(8)), anchorDay: +v.date.slice(8), note: note, tags: ui.formTags }, today());
       state.recurring.push(rule); entry.recurring = rule.id; $('f-repeat').value = '';
     }
     state.entries.push(entry);
-    $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today();
+    $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today(); ui.tagsTouched = false; autoTags();
     ui.month = C.monthKey(entry.date);
     commit();
+    if (rule && rule.nextDate <= today()) { var rc = C.reconcileRule(rule, state.entries, today()); state.entries = state.entries.concat(rc.add); rule.nextDate = rc.nextDate; commit(); }
     toast('Added ' + (entry.type === 'income' ? '+' : '') + money(entry.amount) + ' · ' + entry.cat + (rule ? ' · repeats ' + C.FREQ_LABEL[rule.frequency].toLowerCase() : ''), { action: 'Undo', onAction: function () { state.entries = state.entries.filter(function (x) { return x.id !== entry.id; }); if (rule) state.recurring = state.recurring.filter(function (x) { return x.id !== rule.id; }); commit(); } });
     $('f-amount').focus();
   });
@@ -2070,6 +2272,25 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   // ============================================================
   // SETTINGS & DATA
   // ============================================================
+  function renderTagManage() {
+    var box = $('tag-manage'); clear(box);
+    var used = C.knownTags(state).filter(function (t) { return t.count > 0; });
+    if (!used.length) { box.appendChild(h('span', { class: 'xs muted', text: 'No tags yet.' })); return; }
+    used.forEach(function (t) {
+      box.appendChild(h('button', { type: 'button', class: 'chip sm tag-chip', 'aria-label': 'Remove tag ' + t.tag + ' from ' + t.count + ' items' }, ['#' + t.tag, h('span', { class: 'n', text: String(t.count) }), h('span', { 'aria-hidden': 'true', text: '✕' })]));
+      box.lastChild.addEventListener('click', function () {
+        confirmDialog('Remove #' + t.tag + '?', 'It comes off ' + t.count + (t.count === 1 ? ' entry or bill' : ' entries and bills') + '. The entries themselves stay.', 'Remove tag').then(function (ok) {
+          if (!ok) return;
+          var prevE = state.entries, prevR = state.recurring;
+          var strip = function (x) { if (!x.tags || x.tags.indexOf(t.tag) < 0) return x; var y = Object.assign({}, x); y.tags = x.tags.filter(function (g) { return g !== t.tag; }); if (!y.tags.length && !('frequency' in y)) delete y.tags; return y; }; // entries drop an empty list; bills keep []
+          state.entries = state.entries.map(strip); state.recurring = state.recurring.map(strip);
+          commit(); renderTagManage();
+          toast('Removed #' + t.tag, { action: 'Undo', onAction: function () { state.entries = prevE; state.recurring = prevR; commit(); renderTagManage(); } });
+        });
+      });
+    });
+  }
+  $('btn-settings').addEventListener('click', function () { renderTagManage(); });
   $('btn-settings').addEventListener('click', function () { var d = $('settings-dialog'); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); $('settings-close').focus(); });
   $('settings-close').addEventListener('click', function () { var d = $('settings-dialog'); if (d.close) d.close(); else d.removeAttribute('open'); });
   $('settings-dialog').addEventListener('click', function (e) { if (e.target === this) this.close(); });
@@ -2140,7 +2361,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   });
 
   // ---------- expose for charts/retirement modules & tests ----------
-  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
+  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, tagPicker: tagPicker, tagBars: tagBars, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
 
   // ---------- post due recurring items ----------
   function postDueItems() {
@@ -2403,6 +2624,20 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     if (C.daysBetween(from, to) > 366 * 30) return { valid: false, error: 'Range is too long (max 30 years).', from: from, to: C.addDays(from, 366 * 30) };
     return { valid: true, from: from, to: to };
   }
+  function renderTagFilter() {
+    var box = $('tag-filter'); A.clear(box); var sel = ui.tagFilter;
+    var tags = C.knownTags(A.state).filter(function (t) { return t.count > 0; }).map(function (t) { return t.tag; });
+    if (!tags.length) { box.appendChild(h('span', { class: 'xs muted', text: 'No tags yet. Add them when you log spending.' })); return; }
+    box.appendChild(h('button', { type: 'button', class: 'chip sm', 'aria-pressed': String(!sel), text: 'Any', onclick: function () { ui.tagFilter = null; A.render(); } }));
+    tags.forEach(function (t) {
+      var on = !!sel && sel.indexOf(t) >= 0;
+      box.appendChild(h('button', { type: 'button', class: 'chip sm tag-chip', 'aria-pressed': String(on), text: '#' + t, onclick: function () {
+        var cur = (sel || []).slice(); if (on) cur = cur.filter(function (x) { return x !== t; }); else cur.push(t);
+        ui.tagFilter = cur.length ? cur : null; A.render();
+      } }));
+    });
+    $('tag-filter-details').querySelector('summary').textContent = sel ? 'Filter tags (' + sel.map(function (t) { return '#' + t; }).join(' ') + ')' : 'Filter tags';
+  }
   function renderCatFilter() {
     var box = $('cat-filter'); A.clear(box);
     var all = C.CATS.expense; var sel = ui.catFilter;
@@ -2427,16 +2662,17 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var lbl = $('range-label');
     lbl.textContent = (r.valid ? '' : r.error + ' Showing this month. ') + C.fmtDate(r.from, null) + ' – ' + C.fmtDate(r.to, null) + (r.to.slice(0, 4) === r.from.slice(0, 4) ? ', ' + r.to.slice(0, 4) : '') + ' · by ' + mode;
     lbl.className = 'xs ' + (r.valid ? 'muted' : 'danger-text');
-    renderCatFilter();
+    renderCatFilter(); renderTagFilter();
 
     var inRange = C.entriesInRange(st.entries, r.from, r.to);
     var sel = ui.catFilter;
-    var filtered = sel ? inRange.filter(function (e) { return e.type !== 'expense' || sel.indexOf(e.cat) >= 0; }) : inRange;
+    var tsel = ui.tagFilter;
+    var filtered = (sel || tsel) ? inRange.filter(function (e) { return e.type !== 'expense' || ((!sel || sel.indexOf(e.cat) >= 0) && (!tsel || C.hasAnyTag(e, tsel))); }) : inRange;
     var tot = C.totals(filtered);
     A.setText('rt-income', A.tileMoney(tot.income)); A.setText('rt-expense', A.tileMoney(tot.expense)); A.setText('rt-net', A.tileMoney(tot.net)); A.setText('rt-k401', A.tileMoney(tot.k401));
     $('rt-net').className = 'value num ' + (tot.net < 0 ? 'danger-text' : tot.net > 0 ? 'income-text' : '');
     A.setText('rt-rate', tot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(tot.savingsRate));
-    $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = sel ? 'Spending (filtered)' : 'Spending';
+    $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = (sel || tsel) ? 'Spending (filtered)' : 'Spending';
 
     var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--chart-accent');
     var monthTitle = function (b) { return b.mode === 'week' ? 'Week of ' + C.fmtDate(b.key, null) : C.fmtMonthKey(b.key, true); };
@@ -2472,6 +2708,12 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       });
       box.appendChild(bars); renderTable(box, tblB, 'ch2');
     }
+
+    // b2. spending by tag
+    var tbr = C.tagBreakdown(filtered); var tbox = $('chart-tags'); A.clear(tbox);
+    var tblT = { caption: 'Spending by tag', columns: ['Tag', 'Amount', 'Entries', 'Share of spending'], rows: tbr.tags.map(function (x) { return ['#' + x.tag, money(x.total), String(x.count), C.fmtPct(x.share)]; }) };
+    if (!tbr.tags.length) Charts.emptyChart(tbox, 'No tagged spending in this range.', tblT, 'ch8');
+    else { A.tagBars(tbox, tbr, cAcc); renderTable(tbox, tblT, 'ch8'); }
 
     // c. savings rate by month (always monthly, unfiltered)
     var mb = C.bucketize(inRange, C.monthStart(C.monthKey(r.from)), r.to, 'month');
@@ -2793,7 +3035,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
 (function () {
   'use strict';
   var C = window.FinanceCore, A = window.App, $ = A.$, h = A.h, money = A.money, ui = A.ui;
-  ui.ruleEditing = null; ui.ruleArmed = null; ui.ruleType = 'expense';
+  ui.ruleEditing = null; ui.ruleArmed = null; ui.ruleType = 'expense'; ui.ruleTags = []; ui.ruleTagsTouched = false;
+  var ruleTagPicker = A.tagPicker({ chips: 'u-tag-chips', input: 'u-newtag', add: 'u-addtag', get: function () { return ui.ruleTags; }, set: function (v) { ui.ruleTags = v; }, touched: function () { ui.ruleTagsTouched = true; } });
+  function autoRuleTags() { if (!ui.ruleTagsTouched) ui.ruleTags = ui.ruleType === 'expense' ? C.suggestTags($('u-name').value, $('u-cat').value) : []; ruleTagPicker.render(); }
+  $('u-name').addEventListener('input', autoRuleTags); $('u-cat').addEventListener('change', autoRuleTags);
   var saveTimer = null;
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(A.saveState, 300); }
   function numOrNull(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
@@ -2872,31 +3117,68 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     ui.ruleEditing = r ? r.id : 'new'; ui.ruleType = r ? r.type : 'expense';
     Array.prototype.forEach.call($('u-type').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-type') === ui.ruleType)); });
     ruleCats();
-    $('u-id').value = r ? r.id : ''; $('u-name').value = r ? r.name : ''; $('u-amount').value = r ? r.amount : ''; $('u-freq').value = r ? r.frequency : 'monthly'; $('u-next').value = r ? r.nextDate : A.today(); $('u-cat').value = r ? r.cat : (ui.ruleType === 'expense' ? 'Bills' : 'Paycheck');
+    $('u-id').value = r ? r.id : ''; $('u-name').value = r ? r.name : ''; $('u-amount').value = r ? r.amount : ''; $('u-freq').value = r ? r.frequency : 'monthly'; $('u-start').value = r ? r.startDate : A.today(); $('u-end').value = r && r.endDate ? r.endDate : ''; $('u-cat').value = r ? r.cat : (ui.ruleType === 'expense' ? 'Streaming' : 'Paycheck');
+    ui.ruleTags = r ? (r.tags || []).slice() : []; ui.ruleTagsTouched = !!r; $('u-newtag').value = '';
     $('u-error').style.display = 'none'; $('rule-form').hidden = false; $('u-add').hidden = true; A.setText('u-save', r ? 'Save changes' : 'Add');
+    autoRuleTags(); renderPreview();
     $('u-name').focus();
   }
   function closeRuleForm() { ui.ruleEditing = null; $('rule-form').hidden = true; $('u-add').hidden = false; }
   $('u-add').addEventListener('click', function () { openRuleForm(null); });
   $('u-cancel').addEventListener('click', closeRuleForm);
+  /** Read the form into a rule, or return an error message. */
+  function formRule() {
+    var name = $('u-name').value.trim(), amount = Number($('u-amount').value), start = $('u-start').value, end = $('u-end').value;
+    if (!name) return { error: 'Give it a name.' };
+    if (!($('u-amount').value !== '' && isFinite(amount) && amount > 0)) return { error: 'Amount must be greater than 0.' };
+    if (!C.isValidISO(start)) return { error: 'Pick the start date (the first payment).' };
+    if (end && !C.isValidISO(end)) return { error: 'The end date isn’t a valid date.' };
+    if (end && end < start) return { error: 'The end date is before the start date.' };
+    var id = $('u-id').value; var existing = A.state.recurring.find(function (x) { return x.id === id; });
+    var rule = C.normalizeRule({ id: id || 'preview', name: name, type: ui.ruleType, cat: $('u-cat').value, tags: ui.ruleTags, amount: amount, frequency: $('u-freq').value, startDate: start, endDate: end || null, nextDate: start, anchorDay: +start.slice(8), active: existing ? existing.active : true, note: name }, A.today());
+    return { rule: rule, existing: existing, isNew: !id };
+  }
+  function describeChange(rc, rule) {
+    var parts = [];
+    if (rc.add.length) parts.push('logs ' + rc.add.length + ' past ' + (rc.add.length === 1 ? 'payment' : 'payments') + (rc.add.length > 1 ? ' (' + C.fmtDateShort(rc.add[0].date) + (rc.add[0].date.slice(0, 4) !== rc.add[rc.add.length - 1].date.slice(0, 4) ? ' ' + rc.add[0].date.slice(0, 4) : '') + ' – ' + C.fmtDateShort(rc.add[rc.add.length - 1].date) + ' ' + rc.add[rc.add.length - 1].date.slice(0, 4) + ')' : '') + ', ' + money(C.round2(rc.add.length * rule.amount), { whole: true }) + ' in total');
+    if (rc.remove.length) parts.push('removes ' + rc.remove.length + ' logged ' + (rc.remove.length === 1 ? 'payment' : 'payments') + ' outside the dates');
+    return parts;
+  }
+  function renderPreview() {
+    var el = $('u-preview'); var f = formRule();
+    if (f.error) { el.textContent = ''; return; }
+    var rc = C.reconcileRule(f.rule, f.isNew ? [] : A.state.entries, A.today());
+    var parts = describeChange(rc, f.rule);
+    el.textContent = rc.ended ? 'This item has ended. ' + (parts.length ? 'Saving ' + parts.join(' and ') + '.' : 'Nothing new to log.')
+      : (parts.length ? 'Saving ' + parts.join(' and ') + '. ' : '') + 'Next: ' + C.fmtDate(rc.nextDate, A.today()) + '.';
+  }
+  ['u-name', 'u-amount', 'u-start', 'u-end'].forEach(function (id) { $(id).addEventListener('input', renderPreview); });
+  ['u-freq', 'u-cat'].forEach(function (id) { $(id).addEventListener('change', renderPreview); });
   $('rule-form').addEventListener('submit', function (ev) {
     ev.preventDefault();
-    var name = $('u-name').value.trim(), amount = Number($('u-amount').value), next = $('u-next').value;
-    var err = !name ? 'Give it a name.' : !($('u-amount').value !== '' && isFinite(amount) && amount > 0) ? 'Amount must be greater than 0.' : !C.isValidISO(next) ? 'Pick the next due date.' : '';
-    if (err) { var e = $('u-error'); e.textContent = err; e.style.display = 'block'; return; }
-    var id = $('u-id').value; var existing = A.state.recurring.find(function (x) { return x.id === id; });
-    var rule = C.normalizeRule({ id: id || undefined, name: name, type: ui.ruleType, cat: $('u-cat').value, amount: amount, frequency: $('u-freq').value, nextDate: next, anchorDay: existing && existing.nextDate === next ? existing.anchorDay : +next.slice(8), active: existing ? existing.active : true, note: name }, A.today());
-    var i = A.state.recurring.findIndex(function (x) { return x.id === id; });
-    if (i >= 0) A.state.recurring[i] = rule; else A.state.recurring.push(rule);
-    closeRuleForm(); A.saveState(); A.postDueItems(); A.render();
-    A.toast(name + ' saved · ' + money(C.monthlyize(rule.amount, rule.frequency)) + '/mo');
+    var f = formRule();
+    if (f.error) { var e = $('u-error'); e.textContent = f.error; e.style.display = 'block'; return; }
+    var st = A.state, rule = f.rule;
+    if (f.isNew) rule.id = C.uid();
+    var rc = C.reconcileRule(rule, st.entries, A.today());
+    rule.nextDate = rc.nextDate;
+    var prevEntries = st.entries.slice(), prevRules = st.recurring.slice();
+    // a changed amount or category applies to payments logged from here on; past entries keep what was logged
+    st.entries = st.entries.filter(function (x) { return rc.remove.indexOf(x.id) < 0; }).map(function (x) {
+      if (x.recurring !== rule.id) return x; var y = Object.assign({}, x); if (rule.tags.length) y.tags = rule.tags.slice(); else delete y.tags; return y; // tags follow the item, past payments included
+    }).concat(rc.add);
+    var i = st.recurring.findIndex(function (x) { return x.id === rule.id; });
+    if (i >= 0) st.recurring[i] = rule; else st.recurring.push(rule);
+    closeRuleForm(); A.commit();
+    var parts = describeChange(rc, rule);
+    A.toast(rule.name + ' saved' + (parts.length ? ' · ' + parts.join(' · ') : ' · ' + money(C.monthlyize(rule.amount, rule.frequency)) + '/mo'), { action: 'Undo', duration: 7000, onAction: function () { A.state.entries = prevEntries; A.state.recurring = prevRules; A.commit(); } });
   });
   function renderRules() {
     var st = A.state, box = $('rule-list'), t0 = A.today(); A.clear(box);
-    var bills = C.recurringMonthlyTotal(st.recurring, 'expense'), inc = C.recurringMonthlyTotal(st.recurring, 'income');
-    A.setText('rec-total', st.recurring.length ? money(bills, { whole: true }) + '/mo' + (inc > 0 ? ' · +' + money(inc, { whole: true }) + ' income' : '') : '');
+    var bills = C.recurringMonthlyTotal(st.recurring, 'expense', t0), inc = C.recurringMonthlyTotal(st.recurring, 'income', t0);
+    A.setText('rec-total', bills > 0 || inc > 0 ? money(bills, { whole: true }) + '/mo' + (inc > 0 ? ' · +' + money(inc, { whole: true }) + ' income' : '') : '');
     if (!st.recurring.length) { box.appendChild(A.emptyState('🔁', 'No recurring items yet', 'Add subscriptions, rent, utilities or side income here, or pick “Repeat” when adding an entry. They are logged automatically on their due dates.')); return; }
-    st.recurring.slice().sort(function (a, b) { return a.nextDate < b.nextDate ? -1 : a.nextDate > b.nextDate ? 1 : 0; }).forEach(function (r) {
+    st.recurring.slice().sort(function (a, b) { var ea = C.ruleEnded(a, t0) ? 1 : 0, eb = C.ruleEnded(b, t0) ? 1 : 0; if (ea !== eb) return ea - eb; return a.nextDate < b.nextDate ? -1 : a.nextDate > b.nextDate ? 1 : 0; }).forEach(function (r) {
       var del = h('button', { type: 'button', class: 'btn icon sm del-btn', 'aria-label': 'Delete ' + r.name, text: '✕' });
       if (ui.ruleArmed === r.id) { del.textContent = 'Delete'; del.className = 'btn sm del-btn confirm'; del.style.width = 'auto'; }
       del.addEventListener('click', function () {
@@ -2904,9 +3186,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
         ui.ruleArmed = r.id; A.render(); var again = $('rule-list').querySelector('.del-btn.confirm'); if (again) again.focus();
         setTimeout(function () { if (ui.ruleArmed === r.id) { ui.ruleArmed = null; A.render(); } }, 3500);
       });
-      box.appendChild(h('div', { class: 'rule-row' + (r.active ? '' : ' paused') }, [
-        h('div', {}, [h('div', { class: 'name' }, [h('span', { 'aria-hidden': 'true', text: A.ICONS[r.cat] || '' }), r.name, r.active ? null : h('span', { class: 'pill', text: 'paused' })]),
-          h('div', { class: 'meta num' }, [h('span', { class: r.type === 'income' ? 'income-text' : '', text: (r.type === 'income' ? '+' : '') + money(r.amount) + ' ' + C.FREQ_LABEL[r.frequency].toLowerCase() }), h('span', { text: money(C.monthlyize(r.amount, r.frequency)) + '/mo' }), h('span', { text: 'next ' + C.fmtDate(r.nextDate, t0) })])]),
+      var ended = C.ruleEnded(r, t0);
+      box.appendChild(h('div', { class: 'rule-row' + (r.active && !ended ? '' : ' paused') }, [
+        h('div', {}, [h('div', { class: 'name' }, [h('span', { 'aria-hidden': 'true', text: A.ICONS[r.cat] || '' }), r.name, ended ? h('span', { class: 'pill', text: 'ended' }) : r.active ? null : h('span', { class: 'pill', text: 'paused' })]),
+          h('div', { class: 'meta num' }, [h('span', { class: r.type === 'income' ? 'income-text' : '', text: (r.type === 'income' ? '+' : '') + money(r.amount) + ' ' + C.FREQ_LABEL[r.frequency].toLowerCase() }), h('span', { text: r.cat + (r.tags && r.tags.length ? ' · ' + r.tags.map(function (t) { return '#' + t; }).join(' ') : '') }), h('span', { text: 'since ' + C.fmtMonthKey(C.monthKey(r.startDate)) }), h('span', { text: ended ? 'ended ' + C.fmtMonthKey(C.monthKey(r.endDate)) : 'next ' + C.fmtDate(r.nextDate, t0) + (r.endDate ? ' · ends ' + C.fmtMonthKey(C.monthKey(r.endDate)) : '') })])]),
         h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', 'aria-label': (r.active ? 'Pause ' : 'Resume ') + r.name, text: r.active ? 'Pause' : 'Resume', onclick: function () { r.active = !r.active; if (r.active && r.nextDate < t0) r.nextDate = t0; A.commit(); } }), h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openRuleForm(r); } }), del])
       ]));
     });

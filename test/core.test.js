@@ -107,9 +107,9 @@ test('budget status thresholds', () => {
   assert.strictEqual(C.budgetStatus(0, 0).pct, 0);
 });
 test('category breakdown is spending only, sorted, shares sum to 1', () => {
-  const b = C.categoryBreakdown([E('expense', TODAY, 10, 'Fun'), E('expense', TODAY, 30, 'Groceries'), E('expense', TODAY, 20, 'Fun'), E('income', TODAY, 999)]);
-  assert.deepStrictEqual(b.map(x => x.cat), ['Fun', 'Groceries']);
-  assert.strictEqual(b[0].total, 30); close(b[0].share + b[1].share, 1);
+  const b = C.categoryBreakdown([E('expense', TODAY, 10, 'Recreation'), E('expense', TODAY, 30, 'Groceries'), E('expense', TODAY, 25, 'Recreation'), E('income', TODAY, 999)]);
+  assert.deepStrictEqual(b.map(x => x.cat), ['Recreation', 'Groceries']);
+  assert.strictEqual(b[0].total, 35); close(b[0].share + b[1].share, 1);
 });
 test('groupByDay newest first with daily totals', () => {
   const g = C.groupByDay([E('expense', '2026-11-01', 5), E('expense', '2026-11-03', 7), E('income', '2026-11-03', 100), E('expense', '2026-11-03', 1.5)]);
@@ -117,11 +117,11 @@ test('groupByDay newest first with daily totals', () => {
   assert.strictEqual(g[0].expense, 8.5); assert.strictEqual(g[0].income, 100); assert.strictEqual(g[0].entries.length, 3);
 });
 test('CSV escapes notes and signs expenses', () => {
-  const csv = C.toCSV([E('expense', '2026-11-02', 12.5, 'Dining', { note: 'Pizza, "extra" cheese' }), E('income', '2026-11-01', 2000, 'Paycheck')]);
+  const csv = C.toCSV([E('expense', '2026-11-02', 12.5, 'Dining', { note: 'Pizza, "extra" cheese', tags: ['food', 'date night'] }), E('income', '2026-11-01', 2000, 'Paycheck')]);
   const lines = csv.split('\n');
-  assert.strictEqual(lines[0], 'date,type,category,amount,note');
-  assert.strictEqual(lines[1], '2026-11-01,income,Paycheck,2000.00,');
-  assert.strictEqual(lines[2], '2026-11-02,expense,Dining,-12.50,"Pizza, ""extra"" cheese"');
+  assert.strictEqual(lines[0], 'date,type,category,amount,note,tags');
+  assert.strictEqual(lines[1], '2026-11-01,income,Paycheck,2000.00,,');
+  assert.strictEqual(lines[2], '2026-11-02,expense,Dining,-12.50,"Pizza, ""extra"" cheese",food;date night');
 });
 
 console.log('ranges & buckets');
@@ -460,6 +460,117 @@ test('normalizeState keeps updatedAt and returnFromFund', () => {
   const s = C.normalizeState({ updatedAt: 123, retirement: { returnFromFund: false } }, TODAY);
   assert.strictEqual(s.updatedAt, 123); assert.strictEqual(s.retirement.returnFromFund, false);
   const d = C.normalizeState({}, TODAY); assert.strictEqual(d.updatedAt, 0); assert.strictEqual(d.retirement.returnFromFund, true);
+});
+
+
+console.log('categories & history backfill');
+test('new spending categories, old names mapped', () => {
+  for (const c of ['Streaming', 'Gaming', 'Recreation', 'Food delivery', 'Groceries', 'Dining', 'Utilities', 'Insurance', 'Debt payments']) assert.ok(C.CATS.expense.includes(c), c);
+  assert.ok(!C.CATS.expense.includes('Fun') && !C.CATS.expense.includes('Bills'));
+  assert.strictEqual(C.normalizeEntry({ cat: 'Fun', amount: 1, date: TODAY }, TODAY).cat, 'Recreation');
+  assert.strictEqual(C.normalizeEntry({ cat: 'Bills', amount: 1, date: TODAY }, TODAY).cat, 'Utilities');
+});
+test('schema 1 data is re-categorized once by keyword; schema 2 data is left alone', () => {
+  const raw = { entries: [
+      { id: 'a', date: TODAY, amount: 15.99, cat: 'Fun', note: 'Netflix' },
+      { id: 'b', date: TODAY, amount: 32, cat: 'Dining', note: 'DoorDash' },
+      { id: 'c', date: TODAY, amount: 60, cat: 'Fun', note: 'Steam sale' },
+      { id: 'd', date: TODAY, amount: 90, cat: 'Bills', note: 'TV', recurring: 'rule-1' },
+      { id: 'e', date: TODAY, amount: 20, cat: 'Fun', note: 'Movies' },
+      { id: 'f', date: TODAY, amount: 120, cat: 'Groceries', note: 'Costco' }],
+    recurring: [{ id: 'rule-1', name: 'TV', cat: 'Bills', amount: 90, nextDate: TODAY }, { id: 'rule-5', name: 'Car insurance', cat: 'Transport', amount: 400, nextDate: TODAY }, { id: 'rule-7', name: 'Car loan payment', cat: 'Transport', amount: 430, nextDate: TODAY }, { id: 'rule-2', name: 'Power', cat: 'Bills', amount: 150, nextDate: TODAY }] };
+  const st = C.normalizeState(raw, TODAY);
+  assert.deepStrictEqual(st.entries.map(e => e.cat), ['Streaming', 'Food delivery', 'Gaming', 'Streaming', 'Recreation', 'Groceries']);
+  assert.deepStrictEqual(st.recurring.map(r => r.cat), ['Streaming', 'Insurance', 'Debt payments', 'Utilities']);
+  assert.strictEqual(st.schema, 3);
+  const again = C.normalizeState(Object.assign({}, st, { entries: [{ id: 'z', date: TODAY, amount: 15.99, cat: 'Utilities', note: 'Netflix', tags: ['bills'] }] }), TODAY);
+  assert.strictEqual(again.entries[0].cat, 'Utilities', 'a choice made after the migration sticks');
+});
+test('rules carry a start date (defaulting to next due) and an optional end date', () => {
+  const r = C.normalizeRule({ name: 'Old', nextDate: '2026-12-01' }, TODAY);
+  assert.strictEqual(r.startDate, '2026-12-01'); assert.strictEqual(r.endDate, null);
+  const bad = C.normalizeRule({ startDate: '2026-05-01', endDate: '2026-01-01', nextDate: '2026-06-01' }, TODAY);
+  assert.strictEqual(bad.endDate, null, 'end before start is dropped');
+});
+test('reconcileRule backfills every past payment from the start date', () => {
+  const rule = C.normalizeRule({ id: 'car', name: 'Car loan payment', cat: 'Debt payments', amount: 430, frequency: 'monthly', startDate: '2024-11-07', nextDate: '2024-11-07' }, TODAY);
+  const r = C.reconcileRule(rule, [], TODAY);
+  assert.strictEqual(r.add.length, 25, '25 monthly payments Nov 2024 .. Nov 2026');
+  assert.strictEqual(r.add[0].date, '2024-11-07'); assert.strictEqual(r.add[24].date, '2026-11-07');
+  assert.ok(r.add.every(e => e.recurring === 'car' && e.amount === 430 && e.cat === 'Debt payments'));
+  assert.strictEqual(r.nextDate, '2026-12-07'); assert.strictEqual(r.ended, false);
+});
+test('reconcileRule never doubles up and removes entries outside the dates', () => {
+  const rule = C.normalizeRule({ id: 'nf', name: 'Netflix', cat: 'Streaming', amount: 15.99, frequency: 'monthly', startDate: '2026-08-15', nextDate: '2026-08-15' }, TODAY);
+  const existing = [
+    { id: 'x1', recurring: 'nf', date: '2026-07-01' },   // before the start: removed
+    { id: 'x2', recurring: 'nf', date: '2026-09-02' },   // logged on a different day of the month: counts for Sep
+    { id: 'x3', recurring: 'other', date: '2026-10-15' } // another rule: ignored
+  ];
+  const r = C.reconcileRule(rule, existing, TODAY);
+  assert.deepStrictEqual(r.remove, ['x1']);
+  assert.deepStrictEqual(r.add.map(e => e.date), ['2026-08-15', '2026-10-15']);
+  const again = C.reconcileRule(rule, existing.filter(e => e.id !== 'x1').concat(r.add), TODAY);
+  assert.strictEqual(again.add.length, 0); assert.strictEqual(again.remove.length, 0);
+});
+test('end dates stop backfill, posting and upcoming; ended rules leave the monthly total', () => {
+  const rule = C.normalizeRule({ id: 'gym', name: 'Gym', cat: 'Health', amount: 40, frequency: 'monthly', startDate: '2026-05-01', endDate: '2026-08-31', nextDate: '2026-05-01' }, TODAY);
+  const r = C.reconcileRule(rule, [], TODAY);
+  assert.deepStrictEqual(r.add.map(e => e.date), ['2026-05-01', '2026-06-01', '2026-07-01', '2026-08-01']);
+  assert.ok(r.ended);
+  assert.deepStrictEqual(C.dueDates(rule, TODAY).dates, ['2026-05-01', '2026-06-01', '2026-07-01', '2026-08-01']);
+  const future = C.normalizeRule({ id: 'f', name: 'Promo', amount: 10, frequency: 'weekly', startDate: '2026-11-08', endDate: '2026-11-20', nextDate: '2026-11-08' }, TODAY);
+  assert.deepStrictEqual(C.upcoming({ recurring: [future] }, TODAY, 30).map(u => u.date), ['2026-11-08', '2026-11-15']);
+  const ended = Object.assign({}, rule, { nextDate: '2026-09-01' });
+  assert.ok(C.ruleEnded(ended, TODAY));
+  assert.strictEqual(C.recurringMonthlyTotal([ended, future], 'expense', TODAY), C.round2(10 * 52 / 12));
+});
+test('paused rules do not backfill', () => {
+  const rule = C.normalizeRule({ id: 'p', name: 'Paused', amount: 5, startDate: '2026-01-01', nextDate: '2026-01-01', active: false }, TODAY);
+  assert.strictEqual(C.reconcileRule(rule, [], TODAY).add.length, 0);
+});
+
+
+console.log('tags');
+test('tags are normalized: lowercase, trimmed, no #, no duplicates, at most 8', () => {
+  assert.deepStrictEqual(C.normalizeTags([' Food ', '#DoorDash', 'food', '', 'Date   Night']), ['food', 'doordash', 'date night']);
+  assert.deepStrictEqual(C.normalizeTags('a, b ,c'), ['a', 'b', 'c']);
+  assert.strictEqual(C.normalizeTags(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']).length, 8);
+  assert.deepStrictEqual(C.normalizeTags(null), []);
+  assert.deepStrictEqual(C.normalizeEntry({ amount: 1, date: TODAY, tags: ['X'] }, TODAY).tags, ['x']);
+  assert.ok(!('tags' in C.normalizeEntry({ amount: 1, date: TODAY, tags: [] }, TODAY)), 'no empty tags field');
+});
+test('suggested tags come from the category and the note', () => {
+  assert.deepStrictEqual(C.suggestTags('DoorDash', 'Food delivery'), ['food', 'doordash']);
+  assert.deepStrictEqual(C.suggestTags('Netflix', 'Streaming'), ['streaming', 'subscription']);
+  assert.deepStrictEqual(C.suggestTags('Xbox Game Pass', 'Gaming'), ['gaming', 'subscription']);
+  assert.deepStrictEqual(C.suggestTags('Costco', 'Groceries'), ['groceries']);
+  assert.deepStrictEqual(C.suggestTags('Gas', 'Transport'), []);
+});
+test('schema 2 data gets starter tags once; recurring entries follow their rule', () => {
+  const st = C.normalizeState({ schema: 2, recurring: [{ id: 'nf', name: 'Netflix', cat: 'Streaming', amount: 15.99, nextDate: TODAY }],
+    entries: [{ id: 'a', date: TODAY, amount: 15.99, cat: 'Streaming', note: 'Netflix', recurring: 'nf' }, { id: 'b', date: TODAY, amount: 30, cat: 'Food delivery', note: 'DoorDash' }, { id: 'c', date: TODAY, amount: 40, cat: 'Transport', note: 'Gas' }, { id: 'd', type: 'income', date: TODAY, amount: 100, cat: 'Paycheck' }] }, TODAY);
+  assert.deepStrictEqual(st.recurring[0].tags, ['streaming', 'subscription']);
+  assert.deepStrictEqual(st.entries.map(e => e.tags || []), [['streaming', 'subscription'], ['food', 'doordash'], [], []]);
+  const later = C.normalizeState(Object.assign({}, st, { entries: [{ id: 'e', date: TODAY, amount: 30, cat: 'Food delivery', note: 'DoorDash' }] }), TODAY);
+  assert.ok(!later.entries[0].tags, 'no auto-tagging after the migration');
+});
+test('tagBreakdown counts an entry under every tag it has', () => {
+  const b = C.tagBreakdown([E('expense', TODAY, 30, 'Food delivery', { tags: ['food', 'doordash'] }), E('expense', TODAY, 70, 'Groceries', { tags: ['groceries', 'food'] }), E('expense', TODAY, 50, 'Transport'), E('income', TODAY, 999, 'Paycheck', { tags: ['food'] })]);
+  assert.deepStrictEqual(b.tags.map(t => [t.tag, t.total, t.count]), [['food', 100, 2], ['groceries', 70, 1], ['doordash', 30, 1]]);
+  close(b.tags[0].share, 100 / 150); assert.strictEqual(b.untagged, 50); assert.strictEqual(b.total, 150);
+});
+test('knownTags lists used tags by use, then unused starter tags', () => {
+  const k = C.knownTags({ entries: [{ tags: ['food'] }, { tags: ['food', 'date night'] }], recurring: [{ tags: ['streaming'] }] });
+  assert.deepStrictEqual(k.slice(0, 3).map(t => t.tag), ['food', 'date night', 'streaming']);
+  assert.ok(k.some(t => t.tag === 'gaming' && t.count === 0));
+  assert.strictEqual(k.filter(t => t.tag === 'food').length, 1);
+});
+test('recurring rules pass their tags to every logged payment', () => {
+  const rule = C.normalizeRule({ id: 'nf', name: 'Netflix', cat: 'Streaming', amount: 15.99, startDate: '2026-09-07', nextDate: '2026-09-07', tags: ['streaming', 'subscription'] }, TODAY);
+  assert.ok(C.reconcileRule(rule, [], TODAY).add.every(e => e.tags.join() === 'streaming,subscription'));
+  const due = C.postDue({ recurring: [rule], entries: [] }, TODAY);
+  assert.ok(due.entries.length === 3 && due.entries.every(e => e.tags.join() === 'streaming,subscription'));
 });
 
 console.log('formatting');

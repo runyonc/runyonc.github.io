@@ -81,7 +81,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     const n = await page.evaluate(() => App.state.entries.filter(e => e.sample).length);
     assert.ok(n > 30, 'has samples');
     assert.strictEqual(await page.evaluate(() => App.state.entries.every(e => e.sample)), true);
-    await addEntry(page, { amount: 5, cat: 'Fun', note: 'mine' });
+    await addEntry(page, { amount: 5, cat: 'Recreation', note: 'mine' });
     await tab(page, 'overview');
     await page.click('#btn-clear-samples'); await page.waitForTimeout(50);
     assert.ok(await page.isVisible('#confirm-dialog'), 'confirm shown');
@@ -151,7 +151,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.strictEqual(await text(page, '#page-title'), 'Overview');
   });
   await test('delete needs two taps (✕ then Delete), and Undo restores', O, async (page) => {
-    await addEntry(page, { amount: 7, cat: 'Fun', note: 'DeleteMe' });
+    await addEntry(page, { amount: 7, cat: 'Recreation', note: 'DeleteMe' });
     await tab(page, 'overview');
     const n = await page.evaluate(() => App.state.entries.length);
     const row = page.locator('.entry:has-text("DeleteMe")');
@@ -207,7 +207,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   await test('copy month as CSV puts a header and signed amounts on the clipboard', { browser, init: () => { window.__copied = null; Object.defineProperty(navigator, 'clipboard', { value: { writeText: (t) => { window.__copied = t; return Promise.resolve(); } } }); } }, async (page) => {
     await page.click('#btn-csv'); await page.waitForTimeout(80);
     const csv = await page.evaluate(() => window.__copied);
-    assert.ok(csv.startsWith('date,type,category,amount,note\n'));
+    assert.ok(csv.startsWith('date,type,category,amount,note,tags\n'));
     assert.ok(/,expense,Housing,-1900\.00,/.test(csv));
     assert.ok(/Copied \d+ rows as CSV/.test(await text(page, '#toast-msg')));
   });
@@ -227,9 +227,10 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(await page.evaluate(() => App.state.entries.some(e => e.note === 'Persist')));
     assert.ok(await page.isVisible('#sample-banner'), 'samples not re-seeded');
   });
-  await test('old entries with no type are treated as expenses on load', { browser, init: () => { localStorage.setItem('money-tracker-v2', JSON.stringify({ budget: 2500, entries: [{ id: 'x', date: new Date().toISOString().slice(0, 10), amount: 20, cat: 'Fun', note: 'legacy' }] })); } }, async (page) => {
-    assert.deepStrictEqual(await page.evaluate(() => App.state.entries.map(e => e.type)), ['expense']);
-    assert.strictEqual(await text(page, '#sum-expense'), '$20.00');
+  await test('old entries with no type are treated as expenses on load', { browser, init: () => { localStorage.setItem('money-tracker-v2', JSON.stringify({ budget: 2500, entries: [{ id: 'x', date: new Date().toISOString().slice(0, 10), amount: 20, cat: 'Fun', note: 'legacy' }, { id: 'y', date: new Date().toISOString().slice(0, 10), amount: 15.99, cat: 'Fun', note: 'Netflix' }, { id: 'z', type: 'expense', date: new Date().toISOString().slice(0, 10), amount: 31, cat: 'Dining', note: 'DoorDash' }] })); } }, async (page) => {
+    assert.deepStrictEqual(await page.evaluate(() => App.state.entries.map(e => e.type)), ['expense', 'expense', 'expense']);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.entries.map(e => e.cat)), ['Recreation', 'Streaming', 'Food delivery'], 'old categories migrated');
+    assert.strictEqual(await text(page, '#sum-expense'), '$66.99');
     assert.strictEqual(await page.inputValue('#budget-input'), '2500');
     assert.ok(await page.isHidden('#sample-banner'));
   });
@@ -274,7 +275,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   });
   await test('blocked localStorage does not crash the app and is surfaced', { browser, init: () => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); } }, async (page) => {
     assert.strictEqual(await text(page, '#page-sub'), 'Not saving — storage blocked');
-    await addEntry(page, { amount: 1, cat: 'Fun' });
+    await addEntry(page, { amount: 1, cat: 'Recreation' });
     assert.ok(await page.evaluate(() => App.state.entries.some(e => e.amount === 1)));
   });
 
@@ -490,7 +491,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   console.log('recurring & paycheck');
   await test('Repeat on the Add form creates a rule and logs the entry; the rule shows on Recurring and Overview', O, async (page) => {
     await tab(page, 'add');
-    await page.fill('#f-amount', '15.99'); await page.click('#cat-chips button:has-text("Fun")'); await page.fill('#f-note', 'Netflix');
+    await page.fill('#f-amount', '15.99'); await page.click('#cat-chips button:has-text("Streaming")'); await page.fill('#f-note', 'Netflix');
     await page.selectOption('#f-repeat', 'monthly'); await page.click('#f-submit'); await page.waitForTimeout(100);
     assert.ok((await text(page, '#toast-msg')).includes('repeats monthly'));
     const rule = await page.evaluate(() => App.state.recurring[App.state.recurring.length - 1]);
@@ -559,8 +560,8 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#u-add'); await page.click('#u-save');
     assert.ok(await page.isVisible('#u-error'));
     await page.fill('#u-name', 'Spotify'); await page.fill('#u-amount', '10.99'); await page.selectOption('#u-freq', 'monthly');
-    const due = await page.evaluate(() => FinanceCore.addDays(App.today(), 5)); await page.fill('#u-next', due); await page.selectOption('#u-cat', 'Fun'); await page.click('#u-save'); await page.waitForTimeout(100);
-    const sp = await page.evaluate(() => App.state.recurring.find(r => r.name === 'Spotify')); assert.deepStrictEqual([sp.amount, sp.cat, sp.nextDate], [10.99, 'Fun', due]);
+    const due = await page.evaluate(() => FinanceCore.addDays(App.today(), 5)); await page.fill('#u-start', due); await page.selectOption('#u-cat', 'Streaming'); await page.click('#u-save'); await page.waitForTimeout(100);
+    const sp = await page.evaluate(() => App.state.recurring.find(r => r.name === 'Spotify')); assert.deepStrictEqual([sp.amount, sp.cat, sp.nextDate, sp.startDate], [10.99, 'Streaming', due, due]);
     assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.recurring && e.recurring.length > 12).length), 0, 'future due date logs nothing yet');
     assert.ok((await text(page, '#upcoming')).includes('Spotify'));
     await page.click('.rule-row:has-text("Spotify") button:has-text("Edit")'); await page.fill('#u-amount', '11.99'); await page.click('#u-save'); await page.waitForTimeout(80);
@@ -601,6 +602,130 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   const dumpCloud = (page) => page.evaluate(() => Object.fromEntries(window.__cloud));
   const ROOT = 'data/users/u_test/state';
 
+
+  console.log('categories & recurring history');
+  await test('new categories are on the Add form and the seed bills use them', O, async (page) => {
+    await tab(page, 'add');
+    const chips = await page.$$eval('#cat-chips button', bs => bs.map(b => b.textContent.trim().replace(/^\S+\s/, '')));
+    for (const c of ['Groceries', 'Dining', 'Food delivery', 'Streaming', 'Gaming', 'Recreation', 'Utilities', 'Insurance', 'Debt payments']) assert.ok(chips.includes(c), c + ' in ' + chips.join(','));
+    assert.deepStrictEqual(await page.evaluate(() => App.state.recurring.map(r => r.name + ':' + r.cat)), ['TV:Streaming', 'Internet:Utilities', 'Power:Utilities', 'Water:Utilities', 'Car insurance:Insurance', 'Rent:Housing', 'Car loan payment:Debt payments', 'Credit card payment:Debt payments']);
+    assert.ok(await page.evaluate(() => App.state.entries.some(e => e.cat === 'Food delivery') && App.state.entries.some(e => e.cat === 'Streaming')));
+    await tab(page, 'charts');
+    assert.ok((await text(page, '#chart-cats')).includes('Streaming'));
+  });
+  await test('a recurring item with a past start date fills in its history, previewed first, with undo', O, async (page) => {
+    await page.evaluate(() => { App.state.entries = App.state.entries.filter(e => !e.sample); App.state.recurring = []; App.commit(); });
+    await tab(page, 'recurring');
+    await page.click('#u-add');
+    await page.fill('#u-name', 'Old car loan'); await page.fill('#u-amount', '300'); await page.selectOption('#u-cat', 'Debt payments');
+    const start = await page.evaluate(() => FinanceCore.addMonths(App.today().slice(0, 7), -24) + '-05');
+    await page.fill('#u-start', start); await page.waitForTimeout(50);
+    const expected = await page.evaluate((st) => FinanceCore.occurrences({ startDate: st, frequency: 'monthly', anchorDay: 5 }, App.today()).length, start);
+    const preview = await text(page, '#u-preview');
+    assert.ok(preview.includes('logs ' + expected + ' past payments'), preview);
+    await page.click('#u-save'); await page.waitForTimeout(100);
+    const logged = await page.evaluate(() => App.state.entries.filter(e => e.note === 'Old car loan'));
+    assert.strictEqual(logged.length, expected);
+    assert.ok(logged.every(e => e.cat === 'Debt payments' && e.amount === 300 && e.recurring));
+    assert.strictEqual(logged.map(e => e.date).sort()[0], start);
+    assert.ok((await text(page, '#toast-msg')).includes('logs ' + expected));
+    assert.ok((await text(page, '#rule-list')).includes('since'));
+    // undo removes the whole backfill
+    await page.click('#toast-action'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.note === 'Old car loan').length), 0);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring.length), 0);
+  });
+  await test('editing start and end dates adds or removes history without duplicates; ended items stop counting', O, async (page) => {
+    await page.evaluate(() => { App.state.entries = App.state.entries.filter(e => !e.sample); App.state.recurring = []; App.commit(); });
+    await tab(page, 'recurring');
+    const t = await page.evaluate(() => App.today());
+    const m = (n) => page.evaluate(([t, n]) => FinanceCore.addMonths(t.slice(0, 7), n) + '-10', [t, n]);
+    await page.click('#u-add'); await page.fill('#u-name', 'Gym'); await page.fill('#u-amount', '40'); await page.selectOption('#u-cat', 'Recreation');
+    await page.fill('#u-start', await m(-3)); await page.click('#u-save'); await page.waitForTimeout(80);
+    const count = () => page.evaluate(() => App.state.entries.filter(e => e.note === 'Gym').length);
+    const n1 = await count();
+    await page.click('.rule-row:has-text("Gym") button:has-text("Edit")'); await page.fill('#u-start', await m(-6)); await page.click('#u-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await count(), n1 + 3, 'three earlier months filled in, none doubled');
+    await page.click('.rule-row:has-text("Gym") button:has-text("Edit")'); await page.fill('#u-start', await m(-2)); await page.click('#u-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await count(), n1 - 1, 'months before the new start removed');
+    await page.click('.rule-row:has-text("Gym") button:has-text("Edit")'); await page.fill('#u-end', await m(-2)); await page.waitForTimeout(30);
+    assert.ok((await text(page, '#u-preview')).includes('removes 1'), await text(page, '#u-preview'));
+    await page.click('#u-save'); await page.waitForTimeout(80);
+    assert.ok((await text(page, '.rule-row:has-text("Gym")')).includes('ended'));
+    assert.strictEqual(await text(page, '#rec-total'), '', 'ended item is out of the monthly total');
+    assert.ok(!(await text(page, '#upcoming')).includes('Gym'));
+    await page.click('.rule-row:has-text("Gym") button:has-text("Edit")'); await page.fill('#u-end', await m(-3)); await page.waitForTimeout(30);
+    await page.click('#u-save'); await page.waitForTimeout(30);
+    assert.ok(await page.isVisible('#u-error'), 'end before start is rejected');
+  });
+
+
+  console.log('tags');
+  await test('tags: suggested from category and note, custom tags, saved, editable, shown on the entry', O, async (page) => {
+    await tab(page, 'add');
+    await page.click('#cat-chips button:has-text("Food delivery")');
+    await page.fill('#f-amount', '28.40'); await page.fill('#f-note', 'DoorDash');
+    const pressed = () => page.$$eval('#tag-chips button[aria-pressed="true"]', bs => bs.map(b => b.textContent));
+    assert.deepStrictEqual(await pressed(), ['#food', '#doordash']);
+    await page.fill('#f-newtag', 'Date Night'); await page.press('#f-newtag', 'Enter');
+    assert.deepStrictEqual((await pressed()).sort(), ['#date night', '#doordash', '#food']);
+    await page.click('#tag-chips button:has-text("#doordash")'); // turn one off by hand
+    await page.fill('#f-note', 'DoorDash Friday'); // a touched picker is not overwritten by suggestions
+    assert.deepStrictEqual((await pressed()).sort(), ['#date night', '#food']);
+    await page.click('#f-submit'); await page.waitForTimeout(80);
+    const e = await page.evaluate(() => App.state.entries[App.state.entries.length - 1]);
+    assert.deepStrictEqual([e.cat, e.tags], ['Food delivery', ['food', 'date night']]);
+    assert.ok(!(await pressed()).includes('#date night'), 'picker resets for the next entry');
+    await tab(page, 'overview');
+    const row = page.locator('.entry:has-text("DoorDash Friday")');
+    assert.ok((await row.textContent()).includes('#date night'));
+    await row.locator('.body').click(); await page.waitForTimeout(60);
+    assert.deepStrictEqual((await pressed()).sort(), ['#date night', '#food']);
+    await page.click('#tag-chips button:has-text("#date night")'); await page.click('#f-save'); await page.waitForTimeout(80);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.entries.find(x => x.note === 'DoorDash Friday').tags), ['food']);
+  });
+  await test('Spending by tag on Overview and Charts, with a tag filter that narrows totals', O, async (page) => {
+    await addEntry(page, { amount: '50', cat: 'Gaming', note: 'Steam' });
+    await tab(page, 'overview');
+    assert.ok(await page.isVisible('#tag-card'));
+    assert.ok((await text(page, '#tag-breakdown')).includes('#gaming'));
+    await tab(page, 'charts');
+    assert.ok((await text(page, '#chart-tags')).includes('#gaming'));
+    const all = await text(page, '#rt-expense');
+    await page.click('#tag-filter-details summary');
+    await page.click('#tag-filter button:has-text("#gaming")'); await page.waitForTimeout(80);
+    const gaming = await page.evaluate(() => { const r = FinanceCore.rangeForPreset('last6', App.today(), App.state.entries); return FinanceCore.fmtMoney(FinanceCore.totals(FinanceCore.entriesInRange(App.state.entries, r.from, r.to).filter(e => e.type !== 'expense' || (e.tags || []).includes('gaming'))).expense); });
+    assert.strictEqual(await text(page, '#rt-expense'), gaming);
+    assert.notStrictEqual(gaming, all);
+    assert.ok((await text(page, '#range-totals')).includes('Spending (filtered)'));
+    await page.click('#tag-filter button:has-text("Any")'); await page.waitForTimeout(80);
+    assert.strictEqual(await text(page, '#rt-expense'), all);
+  });
+  await test('recurring tags apply to past payments; removing a tag in Settings strips it everywhere, with undo', O, async (page) => {
+    await tab(page, 'recurring');
+    await page.click('.rule-row:has-text("Internet") button:has-text("Edit")');
+    await page.fill('#u-newtag', 'wifi'); await page.click('#u-addtag');
+    await page.click('#u-save'); await page.waitForTimeout(100);
+    const internet = await page.evaluate(() => App.state.entries.filter(e => e.recurring === 'rule-2').map(e => (e.tags || []).join()));
+    assert.ok(internet.length >= 5 && internet.every(t => t === 'wifi'), JSON.stringify(internet));
+    assert.ok((await text(page, '.rule-row:has-text("Internet")')).includes('#wifi'));
+    await page.click('#btn-settings');
+    await page.click('#tag-manage button:has-text("#wifi")'); await page.waitForTimeout(50);
+    assert.ok((await text(page, '#confirm-desc')).includes('entries and bills'));
+    await page.click('#confirm-ok'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => (e.tags || []).includes('wifi')).length), 0);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.recurring.find(r => r.id === 'rule-2').tags), []);
+    await page.click('#settings-close');
+    await page.click('#toast-action'); await page.waitForTimeout(80);
+    assert.ok(await page.evaluate(() => App.state.entries.filter(e => (e.tags || []).includes('wifi')).length) >= 5, 'undo restores');
+  });
+  await test('CSV includes a tags column', { browser, init: () => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: (t) => { window.__copied = t; return Promise.resolve(); } } }); } }, async (page) => {
+    await page.click('#btn-csv'); await page.waitForTimeout(80);
+    const csv = await page.evaluate(() => window.__copied);
+    assert.ok(csv.startsWith('date,type,category,amount,note,tags\n'));
+    assert.ok(/,expense,Streaming,-90\.00,TV,streaming;subscription/.test(csv), csv.slice(0, 400));
+  });
+
   console.log('account sync');
   let cloudAfterA = null;
   await test('first device with an empty account uploads its data, then syncs each change', { browser, init: fakeRuntime, initArg: {} }, async (page) => {
@@ -614,7 +739,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.strictEqual(total, await page.evaluate(() => App.state.entries.length), 'every entry uploaded');
     assert.deepStrictEqual(cloud[ROOT].months, monthKeys.map((k) => k.split('/').pop()).sort());
     assert.strictEqual(await text(page, '#sync-chip'), 'Synced');
-    await addEntry(page, { amount: '42.42', cat: 'Fun', note: 'SyncMe' });
+    await addEntry(page, { amount: '42.42', cat: 'Recreation', note: 'SyncMe' });
     await page.waitForTimeout(1800);
     cloud = await dumpCloud(page);
     const mk = await page.evaluate(() => App.today().slice(0, 7));

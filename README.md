@@ -13,6 +13,15 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
   delete, "Copy month as CSV".
 - **Add** — one form for spending, income and 401k contributions. Tap any entry
   on Overview to edit it in the same form.
+- **Categories and tags** — each entry has one category (Groceries, Dining,
+  Food delivery, Housing, Utilities, Streaming, Transport, Gaming, Recreation,
+  Shopping, Health, Insurance, Debt payments, Other), so the budget breakdown
+  adds up to 100%. On top of that it can carry up to 8 tags of your own, like
+  `#doordash`, `#food`, `#streaming` or `#date night`. Tags are suggested from
+  the category and the note as you type (DoorDash, Netflix, Steam…), can
+  overlap, get their own "Spending by tag" totals and chart filter, and can be
+  removed everywhere from Settings. Older data is moved into the new categories
+  and given starter tags once, on first load.
 - **Recurring** — a paycheck model and a list of bills & subscriptions.
   - **Paycheck**: enter gross pay, pay frequency, next pay date, 401k %,
     employer match, health/HSA and other deductions straight off a pay stub.
@@ -23,9 +32,13 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
     month, and logs a paycheck as net income plus the employee and employer
     401k entries, automatically on each pay day if you like.
   - **Bills & subscriptions**: recurring expenses or income (Netflix, rent,
-    side income) with a frequency and next due date. Due items are logged
-    automatically when the app opens, with an undo, and the next 30 days are
-    listed. The Add form's "Repeat" option creates one in a single step.
+    a car loan payment) with a frequency, a start date, an optional end date
+    and tags. A start date in the past fills in every payment since then (the
+    form previews how many before you save), an end date stops it, and
+    changing either adds or removes history without doubling anything up.
+    Due items are logged automatically when the app opens, with an undo, and
+    the next 30 days are listed. The Add form's "Repeat" option creates one in
+    a single step.
 - **Charts** — date range presets or a custom range, applied to every chart and
   the totals beside them: income vs. spending (weekly or monthly bars with a
   net line), spending by category, savings rate by month, cumulative 401k
@@ -85,9 +98,10 @@ State is stored under the `money-tracker-v2` key and exported as JSON:
   "debts": [{ "id": "…", "name": "Car loan", "balance": 9000, "rate": 6.5, "payment": 320, "compounding": "monthly" }],
   "k401Fund": "FXAIX", "k401ReturnOverride": null, "inflation": 3,
   "paycheck": { "gross": 3000, "frequency": "biweekly", "nextPayDate": "2026-11-13", "autoLog": true, "k401Pct": 6, "matchPct": 50, "matchCapPct": 6, "health": 100, "filingStatus": "single", "stateRate": 5, "taxMode": "auto" },
-  "recurring": [{ "id": "…", "name": "Netflix", "type": "expense", "cat": "Fun", "amount": 15.99, "frequency": "monthly", "nextDate": "2026-12-07", "anchorDay": 7, "active": true }],
+  "recurring": [{ "id": "…", "name": "Netflix", "type": "expense", "cat": "Streaming", "tags": ["streaming", "subscription"], "amount": 15.99, "frequency": "monthly", "startDate": "2025-03-07", "endDate": null, "nextDate": "2026-12-07", "anchorDay": 7, "active": true }],
   "retirement": { "age": 30, "targetAge": 65, "spendingOverride": null, "withdrawalRate": 4, "returnRate": 6, "taxRate": 15, "contributionOverride": null },
-  "entries": [{ "id": "…", "type": "expense", "date": "2026-11-07", "amount": 12.5, "cat": "Dining", "note": "Tacos" }]
+  "entries": [{ "id": "…", "type": "expense", "date": "2026-11-07", "amount": 12.5, "cat": "Dining", "note": "Tacos", "tags": ["food"] }],
+  "schema": 3
 }
 ```
 
