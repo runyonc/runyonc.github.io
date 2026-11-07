@@ -16,7 +16,7 @@ async function withPage(opts, fn) {
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  if (opts.init) await page.addInitScript(opts.init);
+  if (opts.init) await page.addInitScript(opts.init, opts.initArg);
   await page.goto(URL);
   await page.waitForTimeout(100);
   try { await fn(page, errors, context); assert.deepStrictEqual(errors, [], 'no console/page errors'); }
@@ -50,30 +50,34 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   console.log('layout');
   for (const scheme of ['light', 'dark']) {
     await test(`no horizontal overflow on any tab at 360px (${scheme})`, { browser, context: { colorScheme: scheme } }, async (page) => {
-      for (const v of ['overview', 'add', 'charts', 'retirement']) { await tab(page, v); await noOverflow(page, v); }
+      for (const v of ['overview', 'add', 'charts', 'recurring', 'retirement']) { await tab(page, v); await noOverflow(page, v); }
       await page.click('#btn-settings'); await page.waitForTimeout(50); await noOverflow(page, 'settings');
       assert.ok(await page.isVisible('#settings-dialog'));
       await page.click('#settings-close');
       await tab(page, 'charts'); await page.click('.table-toggle[data-table="ch1"]'); await noOverflow(page, 'chart table');
       await tab(page, 'retirement'); await page.click('#d-add'); await noOverflow(page, 'debt form');
+      await tab(page, 'recurring'); await page.click('#u-add'); await noOverflow(page, 'rule form'); await page.evaluate(() => { App.state.paycheck.gross = 3000; App.state.paycheck.nextPayDate = App.today(); App.commit(); }); await noOverflow(page, 'paycheck');
     });
   }
-  await test('body background follows theme and the theme toggle wins over the OS', { browser, context: { colorScheme: 'dark' } }, async (page) => {
+  await test('dark is the default theme, the toggle switches to light and persists', { browser, context: { colorScheme: 'light' } }, async (page) => {
     const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    assert.strictEqual(dark, 'rgb(13, 13, 13)');
+    assert.strictEqual(dark, 'rgb(7, 10, 18)');
+    assert.strictEqual(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), 'dark');
     await page.click('#btn-settings'); await page.click('#theme-seg button[data-theme="light"]');
     const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    assert.strictEqual(light, 'rgb(244, 244, 241)');
+    assert.strictEqual(light, 'rgb(238, 242, 248)');
     await page.reload(); await page.waitForTimeout(100);
     assert.strictEqual(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light', 'theme persists');
   });
   await test('reduced motion and 320px wide still render without errors', { browser, context: { reducedMotion: 'reduce', viewport: { width: 320, height: 600 } } }, async (page) => {
-    for (const v of ['overview', 'add', 'charts', 'retirement']) { await tab(page, v); await noOverflow(page, v + '@320'); }
+    for (const v of ['overview', 'add', 'charts', 'recurring', 'retirement']) { await tab(page, v); await noOverflow(page, v + '@320'); }
   });
 
   console.log('first run & samples');
   await test('seeds flagged sample data with a banner, and Clear samples removes only samples', O, async (page) => {
     assert.ok(await page.isVisible('#sample-banner'));
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.k401Balance, App.state.paycheck.gross, App.state.recurring.map(r => r.name + ' ' + r.amount)]), [125000, 6000, ['TV 90', 'Internet 70', 'Power 150', 'Water 60', 'Car insurance 400', 'Rent 1900', 'Car loan payment 430', 'Credit card payment 250']]);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.debts.map(d => [d.name, d.balance, d.rate, d.payment])), [['Car loan', 22000, 6.5, 430], ['Credit card', 7000, 17, 250]]);
     const n = await page.evaluate(() => App.state.entries.filter(e => e.sample).length);
     assert.ok(n > 30, 'has samples');
     assert.strictEqual(await page.evaluate(() => App.state.entries.every(e => e.sample)), true);
@@ -204,7 +208,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#btn-csv'); await page.waitForTimeout(80);
     const csv = await page.evaluate(() => window.__copied);
     assert.ok(csv.startsWith('date,type,category,amount,note\n'));
-    assert.ok(/,expense,Housing,-1450\.00,/.test(csv));
+    assert.ok(/,expense,Housing,-1900\.00,/.test(csv));
     assert.ok(/Copied \d+ rows as CSV/.test(await text(page, '#toast-msg')));
   });
   await test('401k balance saves with today as the update date and feeds Retirement', O, async (page) => {
@@ -333,17 +337,29 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   });
 
   console.log('retirement');
-  await test('tiles, progress and plain-language line agree with FinanceCore', O, async (page) => {
+  await test('tiles, progress, odds and plain-language line agree with FinanceCore', O, async (page) => {
     await tab(page, 'retirement');
     await page.fill('#r-roth', '50000'); await page.fill('#r-savings', '10000'); await page.waitForTimeout(100);
-    const calc = await page.evaluate(() => { const s = App.state, r = s.retirement, a = FinanceCore.averages(s.entries, App.today()); return FinanceCore.retirementCalc({ age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: r.returnRate, taxRate: r.taxRate, annualSpending: a.expense * 12, monthlyContribution: a.k401 + a.net, k401Balance: s.k401Balance, rothBalance: s.rothBalance, savingsBalance: s.savingsBalance, otherInvestments: s.otherInvestments, debts: s.debts, today: App.today() }); });
-    assert.strictEqual(await text(page, '#rt-networth'), '$60K');
-    assert.strictEqual(await text(page, '#rt-progress'), (calc.progress < 0.1 ? (calc.progress * 100).toFixed(1) : Math.round(calc.progress * 100)) + '%');
-    assert.strictEqual(await text(page, '#rt-age'), 'Age ' + Math.ceil(calc.ageAtTarget));
+    const d = await page.evaluate(() => { const d = App.retirementDerived(); return { calc: d.calc, odds: d.odds, inputs: d.inputs }; });
+    assert.strictEqual(d.inputs.k401Type, 'roth');
+    assert.strictEqual(d.calc.assets, await page.evaluate(() => App.state.k401Balance + 60000), 'Roth 401k counted in full');
+    assert.strictEqual(await text(page, '#rt-networth'), await page.evaluate((nw) => FinanceCore.fmtMoney(nw, { compact: true, whole: true }), d.calc.netWorth));
+    assert.strictEqual(await text(page, '#rt-progress'), (d.calc.progress < 0.1 ? (d.calc.progress * 100).toFixed(1) : Math.round(d.calc.progress * 100)) + '%');
+    assert.strictEqual(await text(page, '#rt-age'), 'Age ' + Math.ceil(d.calc.ageAtTarget));
     const plain = await text(page, '#rt-plain');
-    assert.ok(plain.includes('by age ' + Math.ceil(calc.ageAtTarget)), plain);
-    assert.ok(Math.abs(parseFloat(await page.$eval('#rt-fill', el => el.style.width)) - Math.min(100, calc.progress * 100)) < 0.01, 'meter width');
+    assert.ok(plain.includes('by age ' + Math.ceil(d.calc.ageAtTarget)), plain);
+    assert.ok(Math.abs(parseFloat(await page.$eval('#rt-fill', el => el.style.width)) - Math.min(100, d.calc.progress * 100)) < 0.01, 'meter width');
     assert.ok(await page.$('#chart-proj svg'));
+    assert.ok(await page.$('#chart-proj svg .band'), 'historical range band on the projection');
+    const odds = await text(page, '#rt-odds');
+    assert.ok(odds.includes('FXAIX') && odds.includes(Math.round(d.odds.probByTargetAge * 100) + '%'), odds);
+    // the projection's return comes from fund history by default
+    const real = await page.evaluate(() => Math.round(FinanceCore.realRate(Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('FXAIX')).cagr * 10) / 10, 3) * 10) / 10);
+    assert.strictEqual(d.inputs.returnRate, real);
+    await page.click('details:has(#r-return) summary');
+    assert.strictEqual(parseFloat(await page.inputValue('#r-return')), real);
+    assert.ok(await page.isDisabled('#r-tax'), 'tax rate unused for a Roth 401k');
+    assert.ok((await text(page, '#r-tax-help')).includes('Roth'));
   });
   await test('spending and contribution overrides, reset to tracker average', O, async (page) => {
     await tab(page, 'retirement');
@@ -360,12 +376,16 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('details:has(#r-wr) summary'); await page.fill('#r-wr', '3'); await page.waitForTimeout(80);
     const t3 = await page.evaluate(() => FinanceCore.averages(App.state.entries, App.today()).expense * 12 / 0.03);
     assert.ok((await text(page, '#rt-target-sub')).includes('÷ 3%'));
+    await page.fill('#r-return', '4'); await page.waitForTimeout(80);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.retirement.returnRate, App.state.retirement.returnFromFund]), [4, false]);
+    assert.ok(await page.isVisible('#r-return-reset'));
     await page.click('#r-assume-reset'); await page.waitForTimeout(50);
-    assert.deepStrictEqual(await page.evaluate(() => { const r = App.state.retirement; return [r.withdrawalRate, r.returnRate, r.taxRate]; }), [4, 6, 15]);
+    assert.deepStrictEqual(await page.evaluate(() => { const r = App.state.retirement; return [r.withdrawalRate, r.returnFromFund, r.taxRate]; }), [4, true, 15]);
     await page.reload(); await page.waitForTimeout(100); await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#r-contrib'), '0', 'override persisted');
   });
   await test('debts: add, edit, delete with confirm; table sorted by rate with payoff and interest', O, async (page) => {
+    await page.evaluate(() => { App.state.debts = []; App.commit(); });
     await tab(page, 'retirement');
     await page.click('#d-add'); await page.click('#d-save');
     assert.ok(await page.isVisible('#d-error'), 'validation');
@@ -374,10 +394,10 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#d-add'); await page.fill('#d-name', 'Stuck'); await page.fill('#d-balance', '5000'); await page.fill('#d-rate', '30'); await page.fill('#d-payment', '50'); await page.click('#d-save'); await page.waitForTimeout(80);
     const rows = await page.$$eval('#debt-table tbody tr', trs => trs.map(tr => Array.from(tr.children).map(td => td.textContent.trim())));
     assert.deepStrictEqual(rows.map(r => r[0]), ['Card', 'Stuck', 'Car', 'Total']);
-    assert.ok(rows[0][3].includes('2 months')); assert.strictEqual(rows[0][4], '$15.00');
+    assert.ok(rows[0][3].includes('2 months')); assert.strictEqual(rows[0][4], '$15');
     assert.strictEqual(rows[1][3], 'never'); assert.strictEqual(rows[1][4], '∞');
-    assert.ok(rows[2][3].includes('10 months')); assert.strictEqual(rows[2][4], '$0.00');
-    assert.strictEqual(rows[3][1], '$6,100.00');
+    assert.ok(rows[2][3].includes('10 months')); assert.strictEqual(rows[2][4], '$0');
+    assert.strictEqual(rows[3][1], '$6,100');
     assert.ok((await text(page, '#debt-summary')).includes('3 debts'));
     assert.ok((await text(page, '#rt-networth-sub')).includes('$6,100 debt'));
     await page.click('.debt-row:has-text("Stuck") button:has-text("Edit")'); await page.fill('#d-payment', '500'); await page.click('#d-save'); await page.waitForTimeout(80);
@@ -388,6 +408,241 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.deepStrictEqual(await page.evaluate(() => App.state.debts.map(d => d.name)), ['Car', 'Stuck']);
     await page.reload(); await page.waitForTimeout(100);
     assert.strictEqual(await page.evaluate(() => App.state.debts.length), 2, 'debts persisted');
+  });
+
+
+  console.log('retirement: ages, interest options, 401k fund');
+  await test('current age and target age sit at the top of Retirement and drive the years-to-go hint', O, async (page) => {
+    await tab(page, 'retirement');
+    const inTop = await page.evaluate(() => { const card = document.querySelector('#view-retirement section.card'); return !!card.querySelector('#r-age') && !!card.querySelector('#r-target-age'); });
+    assert.ok(inTop, 'age inputs are inside the first card');
+    await page.fill('#r-age', '35'); await page.fill('#r-target-age', '60'); await page.waitForTimeout(100);
+    assert.strictEqual(await text(page, '#ret-years'), '25 years to go');
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.retirement.age, App.state.retirement.targetAge]), [35, 60]);
+    assert.ok((await text(page, '#rt-gap')).includes('target age of 60'));
+  });
+  await test('debt interest option: compounding choice is saved and shown; 0% promo ignores the APR', O, async (page) => {
+    await tab(page, 'retirement');
+    await page.click('#d-add');
+    await page.selectOption('#d-compound', 'none');
+    assert.ok(await page.isDisabled('#d-rate'));
+    assert.ok((await text(page, '#d-compound-help')).includes('No interest'));
+    await page.fill('#d-name', 'Promo card'); await page.fill('#d-balance', '1200'); await page.fill('#d-payment', '100'); await page.click('#d-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'none');
+    assert.ok((await text(page, '#debt-list')).includes('no interest'));
+    const row = (await page.$$eval('#debt-table tbody tr', trs => trs.map(tr => tr.textContent.replace(/\s+/g, ' ')))).filter(r => r.includes('Promo card'));
+    assert.ok(row[0].includes('1 year') && /\$0(\.00)?$/.test(row[0].trim()), row[0]);
+    await page.click('.debt-row:has-text("Promo card") button:has-text("Edit")');
+    assert.strictEqual(await page.inputValue('#d-compound'), 'none');
+    await page.selectOption('#d-compound', 'daily'); await page.fill('#d-rate', '24'); await page.click('#d-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'daily');
+    assert.ok((await text(page, '#debt-list')).includes('daily compounding'));
+    await page.reload(); await page.waitForTimeout(100);
+    assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'daily');
+  });
+  await test('401k card: Roth/traditional switch, fund choice drives the forecast and projection, no history display', O, async (page) => {
+    await tab(page, 'retirement');
+    assert.strictEqual(await page.inputValue('#r-k401type'), 'roth');
+    assert.strictEqual(await page.inputValue('#k-fund'), 'FXAIX');
+    assert.ok(!(await page.$('#chart-fund-hist')), 'annual-returns chart removed');
+    assert.ok(!(await page.$('#k-facts')), 'history stats removed');
+    assert.ok(await page.$('#chart-fund-forecast svg .band'), 'forecast range band');
+    assert.ok((await text(page, '#k-summary')).includes('Roth · FXAIX'));
+    const fx = parseFloat(await page.inputValue('#k-return'));
+    assert.strictEqual(fx, await page.evaluate(() => Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('FXAIX')).cagr * 10) / 10));
+    const nwRoth = await page.evaluate(() => App.retirementDerived().calc.netWorth);
+    await page.selectOption('#r-k401type', 'traditional'); await page.waitForTimeout(100);
+    const nwTrad = await page.evaluate(() => App.retirementDerived().calc.netWorth);
+    assert.strictEqual(Math.round(nwRoth - nwTrad), Math.round(await page.evaluate(() => App.state.k401Balance * 0.15)), 'traditional loses 15% to tax');
+    assert.strictEqual(await page.evaluate(() => App.state.paycheck.k401Type), 'traditional', 'same setting as Pay setup');
+    assert.ok(!(await page.isDisabled('#r-tax')));
+    await page.selectOption('#r-k401type', 'roth'); await page.waitForTimeout(80);
+    const realFx = await page.evaluate(() => App.retirementDerived().inputs.returnRate);
+    await page.selectOption('#k-fund', 'LFIKX'); await page.waitForTimeout(150);
+    assert.ok(parseFloat(await page.inputValue('#k-return')) < fx, 'LFIKX long-run estimate is lower');
+    assert.ok(await page.evaluate(() => App.retirementDerived().inputs.returnRate) < realFx, 'projection follows the fund');
+    assert.ok((await text(page, '#rt-odds')).includes('LFIKX'));
+    assert.ok((await text(page, '#k-forecast-line')).includes('LFIKX'));
+    await page.fill('#k-return', '5'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.k401ReturnOverride), 5);
+    await page.click('#k-return-reset'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.k401ReturnOverride), null);
+    await page.selectOption('#k-fund', 'custom'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.inputValue('#k-return'), '7');
+    assert.ok((await text(page, '#rt-odds')).includes('Pick FXAIX or LFIKX'));
+    await page.reload(); await page.waitForTimeout(100); await tab(page, 'retirement');
+    assert.strictEqual(await page.inputValue('#k-fund'), 'custom', 'fund choice persisted');
+  });
+  await test('Roth 401k on the paycheck comes out after tax', O, async (page) => {
+    await tab(page, 'recurring');
+    assert.strictEqual(await page.inputValue('#p-k401type'), 'roth');
+    const lines = await text(page, '#pay-lines');
+    assert.ok(lines.includes('After-tax deductions') && lines.includes('Roth 401k (6%)'), lines);
+    assert.ok(!lines.includes('Pre-tax deductions'), 'nothing pre-tax in the seed');
+    const roth = await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck));
+    assert.strictEqual(roth.taxableWages, 6000);
+    await page.selectOption('#p-k401type', 'traditional'); await page.waitForTimeout(80);
+    const trad = await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck));
+    assert.strictEqual(trad.taxableWages, 5640); assert.ok(trad.net > roth.net);
+    assert.ok((await text(page, '#pay-lines')).includes('Pre-tax deductions'));
+  });
+
+  console.log('recurring & paycheck');
+  await test('Repeat on the Add form creates a rule and logs the entry; the rule shows on Recurring and Overview', O, async (page) => {
+    await tab(page, 'add');
+    await page.fill('#f-amount', '15.99'); await page.click('#cat-chips button:has-text("Fun")'); await page.fill('#f-note', 'Netflix');
+    await page.selectOption('#f-repeat', 'monthly'); await page.click('#f-submit'); await page.waitForTimeout(100);
+    assert.ok((await text(page, '#toast-msg')).includes('repeats monthly'));
+    const rule = await page.evaluate(() => App.state.recurring[App.state.recurring.length - 1]);
+    assert.strictEqual(rule.name, 'Netflix'); assert.strictEqual(rule.amount, 15.99); assert.strictEqual(rule.frequency, 'monthly');
+    assert.strictEqual(rule.nextDate, await page.evaluate(() => FinanceCore.advanceDate(App.today(), 'monthly', +App.today().slice(8))));
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.recurring === App.state.recurring[App.state.recurring.length - 1].id).length), 1);
+    assert.strictEqual(await page.inputValue('#f-repeat'), '', 'repeat resets after adding');
+    await tab(page, 'overview');
+    assert.ok(await page.isVisible('#recurring-card'));
+    assert.strictEqual(await text(page, '#ov-bills'), await page.evaluate(() => App.tileMoney(FinanceCore.recurringMonthlyTotal(App.state.recurring, 'expense'))));
+    await page.click('#recur-open'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.ui.view), 'recurring');
+    assert.ok((await text(page, '#rule-list')).includes('Netflix'));
+    assert.ok((await text(page, '#rec-total')).includes('/mo'));
+  });
+  await test('overdue rules are logged once on load, with undo; paused rules are skipped', { browser, init: () => {
+      const t = new Date(); const iso = d => d.toISOString().slice(0, 10);
+      const past = new Date(t.getFullYear(), t.getMonth() - 2, Math.min(t.getDate(), 28));
+      localStorage.setItem('money-tracker-v2', JSON.stringify({ entries: [], recurring: [
+        { id: 'rent', name: 'Rent', type: 'expense', cat: 'Housing', amount: 1450, frequency: 'monthly', nextDate: iso(past), anchorDay: past.getDate() },
+        { id: 'gym', name: 'Gym', type: 'expense', cat: 'Health', amount: 40, frequency: 'monthly', nextDate: iso(past), active: false }] }));
+    } }, async (page) => {
+    const logged = await page.evaluate(() => App.state.entries.map(e => [e.note, e.amount, e.recurring]));
+    assert.strictEqual(logged.length, 3, 'three monthly rent occurrences caught up: ' + JSON.stringify(logged));
+    assert.ok(logged.every(l => l[0] === 'Rent' && l[1] === 1450 && l[2] === 'rent'));
+    assert.ok((await text(page, '#toast-msg')).includes('Logged 3 recurring'));
+    const next = await page.evaluate(() => App.state.recurring[0].nextDate);
+    assert.ok(next > await page.evaluate(() => App.today()));
+    await page.reload(); await page.waitForTimeout(150);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), 3, 'not logged twice');
+    assert.ok((await text(page, '#entries')).includes('auto'), 'auto tag shown');
+    await page.evaluate(() => { localStorage.clear(); });
+  });
+  await test('paycheck setup estimates taxes, logs a paycheck with 401k entries, and auto-logs on pay day', O, async (page) => {
+    await tab(page, 'recurring');
+    await page.fill('#p-gross', '3000'); await page.selectOption('#p-freq', 'biweekly'); await page.fill('#p-k401pct', '6'); await page.fill('#p-health', '100'); await page.fill('#p-staterate', '5');
+    await page.press('#p-staterate', 'Tab'); await page.waitForTimeout(120);
+    const b = await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck));
+    assert.strictEqual(b.gross, 3000); assert.strictEqual(b.k401, 180); assert.strictEqual(b.match, 90);
+    assert.strictEqual(await text(page, '#pay-net-month'), FinanceCore_fmt(b.monthly.net));
+    const lines = await text(page, '#pay-lines');
+    assert.ok(lines.includes('Federal income tax') && lines.includes('Social Security') && lines.includes('Medicare') && lines.includes('State income tax'), lines);
+    assert.ok(lines.includes(FinanceCore_fmt(b.net)));
+    const n0 = await page.evaluate(() => App.state.entries.length);
+    await page.click('#pay-log'); await page.waitForTimeout(100);
+    const added = await page.evaluate(() => App.state.entries.slice(-3).map(e => [e.type, e.cat, e.amount]));
+    assert.deepStrictEqual(added, [['income', 'Paycheck', b.net], ['k401', 'My contribution', 180], ['k401', 'Employer match', 90]]);
+    await page.click('#toast-action'); await page.waitForTimeout(50);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), n0, 'undo removes all three');
+    // manual tax mode
+    await page.click('#p-taxmode button[data-mode="manual"]'); await page.waitForTimeout(80);
+    assert.ok(await page.isVisible('#p-federal')); assert.ok(await page.isHidden('#p-staterate'));
+    await page.fill('#p-federal', '300'); await page.fill('#p-ss', '186'); await page.fill('#p-medicare', '43.5'); await page.fill('#p-state', '120'); await page.press('#p-state', 'Tab'); await page.waitForTimeout(120);
+    assert.strictEqual(await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck).taxes), 649.5);
+    // auto-log: set next pay date in the past, reload
+    await page.evaluate(() => { App.state.paycheck.nextPayDate = FinanceCore.addDays(App.today(), -3); App.state.paycheck.autoLog = true; App.saveState(); });
+    await page.reload(); await page.waitForTimeout(150);
+    const auto = await page.evaluate(() => App.state.entries.filter(e => e.recurring === 'paycheck' && !e.sample).map(e => e.type));
+    assert.deepStrictEqual(auto, ['income', 'k401', 'k401']);
+    assert.ok(await page.evaluate(() => App.state.paycheck.nextPayDate > App.today()));
+    await tab(page, 'overview');
+    assert.ok((await text(page, '#ov-pay-sub')).includes('every 2 weeks'));
+  });
+  await test('bills form: add, edit, pause and delete with confirm; upcoming lists them', O, async (page) => {
+    await tab(page, 'recurring');
+    await page.click('#u-add'); await page.click('#u-save');
+    assert.ok(await page.isVisible('#u-error'));
+    await page.fill('#u-name', 'Spotify'); await page.fill('#u-amount', '10.99'); await page.selectOption('#u-freq', 'monthly');
+    const due = await page.evaluate(() => FinanceCore.addDays(App.today(), 5)); await page.fill('#u-next', due); await page.selectOption('#u-cat', 'Fun'); await page.click('#u-save'); await page.waitForTimeout(100);
+    const sp = await page.evaluate(() => App.state.recurring.find(r => r.name === 'Spotify')); assert.deepStrictEqual([sp.amount, sp.cat, sp.nextDate], [10.99, 'Fun', due]);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.recurring && e.recurring.length > 12).length), 0, 'future due date logs nothing yet');
+    assert.ok((await text(page, '#upcoming')).includes('Spotify'));
+    await page.click('.rule-row:has-text("Spotify") button:has-text("Edit")'); await page.fill('#u-amount', '11.99'); await page.click('#u-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring.find(r => r.name === 'Spotify').amount), 11.99);
+    await page.click('.rule-row:has-text("Spotify") button:has-text("Pause")'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring.find(r => r.name === 'Spotify').active), false);
+    assert.ok(!(await text(page, '#upcoming')).includes('Spotify'), 'paused items leave upcoming');
+    const del = page.locator('.rule-row:has-text("Spotify") .del-btn');
+    await del.click(); assert.strictEqual(await del.textContent(), 'Delete'); await del.click(); await page.waitForTimeout(80);
+    assert.ok(!(await page.evaluate(() => App.state.recurring.some(r => r.name === 'Spotify'))));
+    await page.click('#toast-action'); await page.waitForTimeout(50);
+    assert.ok(await page.evaluate(() => App.state.recurring.some(r => r.name === 'Spotify')), 'undo restores the rule');
+  });
+
+
+  // A stand-in for the Claude viewer runtime: an in-memory db shaped like the real one.
+  const fakeRuntime = (seed) => {
+    const store = new Map(Object.entries(seed || {}));
+    window.__cloud = store; window.__cloudWrites = 0;
+    const listeners = [];
+    const clone = (x) => JSON.parse(JSON.stringify(x));
+    const snapOf = (path) => { const d = store.get(path); return { id: path.split('/').pop(), exists: !!d, data: () => (d ? clone(d) : undefined), metadata: { fromCache: false, hasPendingWrites: false } }; };
+    const notify = (path) => listeners.filter((l) => l.path === path).forEach((l) => setTimeout(() => l.fn(snapOf(path)), 0));
+    const docRef = (path) => ({ id: path.split('/').pop(), path,
+      get: async () => snapOf(path),
+      set: async (data) => { window.__cloudWrites++; store.set(path, clone(data)); notify(path); },
+      update: async (data) => { store.set(path, Object.assign(clone(store.get(path) || {}), clone(data))); notify(path); },
+      delete: async () => { store.delete(path); notify(path); },
+      onSnapshot: (fn) => { listeners.push({ path, fn }); setTimeout(() => fn(snapOf(path)), 0); return () => {}; },
+      collection: (sub) => colRef(path + '/' + sub) });
+    const colRef = (path) => ({ path, doc: (id) => docRef(path + '/' + id),
+      get: async () => { const depth = path.split('/').length + 1; const docs = [...store.keys()].filter((k) => k.startsWith(path + '/') && k.split('/').length === depth).sort().map(snapOf); return { docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata: { fromCache: false, hasPendingWrites: false } }; } });
+    const db = { doc: docRef, collection: colRef };
+    const user = { id: async () => 'u_test', isOwner: async () => true, canEdit: async () => true, can: async () => true, me: async () => ({ id: 'u_test' }) };
+    window.__setRemote = (path, data) => { store.set(path, data); notify(path); };
+    window.claude = { use: (name) => new Promise((r) => setTimeout(() => r(name === 'db' ? db : name === 'user' ? user : null), 30)) };
+  };
+  const dumpCloud = (page) => page.evaluate(() => Object.fromEntries(window.__cloud));
+  const ROOT = 'data/users/u_test/state';
+
+  console.log('account sync');
+  let cloudAfterA = null;
+  await test('first device with an empty account uploads its data, then syncs each change', { browser, init: fakeRuntime, initArg: {} }, async (page) => {
+    await page.waitForTimeout(1500);
+    let cloud = await dumpCloud(page);
+    assert.ok(cloud[ROOT], 'settings document written');
+    assert.strictEqual(cloud[ROOT].state.k401Balance, 125000);
+    assert.strictEqual(cloud[ROOT].state.paycheck.k401Type, 'roth');
+    const monthKeys = Object.keys(cloud).filter((k) => k.startsWith(ROOT + '/months/'));
+    const total = monthKeys.reduce((n, k) => n + cloud[k].entries.length, 0);
+    assert.strictEqual(total, await page.evaluate(() => App.state.entries.length), 'every entry uploaded');
+    assert.deepStrictEqual(cloud[ROOT].months, monthKeys.map((k) => k.split('/').pop()).sort());
+    assert.strictEqual(await text(page, '#sync-chip'), 'Synced');
+    await addEntry(page, { amount: '42.42', cat: 'Fun', note: 'SyncMe' });
+    await page.waitForTimeout(1800);
+    cloud = await dumpCloud(page);
+    const mk = await page.evaluate(() => App.today().slice(0, 7));
+    assert.ok(cloud[ROOT + '/months/' + mk].entries.some((e) => e.note === 'SyncMe' && e.amount === 42.42), 'new entry reached the account');
+    const writes = await page.evaluate(() => window.__cloudWrites);
+    assert.ok(writes <= monthKeys.length + 4, 'only changed months rewritten (' + writes + ' writes)');
+    cloudAfterA = cloud;
+  });
+  await test('a fresh device adopts the account data exactly', { browser, init: fakeRuntime, initArg: cloudAfterA }, async (page) => {
+    await page.waitForTimeout(800);
+    const notes = await page.evaluate(() => App.state.entries.filter((e) => e.note === 'SyncMe').length);
+    assert.strictEqual(notes, 1, 'history from the other device is here');
+    const cloudTotal = Object.keys(cloudAfterA).filter((k) => k.startsWith(ROOT + '/months/')).reduce((n, k) => n + cloudAfterA[k].entries.length, 0);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), cloudTotal, 'no duplicates, nothing lost');
+    assert.strictEqual(await text(page, '#sync-chip'), 'Synced');
+    await page.click('#btn-settings');
+    assert.ok((await text(page, '#sync-status')).includes('Saved to your Claude account'));
+    await page.click('#settings-close');
+    // a change made on the other device arrives live
+    const remote = JSON.parse(JSON.stringify(cloudAfterA[ROOT])); remote.state.k401Balance = 130000; remote.updatedAt = Date.now() + 1000; remote.writer = 'other-device';
+    await page.evaluate(([path, data]) => window.__setRemote(path, data), [ROOT, remote]);
+    await page.waitForTimeout(400);
+    assert.strictEqual(await page.evaluate(() => App.state.k401Balance), 130000);
+    assert.ok((await text(page, '#toast-msg')).includes('another device'));
+  });
+  await test('without the Claude runtime the app stays local and shows no sync chip', O, async (page) => {
+    assert.ok(await page.isHidden('#sync-chip'));
+    assert.strictEqual(await page.evaluate(() => App.cloudActive), false);
   });
 
   console.log('accessibility');

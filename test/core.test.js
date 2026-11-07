@@ -245,6 +245,223 @@ test('negative contributions and zero withdrawal rate do not crash', () => {
   assert.strictEqual(r.target, Infinity); assert.strictEqual(r.monthsToTarget, null);
 });
 
+
+console.log('debt interest options');
+test('compounding options change the monthly rate', () => {
+  close(C.monthlyDebtRate({ rate: 12, compounding: 'monthly' }), 0.01);
+  assert.ok(C.monthlyDebtRate({ rate: 12, compounding: 'daily' }) > 0.01 && C.monthlyDebtRate({ rate: 12, compounding: 'daily' }) < 0.0101);
+  assert.strictEqual(C.monthlyDebtRate({ rate: 12, compounding: 'none' }), 0);
+  assert.strictEqual(C.normalizeDebt({ compounding: 'weird' }).compounding, 'monthly');
+  assert.strictEqual(C.normalizeDebt({ compounding: 'daily' }).compounding, 'daily');
+});
+test('no-interest debt pays off with zero interest regardless of APR', () => {
+  const p = C.debtPayoff({ balance: 1200, rate: 29.99, payment: 100, compounding: 'none' });
+  assert.strictEqual(p.months, 12); assert.strictEqual(p.interest, 0);
+});
+test('simple interest charges on the original balance only', () => {
+  // $1200 at 12% simple: $12/month flat. Payment 112 -> principal 100/mo -> 12 months, interest 144.
+  const p = C.debtPayoff({ balance: 1200, rate: 12, payment: 112, compounding: 'simple' });
+  assert.strictEqual(p.months, 12); assert.strictEqual(p.interest, 144);
+  const c = C.debtPayoff({ balance: 1200, rate: 12, payment: 112, compounding: 'monthly' });
+  assert.ok(c.interest < p.interest, 'compound on a shrinking balance costs less than flat simple interest');
+});
+test('daily compounding costs a little more than monthly', () => {
+  const m = C.debtPayoff({ balance: 5000, rate: 24, payment: 250, compounding: 'monthly' });
+  const d = C.debtPayoff({ balance: 5000, rate: 24, payment: 250, compounding: 'daily' });
+  assert.ok(d.interest > m.interest && d.interest < m.interest * 1.03, `${d.interest} vs ${m.interest}`);
+});
+test('projection honours per-debt compounding', () => {
+  const noInt = C.retirementCalc(Object.assign({}, base, { returnRate: 0, annualSpending: 480, monthlyContribution: 500, debts: [{ name: 'Promo', balance: 1000, rate: 99, payment: 500, compounding: 'none' }] }));
+  assert.strictEqual(noInt.monthsToTarget, 13, 'same as the zero-rate case');
+  assert.strictEqual(noInt.debts[0].compounding, 'none');
+});
+
+console.log('funds & forecast');
+test('embedded S&P 500 history is complete and has the expected long-run CAGR', () => {
+  const s = C.sp500Series();
+  assert.strictEqual(s.length, 98); assert.strictEqual(s[0].year, 1928); assert.strictEqual(s[97].year, 2025);
+  const st = C.seriesStats(s);
+  assert.ok(st.cagr > 9.5 && st.cagr < 10.5, 'cagr ' + st.cagr);
+  assert.strictEqual(st.best.year, 1954); assert.strictEqual(st.worst.year, 1931);
+  assert.ok(st.positiveShare > 0.7 && st.positiveShare < 0.76);
+});
+test('seriesStats on a tiny hand-computed series', () => {
+  const st = C.seriesStats([{ year: 1, r: 10 }, { year: 2, r: -10 }]);
+  close(st.cagr, (Math.sqrt(1.1 * 0.9) - 1) * 100); close(st.mean, 0); close(st.stdev, Math.sqrt(200)); assert.strictEqual(st.growth10k, 9900);
+  assert.strictEqual(C.seriesStats([]).years, 0);
+});
+test('fund series and long-run basis splice actual years over the S&P proxy', () => {
+  const fx = C.fundSeries('FXAIX'); assert.strictEqual(fx[0].year, 2012); assert.strictEqual(fx[fx.length - 1].year, 2025); assert.strictEqual(fx[0].r, 15.99);
+  const lf = C.fundSeries('LFIKX'); assert.strictEqual(lf[0].year, 2016); assert.strictEqual(lf.length, 10); assert.strictEqual(lf[6].r, -15.44);
+  const bfx = C.fundBasisSeries('FXAIX'); assert.strictEqual(bfx.length, 98);
+  const y2011 = bfx.find(p => p.year === 2011); assert.strictEqual(y2011.actual, false); close(y2011.r, 2.10 - 0.015, 0.01);
+  const y2012 = bfx.find(p => p.year === 2012); assert.strictEqual(y2012.actual, true); assert.strictEqual(y2012.r, 15.99);
+  const blf = C.fundBasisSeries('LFIKX'); const y2015 = blf.find(p => p.year === 2015); close(y2015.r, 1.38 * 0.85 - 0.40, 0.01);
+  assert.ok(C.seriesStats(blf).cagr < C.seriesStats(bfx).cagr, 'lower beta and higher fee give a lower long-run CAGR');
+  assert.deepStrictEqual(C.fundSeries('custom'), []); assert.deepStrictEqual(C.fundBasisSeries('nope'), []);
+});
+test('realRate uses the Fisher relation', () => { close(C.realRate(10, 3), (1.1 / 1.03 - 1) * 100); close(C.realRate(3, 3), 0); });
+test('deterministic forecast: 0% return is balance plus contributions', () => {
+  const f = C.forecastBalance({ balance: 1000, monthlyContribution: 100, years: 3, annualReturnPct: 0 });
+  assert.deepStrictEqual(f.map(p => p.balance), [1000, 2200, 3400, 4600]);
+  const g = C.forecastBalance({ balance: 1000, monthlyContribution: 0, years: 1, annualReturnPct: 6 });
+  close(g[1].balance, 1060, 0.01);
+});
+test('bootstrap forecast is deterministic, ordered, and collapses to the exact path for a constant series', () => {
+  const a = C.bootstrapForecast({ balance: 10000, monthlyContribution: 500, years: 10, returns: C.SP500.returns, runs: 300, seed: 7 });
+  const b = C.bootstrapForecast({ balance: 10000, monthlyContribution: 500, years: 10, returns: C.SP500.returns, runs: 300, seed: 7 });
+  assert.deepStrictEqual(a, b);
+  assert.strictEqual(a.length, 11); assert.strictEqual(a[0].p50, 10000);
+  a.forEach(p => assert.ok(p.p10 <= p.p50 && p.p50 <= p.p90));
+  assert.ok(a[10].p90 > a[10].p10);
+  const c = C.bootstrapForecast({ balance: 1000, monthlyContribution: 0, years: 2, returns: [10], runs: 5, seed: 1 });
+  close(c[2].p50, 1210, 0.01); close(c[2].p10, 1210, 0.01);
+  assert.deepStrictEqual(C.bootstrapForecast({ balance: 1, years: 2, returns: [] }), []);
+});
+test('normalizeState carries fund choices', () => {
+  const s = C.normalizeState({ k401Fund: 'LFIKX', k401ReturnOverride: '8.5', inflation: 2 }, TODAY);
+  assert.strictEqual(s.k401Fund, 'LFIKX'); assert.strictEqual(s.k401ReturnOverride, 8.5); assert.strictEqual(s.inflation, 2);
+  const d = C.normalizeState({ k401Fund: 'XXXX' }, TODAY); assert.strictEqual(d.k401Fund, 'FXAIX'); assert.strictEqual(d.k401ReturnOverride, null); assert.strictEqual(d.inflation, 3);
+  assert.strictEqual(C.normalizeState({ k401Fund: 'custom' }, TODAY).k401Fund, 'custom');
+});
+
+
+console.log('paycheck');
+test('2026 federal tax brackets with the standard deduction', () => {
+  // single: $66,100 wages - $16,100 deduction = $50,000 taxable -> 10% of 12,400 + 12% of 37,600 = 1,240 + 4,512
+  close(C.federalTax(66100, 'single'), 5752);
+  assert.strictEqual(C.federalTax(10000, 'single'), 0);
+  // married: $132,200 - 32,200 = 100,000 taxable -> 2,480 + 12% of 75,200 = 2,480 + 9,024
+  close(C.federalTax(132200, 'married'), 11504);
+  // crosses into the 22% bracket: single taxable 60,000 -> 1,240 + 4,560 + 22% of 9,600 = 7,912
+  close(C.federalTax(76100, 'single'), 7912);
+});
+test('paycheck breakdown: 401k, match, FICA, federal, state and net', () => {
+  // $3,000 biweekly gross = $78,000/yr. 6% 401k = $180; 50% match up to 6% = $90; health $100 pre-tax.
+  const b = C.paycheckBreakdown({ gross: 3000, frequency: 'biweekly', k401Pct: 6, matchPct: 50, matchCapPct: 6, health: 100, stateRate: 5, filingStatus: 'single' });
+  assert.strictEqual(b.k401, 180); assert.strictEqual(b.match, 90); assert.strictEqual(b.pretax, 280); assert.strictEqual(b.taxableWages, 2720);
+  close(b.socialSecurity, C.round2(2900 * 0.062), 0.01); close(b.medicare, C.round2(2900 * 0.0145), 0.01);
+  close(b.federal, C.round2(C.federalTax(2720 * 26, 'single') / 26), 0.01);
+  close(b.state, 136, 0.01);
+  close(b.net, C.round2(3000 - 280 - b.federal - b.state - b.socialSecurity - b.medicare), 0.005);
+  close(b.monthly.net, C.round2(b.net * 26 / 12), 0.01); assert.strictEqual(b.annual.gross, 78000); assert.strictEqual(b.periodsPerYear, 26);
+  assert.ok(b.effectiveTaxRate > 0.15 && b.effectiveTaxRate < 0.25, 'plausible total tax rate ' + b.effectiveTaxRate);
+});
+test('match is capped at the employer cap and manual taxes override the estimate', () => {
+  const b = C.paycheckBreakdown({ gross: 1000, frequency: 'monthly', k401Pct: 10, matchPct: 100, matchCapPct: 4 });
+  assert.strictEqual(b.k401, 100); assert.strictEqual(b.match, 40);
+  const m = C.paycheckBreakdown({ gross: 1000, frequency: 'monthly', k401Pct: 0, taxMode: 'manual', federalManual: 80, stateManual: 20, ssManual: 62, medicareManual: 14.5 });
+  assert.strictEqual(m.taxes, 176.5); assert.strictEqual(m.net, 823.5);
+  const z = C.paycheckBreakdown({}); assert.strictEqual(z.net, 0); assert.strictEqual(z.gross, 0);
+});
+test('social security stops at the wage base', () => {
+  const b = C.paycheckBreakdown({ gross: 20000, frequency: 'monthly', k401Pct: 0 }); // $240k/yr
+  close(b.socialSecurity, C.round2(184500 / 12 * 0.062), 0.01);
+  assert.ok(b.medicare > 20000 * 0.0145, 'additional medicare applies above $200k');
+});
+test('paycheck entries: net income, employee 401k (+roth) and employer match', () => {
+  const es = C.paycheckEntries({ gross: 3000, frequency: 'biweekly', k401Pct: 6, matchPct: 50, matchCapPct: 6, roth: 50 }, '2026-11-13');
+  assert.deepStrictEqual(es.map(e => [e.type, e.cat, e.amount]), [['income', 'Paycheck', C.paycheckBreakdown({ gross: 3000, frequency: 'biweekly', k401Pct: 6, matchPct: 50, matchCapPct: 6, roth: 50 }).net], ['k401', 'My contribution', 230], ['k401', 'Employer match', 90]]);
+  assert.ok(es.every(e => e.date === '2026-11-13' && e.recurring === 'paycheck'));
+});
+test('monthlyize converts pay frequencies', () => {
+  assert.strictEqual(C.monthlyize(1000, 'biweekly'), 2166.67); assert.strictEqual(C.monthlyize(100, 'weekly'), 433.33); assert.strictEqual(C.monthlyize(120, 'yearly'), 10); assert.strictEqual(C.monthlyize(15.99, 'monthly'), 15.99);
+});
+
+console.log('recurring');
+test('advanceDate keeps the anchor day across short months', () => {
+  assert.strictEqual(C.advanceDate('2026-01-31', 'monthly', 31), '2026-02-28');
+  assert.strictEqual(C.advanceDate('2026-02-28', 'monthly', 31), '2026-03-31');
+  assert.strictEqual(C.advanceDate('2026-11-07', 'weekly'), '2026-11-14');
+  assert.strictEqual(C.advanceDate('2026-11-07', 'biweekly'), '2026-11-21');
+  assert.strictEqual(C.advanceDate('2026-11-01', 'semimonthly'), '2026-11-16');
+  assert.strictEqual(C.advanceDate('2026-11-16', 'semimonthly'), '2026-12-01');
+  assert.strictEqual(C.advanceDate('2024-02-29', 'yearly', 29), '2025-02-28');
+});
+test('postDue logs every missed occurrence once and advances the rule', () => {
+  const st = C.normalizeState({ recurring: [{ id: 'nf', name: 'Netflix', amount: 15.99, cat: 'Fun', frequency: 'monthly', nextDate: '2026-09-07' }, { id: 'off', name: 'Paused', amount: 50, cat: 'Fun', frequency: 'monthly', nextDate: '2026-01-01', active: false }, { id: 'fut', name: 'Future', amount: 5, cat: 'Fun', frequency: 'monthly', nextDate: '2026-12-01' }] }, TODAY);
+  const r = C.postDue(st, TODAY);
+  assert.ok(r.changed);
+  assert.deepStrictEqual(r.entries.map(e => [e.date, e.amount, e.recurring, e.note]), [['2026-09-07', 15.99, 'nf', 'Netflix'], ['2026-10-07', 15.99, 'nf', 'Netflix'], ['2026-11-07', 15.99, 'nf', 'Netflix']]);
+  assert.strictEqual(r.recurring.find(x => x.id === 'nf').nextDate, '2026-12-07');
+  assert.strictEqual(r.recurring.find(x => x.id === 'off').nextDate, '2026-01-01', 'paused rule untouched');
+  const again = C.postDue(Object.assign({}, st, { recurring: r.recurring }), TODAY);
+  assert.strictEqual(again.entries.length, 0, 'nothing double-posted');
+  assert.ok(!again.changed);
+});
+test('postDue logs due paychecks with their 401k entries and advances the pay date', () => {
+  const st = C.normalizeState({ paycheck: { gross: 2000, frequency: 'biweekly', nextPayDate: '2026-10-30', k401Pct: 5, matchPct: 100, matchCapPct: 3 } }, TODAY);
+  const r = C.postDue(st, TODAY);
+  assert.strictEqual(r.entries.filter(e => e.type === 'income').length, 1);
+  assert.strictEqual(r.entries.filter(e => e.type === 'k401').length, 2);
+  assert.strictEqual(r.paycheck.nextPayDate, '2026-11-13');
+  const off = C.postDue(C.normalizeState({ paycheck: { gross: 2000, nextPayDate: '2026-10-30', autoLog: false } }, TODAY), TODAY);
+  assert.strictEqual(off.entries.length, 0);
+});
+test('upcoming lists the next 30 days in date order, including paychecks', () => {
+  const st = C.normalizeState({ recurring: [{ id: 'a', name: 'Rent', amount: 1450, cat: 'Housing', frequency: 'monthly', nextDate: '2026-12-01' }, { id: 'b', name: 'Gym', amount: 40, cat: 'Health', frequency: 'weekly', nextDate: '2026-11-10' }], paycheck: { gross: 1000, frequency: 'biweekly', nextPayDate: '2026-11-20' } }, TODAY);
+  const u = C.upcoming(st, TODAY, 30);
+  assert.deepStrictEqual(u.map(x => x.date + ' ' + x.name), ['2026-11-10 Gym', '2026-11-17 Gym', '2026-11-20 Paycheck', '2026-11-24 Gym', '2026-12-01 Rent', '2026-12-01 Gym', '2026-12-04 Paycheck']);
+  assert.strictEqual(C.recurringMonthlyTotal(st.recurring, 'expense'), C.round2(1450 + 40 * 52 / 12));
+});
+test('normalizeRule and normalizePaycheck repair bad input', () => {
+  const r = C.normalizeRule({ name: '', amount: -3, frequency: 'daily', nextDate: 'bad', type: 'nope' }, TODAY);
+  assert.strictEqual(r.name, 'Recurring'); assert.strictEqual(r.amount, 0); assert.strictEqual(r.frequency, 'monthly'); assert.strictEqual(r.nextDate, TODAY); assert.strictEqual(r.type, 'expense'); assert.strictEqual(r.anchorDay, 7); assert.ok(r.active);
+  const p = C.normalizePaycheck({ gross: '2500', frequency: 'nope', filingStatus: 'x', k401Pct: 500 });
+  assert.strictEqual(p.gross, 2500); assert.strictEqual(p.frequency, 'biweekly'); assert.strictEqual(p.filingStatus, 'single'); assert.strictEqual(p.k401Pct, 100); assert.strictEqual(p.taxMode, 'auto');
+  const st = C.normalizeState({}, TODAY); assert.deepStrictEqual(st.recurring, []); assert.strictEqual(st.paycheck.matchPct, 50);
+});
+
+
+console.log('roth 401k & odds');
+test('Roth 401k is after-tax: taxable wages keep the contribution, take-home drops by the tax on it', () => {
+  const trad = C.paycheckBreakdown({ gross: 6000, frequency: 'monthly', k401Pct: 6, k401Type: 'traditional' });
+  const roth = C.paycheckBreakdown({ gross: 6000, frequency: 'monthly', k401Pct: 6, k401Type: 'roth' });
+  assert.strictEqual(trad.taxableWages, 5640); assert.strictEqual(roth.taxableWages, 6000);
+  assert.strictEqual(roth.k401, 360); assert.strictEqual(roth.pretax, 0); assert.strictEqual(roth.posttax, 360);
+  assert.ok(roth.federal > trad.federal, 'more federal tax on Roth');
+  assert.strictEqual(roth.socialSecurity, trad.socialSecurity, 'FICA is the same either way');
+  close(trad.net - roth.net, roth.federal - trad.federal, 0.011);
+  assert.strictEqual(C.paycheckEntries({ gross: 6000, frequency: 'monthly', k401Pct: 6, k401Type: 'roth' }, '2026-12-01')[1].amount, 360);
+  assert.strictEqual(C.normalizePaycheck({}).k401Type, 'traditional'); assert.strictEqual(C.normalizePaycheck({ k401Type: 'roth' }).k401Type, 'roth');
+});
+test('Roth 401k balance is not reduced by the withdrawal tax rate', () => {
+  const t = C.retirementCalc(Object.assign({}, base, { k401Balance: 100000, taxRate: 15 }));
+  const r = C.retirementCalc(Object.assign({}, base, { k401Balance: 100000, taxRate: 15, k401Type: 'roth' }));
+  assert.strictEqual(t.assets, 85000); assert.strictEqual(r.assets, 100000); assert.strictEqual(r.k401Type, 'roth');
+});
+test('simulate accepts a per-month rate function', () => {
+  const s = C.simulate(1000, [], 0, (m) => (m === 1 ? 0.1 : 0), 2, 1e9);
+  close(s.path[1].assets, 1100); close(s.path[2].assets, 1100);
+});
+test('retirementOdds: constant history matches the deterministic projection', () => {
+  // 6% nominal every year with 0% inflation must equal retirementCalc at a 6% real return.
+  const inp = Object.assign({}, base, { rothBalance: 100000, monthlyContribution: 1000, annualSpending: 40000, returnRate: 6 });
+  const det = C.retirementCalc(inp);
+  const odds = C.retirementOdds(inp, { returns: [6], inflation: 0, runs: 5 });
+  assert.strictEqual(odds.years.length, det.projection.length);
+  odds.years.forEach((y, i) => { close(y.p50, det.projection[i].netWorth, 0.05); close(y.p10, y.p90, 0.05); });
+  close(odds.reachAge.p50, det.ageAtTarget, 1e-9);
+  assert.strictEqual(odds.probByTargetAge, det.ageAtTarget <= inp.targetAge ? 1 : 0);
+});
+test('retirementOdds on real S&P history: ordered percentiles, deterministic, sane probability', () => {
+  const inp = Object.assign({}, base, { age: 30, targetAge: 65, k401Balance: 125000, k401Type: 'roth', monthlyContribution: 1200, annualSpending: 50000, debts: [{ name: 'Car', balance: 22000, rate: 6.5, payment: 430 }] });
+  const a = C.retirementOdds(inp, { returns: C.SP500.returns, inflation: 3, runs: 300 });
+  const b = C.retirementOdds(inp, { returns: C.SP500.returns, inflation: 3, runs: 300 });
+  assert.deepStrictEqual(a, b);
+  a.years.forEach(y => assert.ok(y.p10 <= y.p50 && y.p50 <= y.p90));
+  assert.ok(a.years[0].p10 === a.years[0].p90, 'year 0 is known');
+  assert.ok(a.probByTargetAge > 0.5 && a.probByTargetAge <= 1, 'prob ' + a.probByTargetAge);
+  assert.ok(a.reachAge.p10 <= a.reachAge.p50 && a.reachAge.p50 <= a.reachAge.p90);
+  assert.strictEqual(C.retirementOdds(inp, { returns: [] }), null);
+  assert.strictEqual(C.retirementOdds(Object.assign({}, inp, { withdrawalRate: 0 }), { returns: [5] }), null);
+});
+test('normalizeState keeps updatedAt and returnFromFund', () => {
+  const s = C.normalizeState({ updatedAt: 123, retirement: { returnFromFund: false } }, TODAY);
+  assert.strictEqual(s.updatedAt, 123); assert.strictEqual(s.retirement.returnFromFund, false);
+  const d = C.normalizeState({}, TODAY); assert.strictEqual(d.updatedAt, 0); assert.strictEqual(d.retirement.returnFromFund, true);
+});
+
 console.log('formatting');
 test('money formats', () => {
   assert.strictEqual(C.fmtMoney(1234.5), '$1,234.50');

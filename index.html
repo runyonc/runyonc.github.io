@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eef2f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#070a12" media="(prefers-color-scheme: dark)">
 <title>Money</title>
 <meta name="description" content="A personal finance tracker: spending, income, 401k, charts and a retirement target. Everything stays on your device.">
 <style>
@@ -14,38 +14,45 @@
    ============================================================ */
 :root {
   color-scheme: light;
-  --bg: #f4f4f1;
-  --surface: #fcfcfb;
-  --surface-2: #efeeea;
-  --surface-3: #e4e3dd;
-  --border: rgba(11, 11, 11, 0.10);
-  --border-strong: rgba(11, 11, 11, 0.22);
-  --text: #0b0b0b;
-  --text-2: #52514e;
-  --muted: #898781;
-  --accent: #2a78d6;
+  --bg: #eef2f8;
+  --bg-glow-1: rgba(11, 127, 209, 0.10);
+  --bg-glow-2: rgba(106, 90, 224, 0.10);
+  --bg-grid: rgba(20, 60, 120, 0.06);
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-solid: #ffffff;
+  --surface-2: #e9eff8;
+  --surface-3: #d9e3f1;
+  --border: rgba(20, 60, 120, 0.13);
+  --border-strong: rgba(20, 60, 120, 0.30);
+  --text: #0b1526;
+  --text-2: #45546f;
+  --muted: #6f7e9c;
+  --accent: #0b7fd1;
+  --accent-2: #6a5ae0;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(42, 120, 214, 0.12);
-  --income: #1baf7a;
-  --income-text: #0e7a55;
-  --spend: #eb6834;
-  --spend-text: #0b0b0b;
-  --k401: #6250d6;
-  --k401-text: #4f3fc4;
-  --k401-match: #eda100;
-  --good: #0ca30c;
-  --warn: #f0932b;
-  --danger: #d03b3b;
-  --danger-text: #b92f2f;
-  --danger-soft: rgba(208, 59, 59, 0.12);
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 4px 16px rgba(11, 11, 11, 0.05);
-  --shadow-lg: 0 12px 40px rgba(11, 11, 11, 0.18);
+  --accent-soft: rgba(11, 127, 209, 0.12);
+  --chart-accent: #0b7fd1;
+  --glow: 0 0 18px rgba(11, 127, 209, 0.28);
+  --income: #0f9d6e;
+  --income-text: #0a7a55;
+  --spend: #e8561f;
+  --spend-text: #0b1526;
+  --k401: #6a5ae0;
+  --k401-text: #5443c9;
+  --k401-match: #c98500;
+  --good: #0f9d6e;
+  --warn: #e8930c;
+  --danger: #d93652;
+  --danger-text: #b8233d;
+  --danger-soft: rgba(217, 54, 82, 0.12);
+  --grid: #dfe6f0;
+  --axis: #c3cddc;
+  --shadow: 0 1px 2px rgba(11, 21, 38, 0.05), 0 8px 24px rgba(11, 21, 38, 0.06);
+  --shadow-lg: 0 16px 48px rgba(11, 21, 38, 0.18);
 
-  --radius: 14px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-xs: 5px;
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -65,7 +72,8 @@
   --fs-hero: 40px;
 
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --tabbar-h: 60px;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, "DejaVu Sans Mono", ui-monospace, monospace;
+  --tabbar-h: 62px;
   --max-w: 600px;
   --dur: 160ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
@@ -73,66 +81,80 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-2: #242422;
-    --surface-3: #2f2f2c;
-    --border: rgba(255, 255, 255, 0.10);
-    --border-strong: rgba(255, 255, 255, 0.24);
-    --text: #f0efec;
-    --text-2: #c3c2b7;
-    --muted: #8f8d86;
-    --accent: #3987e5;
-    --accent-ink: #ffffff;
-    --accent-soft: rgba(57, 135, 229, 0.18);
-    --income: #199e70;
-    --income-text: #4ad39f;
-    --spend: #d95926;
-    --spend-text: #f0efec;
-    --k401: #9085e9;
-    --k401-text: #aba3f0;
-    --k401-match: #c98500;
-    --good: #0ca30c;
-    --warn: #f0932b;
-    --danger: #e35050;
-    --danger-text: #f07070;
-    --danger-soft: rgba(227, 80, 80, 0.16);
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+    --bg: #070a12;
+    --bg-glow-1: rgba(56, 217, 255, 0.13);
+    --bg-glow-2: rgba(139, 124, 232, 0.14);
+    --bg-grid: rgba(90, 150, 255, 0.055);
+    --surface: rgba(15, 22, 38, 0.80);
+    --surface-solid: #0f1626;
+    --surface-2: rgba(70, 100, 160, 0.20);
+    --surface-3: rgba(90, 125, 190, 0.30);
+    --border: rgba(120, 170, 255, 0.16);
+    --border-strong: rgba(120, 170, 255, 0.36);
+    --text: #e9f0ff;
+    --text-2: #aab8d6;
+    --muted: #7a8aad;
+    --accent: #38d9ff;
+    --accent-2: #8b7ce8;
+    --accent-ink: #041019;
+    --accent-soft: rgba(56, 217, 255, 0.14);
+    --chart-accent: #1b9bd3;
+    --glow: 0 0 22px rgba(56, 217, 255, 0.30);
+    --income: #1aa872;
+    --income-text: #49e3a6;
+    --spend: #ec6230;
+    --spend-text: #e9f0ff;
+    --k401: #8b7ce8;
+    --k401-text: #b3a8ff;
+    --k401-match: #c28700;
+    --good: #49e3a6;
+    --warn: #f5b23a;
+    --danger: #ff4d6d;
+    --danger-text: #ff8099;
+    --danger-soft: rgba(255, 77, 109, 0.16);
+    --grid: #1b2640;
+    --axis: #2c3a5c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(120, 170, 255, 0.12);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-2: #242422;
-  --surface-3: #2f2f2c;
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.24);
-  --text: #f0efec;
-  --text-2: #c3c2b7;
-  --muted: #8f8d86;
-  --accent: #3987e5;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(57, 135, 229, 0.18);
-  --income: #199e70;
-  --income-text: #4ad39f;
-  --spend: #d95926;
-  --spend-text: #f0efec;
-  --k401: #9085e9;
-  --k401-text: #aba3f0;
-  --k401-match: #c98500;
-  --good: #0ca30c;
-  --warn: #f0932b;
-  --danger: #e35050;
-  --danger-text: #f07070;
-  --danger-soft: rgba(227, 80, 80, 0.16);
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --bg: #070a12;
+  --bg-glow-1: rgba(56, 217, 255, 0.13);
+  --bg-glow-2: rgba(139, 124, 232, 0.14);
+  --bg-grid: rgba(90, 150, 255, 0.055);
+  --surface: rgba(15, 22, 38, 0.80);
+  --surface-solid: #0f1626;
+  --surface-2: rgba(70, 100, 160, 0.20);
+  --surface-3: rgba(90, 125, 190, 0.30);
+  --border: rgba(120, 170, 255, 0.16);
+  --border-strong: rgba(120, 170, 255, 0.36);
+  --text: #e9f0ff;
+  --text-2: #aab8d6;
+  --muted: #7a8aad;
+  --accent: #38d9ff;
+  --accent-2: #8b7ce8;
+  --accent-ink: #041019;
+  --accent-soft: rgba(56, 217, 255, 0.14);
+  --chart-accent: #1b9bd3;
+  --glow: 0 0 22px rgba(56, 217, 255, 0.30);
+  --income: #1aa872;
+  --income-text: #49e3a6;
+  --spend: #ec6230;
+  --spend-text: #e9f0ff;
+  --k401: #8b7ce8;
+  --k401-text: #b3a8ff;
+  --k401-match: #c28700;
+  --good: #49e3a6;
+  --warn: #f5b23a;
+  --danger: #ff4d6d;
+  --danger-text: #ff8099;
+  --danger-soft: rgba(255, 77, 109, 0.16);
+  --grid: #1b2640;
+  --axis: #2c3a5c;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(120, 170, 255, 0.12);
 }
 
 /* ============================================================
@@ -189,19 +211,19 @@ a { color: var(--accent); }
    Layout
    ============================================================ */
 .app-header {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
 .app-header .inner {
   max-width: var(--max-w); margin: 0 auto;
-  padding: calc(var(--sp-3) + env(safe-area-inset-top, 0px)) var(--sp-4) var(--sp-3);
+  padding-block: var(--sp-3); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
 }
 .app-title { display: flex; align-items: baseline; gap: var(--sp-2); }
 .app-title .sub { color: var(--muted); font-size: var(--fs-sm); }
-main { max-width: var(--max-w); margin: 0 auto; padding: var(--sp-4); }
+main { max-width: var(--max-w); margin: 0 auto; padding-block: var(--sp-4); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .view { display: none; }
 .view.active { display: flex; flex-direction: column; gap: var(--sp-4); animation: fade var(--dur) var(--ease); }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -260,7 +282,7 @@ main { max-width: var(--max-w); margin: 0 auto; padding: var(--sp-4); }
 /* Forms */
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field > label, .field > .label { font-size: var(--fs-sm); font-weight: 600; color: var(--text-2); }
-.field .help { font-size: var(--fs-xs); color: var(--muted); }
+.field .help, .help { font-size: var(--fs-xs); color: var(--muted); }
 .field .error { font-size: var(--fs-xs); color: var(--danger-text); display: none; }
 .field.invalid .error { display: block; }
 .field.invalid .input { border-color: var(--danger); }
@@ -392,7 +414,7 @@ input[type="date"].input { min-width: 0; }
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.tabbar .inner { max-width: var(--max-w); margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--tabbar-h); }
+.tabbar .inner { max-width: var(--max-w); margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--tabbar-h); }
 .tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 600; transition: color var(--dur); -webkit-tap-highlight-color: transparent; }
 .tab svg { width: 24px; height: 24px; }
 .tab[aria-selected="true"] { color: var(--accent); }
@@ -467,8 +489,11 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .data-table th:first-child, .data-table td:first-child { text-align: left; }
 .data-table th { color: var(--muted); font-weight: 600; }
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-#debt-table th, #debt-table td { white-space: normal; padding: 6px 4px; }
-#debt-table th:first-child, #debt-table td:first-child { overflow-wrap: anywhere; }
+#debt-table { font-size: 11px; width: 100%; }
+#debt-table th, #debt-table td { white-space: nowrap; padding: 6px 3px; }
+#debt-table th:first-child, #debt-table td:first-child { padding-left: 0; }
+#debt-table th:last-child, #debt-table td:last-child { padding-right: 0; }
+#debt-table tbody th:first-child { white-space: normal; overflow-wrap: normal; min-width: 52px; max-width: 96px; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .table-toggle { font-size: var(--fs-xs); color: var(--accent); font-weight: 600; min-height: 32px; padding: 0 6px; border-radius: 6px; }
 .table-toggle:hover { background: var(--accent-soft); }
 
@@ -495,15 +520,143 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 .override-row .field { flex: 1; }
 .check { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--text-2); min-height: 32px; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ============================================================
+   Futuristic skin
+   ============================================================ */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 520px at 8% -8%, var(--bg-glow-1), transparent 60%),
+    radial-gradient(760px 460px at 100% 18%, var(--bg-glow-2), transparent 60%),
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: auto, auto, 32px 32px, 32px 32px;
+  background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+}
+.num, .tile .value, .hero, .amount-input, .entry .amt, .bar-row .val, .data-table td, .chart .axis-text, .day-head .tot, .tooltip .v, .debt-row .meta { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.tile .value { font-weight: 600; }
+.hero { font-weight: 600; }
+h1 { font-size: 17px; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; }
+.app-title::before { content: "//"; color: var(--accent); font-family: var(--font-mono); font-weight: 700; letter-spacing: 0; margin-right: 2px; }
+.app-title { align-items: center; gap: var(--sp-2); }
+.app-header { background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); border-bottom: 1px solid var(--border); }
+.app-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.6; }
+.app-header { position: sticky; }
+
+.card, .sheet { position: relative; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); }
+.card::before, .card::after { content: ""; position: absolute; width: 14px; height: 14px; border: 0 solid var(--accent); opacity: 0.7; pointer-events: none; }
+.card::before { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: var(--radius); }
+.card::after { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: var(--radius); }
+.card.flush { overflow: visible; }
+.card.flush > #entries { overflow: hidden; border-radius: 0 0 var(--radius) var(--radius); }
+
+.tile .label, .field > label, .field > .label, .day-head, .section-title h2, .settings-row .lbl, .legend, .amount-field .label, .seg button, .tab { text-transform: uppercase; letter-spacing: 0.08em; }
+.data-table th { letter-spacing: 0.02em; }
+.tile .label, .field > label, .field > .label, .amount-field .label { font-size: 11px; }
+.card-head h2, .sheet h2, summary, .month-nav h2, .plain-line { letter-spacing: 0.01em; }
+.tile { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative; overflow: hidden; }
+.tile::after { content: ""; position: absolute; left: 0; top: 0; width: 3px; height: 100%; background: var(--border-strong); opacity: 0.6; }
+.tile:has(.dot.income)::after { background: var(--income); opacity: 1; }
+.tile:has(.dot.expense)::after { background: var(--spend); opacity: 1; }
+.tile:has(.dot.k401)::after { background: var(--k401); opacity: 1; }
+.dot { box-shadow: 0 0 8px currentColor; }
+.dot.income { color: var(--income); } .dot.expense { color: var(--spend); } .dot.k401 { color: var(--k401); } .dot.accent { color: var(--accent); }
+
+.btn { border: 1px solid var(--border); background: var(--surface-2); }
+.btn.primary { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-2))); color: var(--accent-ink); border-color: transparent; box-shadow: var(--glow); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.danger.solid { box-shadow: 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); }
+.link-btn { text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-xs); }
+
+.input, select.input, textarea.input { background: color-mix(in srgb, var(--surface-solid) 55%, transparent); border: 1px solid var(--border-strong); box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+.input:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft), var(--glow); }
+.amount-input { border-bottom: 2px solid var(--border-strong); background: transparent; box-shadow: none; }
+.amount-input:focus-visible { box-shadow: 0 12px 24px -16px var(--accent); }
+.amount-wrap .currency { font-family: var(--font-mono); color: var(--accent); }
+
+.seg { background: color-mix(in srgb, var(--surface-solid) 55%, transparent); border: 1px solid var(--border); }
+.seg button { font-size: var(--fs-xs); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip { border: 1px solid var(--border); background: color-mix(in srgb, var(--surface-solid) 50%, transparent); }
+.chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent); }
+
+.meter { background: color-mix(in srgb, var(--surface-solid) 60%, transparent); border: 1px solid var(--border); height: 12px; }
+.meter .fill { background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+.meter.warn .fill { background: linear-gradient(90deg, var(--warn), #ff8a3d); box-shadow: 0 0 12px color-mix(in srgb, var(--warn) 55%, transparent); }
+.meter.over .fill { background: linear-gradient(90deg, var(--danger), #ff2d55); box-shadow: 0 0 12px color-mix(in srgb, var(--danger) 55%, transparent); }
+.meter.good .fill { background: linear-gradient(90deg, var(--income), var(--accent)); box-shadow: 0 0 12px color-mix(in srgb, var(--income) 55%, transparent); }
+.bar-row .track { background: color-mix(in srgb, var(--surface-solid) 60%, transparent); border: 1px solid var(--border); height: 12px; border-radius: 3px; }
+.bar-row .track .fill { background: linear-gradient(90deg, var(--chart-accent), var(--accent)); border-radius: 0 3px 3px 0; }
+
+.tabbar { background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); }
+.tabbar::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); }
+.tab { position: relative; font-size: 9px; letter-spacing: 0.03em; gap: 2px; }
+.tab[aria-selected="true"]::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 36px; height: 2px; background: var(--accent); box-shadow: var(--glow); border-radius: 0 0 2px 2px; }
+.tab[aria-selected="true"] svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+
+.entry .cat-icon { background: color-mix(in srgb, var(--surface-solid) 60%, transparent); border: 1px solid var(--border); }
+.entry .cat-icon.income { border-color: color-mix(in srgb, var(--income) 50%, transparent); }
+.entry .cat-icon.k401 { border-color: color-mix(in srgb, var(--k401) 50%, transparent); }
+.day-head { background: transparent; }
+.banner { border-left: 3px solid var(--accent); }
+.toast { background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg), var(--glow); }
+.toast button { color: var(--accent); }
+:root[data-theme="dark"] .toast button, :root:not([data-theme="light"]) .toast button, :root[data-theme="light"] .toast button { color: var(--accent); }
+dialog::backdrop { background: rgba(2, 6, 16, 0.6); backdrop-filter: blur(4px); }
+.sheet { background: var(--surface); }
+.tooltip { background: var(--surface-solid); border-color: var(--border-strong); }
+.chart .crosshair { stroke: var(--accent); opacity: 0.7; }
+.chart .label-text { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0; }
+.note-box { border: 1px dashed var(--border-strong); background: transparent; }
+details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm); }
+.plain-line strong { color: var(--accent); font-family: var(--font-mono); font-weight: 600; }
+.empty .icon { filter: grayscale(0.2); }
+.scanline { position: relative; }
+.hud-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+.stat { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; min-width: 0; }
+.stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat .v { font-family: var(--font-mono); font-weight: 600; font-size: var(--fs-base); white-space: nowrap; }
+.stat .s { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 380px) { .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.chart .band { opacity: 0.14; }
+.chart .band-edge { fill: none; stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.8; }
+@media (forced-colors: active) { .card::before, .card::after { display: none; } }
+.sync-chip { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.sync-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.sync-chip[data-s="synced"]::before { background: var(--good); box-shadow: 0 0 6px var(--good); }
+.sync-chip[data-s="syncing"]::before, .sync-chip[data-s="connecting"]::before { background: var(--accent); }
+.sync-chip[data-s="offline"]::before, .sync-chip[data-s="error"]::before, .sync-chip[data-s="full"]::before { background: var(--warn); }
+.pay-lines { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+.pay-line { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 4px 0; border-bottom: 1px solid var(--border); }
+.pay-line.sub { color: var(--text-2); padding-left: var(--sp-3); font-size: var(--fs-xs); border-bottom: 0; padding-top: 0; padding-bottom: 2px; }
+.pay-line.total { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--border-strong); padding-top: 8px; font-size: var(--fs-base); }
+.segbar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; gap: 2px; background: var(--surface-3); }
+.segbar span { display: block; height: 100%; }
+.rule-row { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--border); align-items: center; }
+.rule-row:first-child { border-top: 0; }
+.rule-row .name { font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.rule-row .meta { font-size: var(--fs-xs); color: var(--text-2); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.rule-row .acts { display: flex; gap: 4px; }
+.rule-row.paused { opacity: 0.6; }
+.upc { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+.upc:first-child { border-top: 0; }
+.upc .d { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-xs); width: 52px; flex: none; }
+.upc .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--muted); font-weight: 700; }
+
 </style>
 </head>
 <body>
 <header class="app-header">
   <div class="inner">
     <div class="app-title"><h1 id="page-title">Overview</h1><span class="sub" id="page-sub"></span></div>
+    <div class="row" style="gap: var(--sp-2)"><span class="sync-chip" id="sync-chip" role="status" aria-live="polite" hidden></span>
     <button class="btn icon ghost" id="btn-settings" aria-label="Settings" title="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
+    </button></div>
   </div>
 </header>
 
@@ -551,6 +704,15 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         <span class="text-2" id="budget-spent">$0 of $3,000</span>
         <strong id="budget-left">$3,000 left</strong>
       </div>
+    </section>
+
+    <section class="card" id="recurring-card" aria-labelledby="recur-h" hidden>
+      <div class="card-head"><h2 id="recur-h">Recurring</h2><button class="link-btn xs" id="recur-open">Manage</button></div>
+      <div class="tiles">
+        <div class="tile"><div class="label"><span class="dot income"></span>Take-home / mo</div><div class="value num" id="ov-pay">$0</div><div class="sub" id="ov-pay-sub"></div></div>
+        <div class="tile"><div class="label"><span class="dot expense"></span>Bills / mo</div><div class="value num" id="ov-bills">$0</div><div class="sub" id="ov-bills-sub"></div></div>
+      </div>
+      <div id="ov-upcoming" style="margin-top: var(--sp-3)"></div>
     </section>
 
     <section class="card" aria-labelledby="breakdown-h">
@@ -610,6 +772,11 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         <div class="field">
           <span class="label">Quick date</span>
           <div class="row" style="gap:6px"><button type="button" class="btn sm" data-quick="0">Today</button><button type="button" class="btn sm" data-quick="-1">Yesterday</button></div>
+        </div>
+        <div class="field span2" id="repeat-fieldwrap">
+          <label for="f-repeat">Repeat</label>
+          <select class="input" id="f-repeat"><option value="">Doesn’t repeat</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+          <span class="help" id="repeat-help">Creates a recurring item that is logged automatically on each due date.</span>
         </div>
       </div>
 
@@ -677,10 +844,85 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     </section>
   </section>
 
+  <!-- ================= RECURRING (paycheck + bills) ================= -->
+  <section class="view" id="view-recurring" role="tabpanel" aria-labelledby="tab-recurring">
+    <section class="card" aria-labelledby="pay-h">
+      <div class="card-head"><h2 id="pay-h">Paycheck</h2><span class="hint" id="pay-next"></span></div>
+      <div class="tiles" style="margin-bottom: var(--sp-3)">
+        <div class="tile"><div class="label"><span class="dot income"></span>Take-home / month</div><div class="value num" id="pay-net-month">$0</div><div class="sub" id="pay-net-period"></div></div>
+        <div class="tile"><div class="label">Taxes / month</div><div class="value num" id="pay-tax-month">$0</div><div class="sub" id="pay-tax-rate"></div></div>
+      </div>
+      <div class="segbar" id="pay-segbar" role="img" aria-label="Paycheck split"></div>
+      <div class="legend" id="pay-legend"></div>
+      <div class="pay-lines" id="pay-lines" style="margin-top: var(--sp-3)"></div>
+      <div class="row wrap" style="margin-top: var(--sp-3)">
+        <button type="button" class="btn primary grow" id="pay-log">Log a paycheck now</button>
+        <label class="check" for="pay-autolog"><input type="checkbox" id="pay-autolog"> Auto-log on pay days</label>
+      </div>
+    </section>
+
+    <details class="card" open id="pay-setup">
+      <summary>Pay setup <span class="pill" style="margin-left:auto;margin-right:8px">from your pay stub</span></summary>
+      <div class="form-grid">
+        <div class="field"><label for="p-gross">Gross pay per paycheck</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-gross" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="p-freq">Pay frequency</label><select class="input" id="p-freq"><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="semimonthly">Twice a month</option><option value="monthly">Monthly</option></select></div>
+        <div class="field"><label for="p-next">Next pay date</label><input class="input" id="p-next" type="date"></div>
+        <div class="field"><label for="p-status">Filing status</label><select class="input" id="p-status"><option value="single">Single</option><option value="married">Married filing jointly</option></select></div>
+        <div class="field"><label for="p-k401pct">401k contribution</label><div class="input-wrap"><input class="input has-suffix num" id="p-k401pct" type="number" inputmode="decimal" min="0" max="100" step="0.5"><span class="suffix">%</span></div><span class="help" id="p-k401pct-help">of gross</span></div>
+        <div class="field"><label for="p-k401fixed">401k extra per check</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-k401fixed" type="number" inputmode="decimal" min="0" step="1"></div></div>
+        <div class="field"><label for="p-matchpct">Employer match</label><div class="input-wrap"><input class="input has-suffix num" id="p-matchpct" type="number" inputmode="decimal" min="0" max="500" step="5"><span class="suffix">%</span></div><span class="help">of what you put in</span></div>
+        <div class="field"><label for="p-matchcap">Match up to</label><div class="input-wrap"><input class="input has-suffix num" id="p-matchcap" type="number" inputmode="decimal" min="0" max="100" step="0.5"><span class="suffix">%</span></div><span class="help">of gross</span></div>
+        <div class="field"><label for="p-health">Health insurance</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-health" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help">pre-tax, per check</span></div>
+        <div class="field"><label for="p-hsa">HSA / FSA</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-hsa" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help">pre-tax, per check</span></div>
+        <div class="field"><label for="p-otherpre">Other pre-tax</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-otherpre" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="p-k401type">401k type</label><select class="input" id="p-k401type"><option value="roth">Roth (after-tax)</option><option value="traditional">Traditional (pre-tax)</option></select></div>
+        <div class="field"><label for="p-otherpost">Other after-tax</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-otherpost" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help">life insurance, garnishments…</span></div>
+        <div class="field span2"><span class="label">Taxes</span>
+          <div class="seg" id="p-taxmode" role="group" aria-label="Tax mode"><button type="button" data-mode="auto" aria-pressed="true">Estimate (2026 tables)</button><button type="button" data-mode="manual" aria-pressed="false">Type from pay stub</button></div>
+        </div>
+        <div class="field" id="p-auto-state"><label for="p-staterate">State income tax</label><div class="input-wrap"><input class="input has-suffix num" id="p-staterate" type="number" inputmode="decimal" min="0" max="20" step="0.1"><span class="suffix">%</span></div><span class="help">flat estimate; 0 for no-tax states</span></div>
+        <div class="field" id="p-auto-extra"><label for="p-extra">Extra federal withholding</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-extra" type="number" inputmode="decimal" min="0" step="1"></div><span class="help">W-4 line 4(c), per check</span></div>
+        <div class="field" id="p-man-fed" hidden><label for="p-federal">Federal withholding</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-federal" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field" id="p-man-state" hidden><label for="p-state">State withholding</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-state" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field" id="p-man-ss" hidden><label for="p-ss">Social Security</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-ss" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field" id="p-man-med" hidden><label for="p-medicare">Medicare</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-medicare" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+      </div>
+      <p class="xs muted" style="margin-top: var(--sp-3)" id="pay-note">Federal withholding is estimated from the 2026 IRS brackets and standard deduction with no other W-4 adjustments; Social Security 6.2% up to the wage base and Medicare 1.45% are applied to wages after health/HSA. A Roth 401k comes out after tax; a traditional one before. Employer match is shown separately and never comes out of your pay. Your real stub can differ, so switch to “Type from pay stub” to enter the exact lines.</p>
+    </details>
+
+    <section class="card" aria-labelledby="rec-h">
+      <div class="card-head"><h2 id="rec-h">Bills &amp; subscriptions</h2><span class="hint" id="rec-total"></span></div>
+      <div id="rule-list"></div>
+      <form id="rule-form" class="stack-sm" novalidate hidden style="margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border);">
+        <input type="hidden" id="u-id">
+        <div class="seg" role="group" aria-label="Recurring type" id="u-type"><button type="button" data-type="expense" aria-pressed="true"><span class="dot expense"></span>Bill</button><button type="button" data-type="income" aria-pressed="false"><span class="dot income"></span>Income</button></div>
+        <div class="form-grid">
+          <div class="field span2"><label for="u-name">Name</label><input class="input" id="u-name" type="text" maxlength="40" placeholder="e.g. Netflix" required></div>
+          <div class="field"><label for="u-amount">Amount</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="u-amount" type="number" inputmode="decimal" min="0" step="0.01" required></div></div>
+          <div class="field"><label for="u-freq">Repeats</label><select class="input" id="u-freq"><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div>
+          <div class="field"><label for="u-next">Next due</label><input class="input" id="u-next" type="date" required></div>
+          <div class="field"><label for="u-cat">Category</label><select class="input" id="u-cat"></select></div>
+          <div class="field span2"><div class="error" id="u-error" role="alert"></div></div>
+        </div>
+        <div class="row"><button type="button" class="btn ghost" id="u-cancel">Cancel</button><button type="submit" class="btn primary grow" id="u-save">Save</button></div>
+      </form>
+      <button type="button" class="btn block" id="u-add" style="margin-top: var(--sp-3)">+ Add a bill or subscription</button>
+    </section>
+
+    <section class="card" aria-labelledby="upc-h">
+      <div class="card-head"><h2 id="upc-h">Next 30 days</h2><span class="hint" id="upc-total"></span></div>
+      <div id="upcoming"></div>
+    </section>
+  </section>
+
   <!-- ================= RETIREMENT ================= -->
   <section class="view" id="view-retirement" role="tabpanel" aria-labelledby="tab-retirement">
     <section class="card" aria-labelledby="ret-h">
-      <div class="card-head"><h2 id="ret-h">How much do I need?</h2></div>
+      <div class="card-head"><h2 id="ret-h">How much do I need?</h2><span class="hint" id="ret-years"></span></div>
+      <div class="form-grid" style="margin-bottom: var(--sp-3)">
+        <div class="field"><label for="r-age">Current age</label><input class="input num" id="r-age" type="number" inputmode="numeric" min="10" max="99" step="1"></div>
+        <div class="field"><label for="r-target-age">Target retirement age</label><input class="input num" id="r-target-age" type="number" inputmode="numeric" min="11" max="100" step="1"></div>
+      </div>
       <div class="tiles four">
         <div class="tile"><div class="label">Target number</div><div class="value num" id="rt-target">—</div><div class="sub" id="rt-target-sub"></div></div>
         <div class="tile"><div class="label">Net worth</div><div class="value num" id="rt-networth">—</div><div class="sub" id="rt-networth-sub"></div></div>
@@ -690,6 +932,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       <div class="meter good" id="rt-meter" style="margin-top: var(--sp-3)" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progress toward target"><div class="fill" id="rt-fill"></div></div>
       <p class="plain-line" id="rt-plain" style="margin-top: var(--sp-3)"></p>
       <p class="small text-2" id="rt-gap" style="margin-top: var(--sp-2)"></p>
+      <p class="small text-2" id="rt-odds" style="margin-top: var(--sp-2)"></p>
     </section>
 
     <section class="card chart-card" aria-labelledby="ch5-h">
@@ -698,10 +941,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     </section>
 
     <details class="card" open>
-      <summary>You</summary>
+      <summary>Spending &amp; contributions</summary>
       <div class="form-grid">
-        <div class="field"><label for="r-age">Current age</label><input class="input num" id="r-age" type="number" inputmode="numeric" min="10" max="99" step="1"></div>
-        <div class="field"><label for="r-target-age">Retire at</label><input class="input num" id="r-target-age" type="number" inputmode="numeric" min="11" max="100" step="1"></div>
         <div class="field span2">
           <label for="r-spending">Annual spending in retirement</label>
           <div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-spending" type="number" inputmode="decimal" min="0" step="100"></div>
@@ -725,6 +966,25 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       </div>
     </details>
 
+    <details class="card" open id="k401-fund-card">
+      <summary>401k &amp; forecast <span class="pill" id="k-summary" style="margin-left:auto;margin-right:8px"></span></summary>
+      <div class="form-grid">
+        <div class="field span2"><label for="r-k401type">Account type</label><select class="input" id="r-k401type"><option value="roth">Roth 401k (withdrawals tax-free)</option><option value="traditional">Traditional 401k (taxed when withdrawn)</option></select></div>
+        <div class="field span2"><label for="k-fund">Invested in</label><select class="input" id="k-fund">
+          <option value="FXAIX">FXAIX · Fidelity 500 Index Fund</option>
+          <option value="LFIKX">LFIKX · MFS Lifetime 2055 Fund (R6)</option>
+          <option value="custom">Custom return rate</option>
+        </select><span class="help" id="k-fund-desc"></span></div>
+        <div class="field"><label for="k-return">Expected return / yr</label><div class="input-wrap"><input class="input has-suffix num" id="k-return" type="number" inputmode="decimal" min="-50" max="50" step="0.1"><span class="suffix">%</span></div></div>
+        <div class="field"><label for="k-inflation">Inflation / yr</label><div class="input-wrap"><input class="input has-suffix num" id="k-inflation" type="number" inputmode="decimal" min="0" max="30" step="0.1"><span class="suffix">%</span></div></div>
+      </div>
+      <div class="row between" style="margin-top:4px"><span class="help" id="k-return-help"></span><button type="button" class="link-btn xs" id="k-return-reset">Use fund history</button></div>
+      <div class="card-head" style="margin-top: var(--sp-4)"><h2 id="ch7-h">401k balance forecast</h2><button class="table-toggle" data-table="ch7" aria-expanded="false">Table</button></div>
+      <div class="chart" id="chart-fund-forecast"></div>
+      <p class="small text-2" id="k-forecast-line" style="margin-top: var(--sp-3)"></p>
+      <p class="xs muted" id="k-basis" style="margin-top: var(--sp-2)"></p>
+    </details>
+
     <details class="card" open>
       <summary>Debts <span class="xs muted" id="debt-summary" style="font-weight:400;margin-left:auto;margin-right:8px"></span></summary>
       <div id="debt-list"></div>
@@ -733,7 +993,13 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         <div class="form-grid">
           <div class="field span2"><label for="d-name">Name</label><input class="input" id="d-name" type="text" maxlength="40" placeholder="e.g. Car loan" required></div>
           <div class="field"><label for="d-balance">Balance</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-balance" type="number" inputmode="decimal" min="0" step="0.01" required></div></div>
-          <div class="field"><label for="d-rate">Interest rate</label><div class="input-wrap"><input class="input has-suffix num" id="d-rate" type="number" inputmode="decimal" min="0" max="999" step="0.01" required><span class="suffix">%</span></div></div>
+          <div class="field"><label for="d-rate">Interest rate (APR)</label><div class="input-wrap"><input class="input has-suffix num" id="d-rate" type="number" inputmode="decimal" min="0" max="999" step="0.01" required><span class="suffix">%</span></div></div>
+          <div class="field span2"><label for="d-compound">Interest option</label><select class="input" id="d-compound">
+            <option value="monthly">Compounds monthly (most loans)</option>
+            <option value="daily">Compounds daily (credit cards)</option>
+            <option value="simple">Simple interest on the original balance</option>
+            <option value="none">No interest (0% promo / interest-free)</option>
+          </select><span class="help" id="d-compound-help">Monthly interest = balance × APR ÷ 12.</span></div>
           <div class="field span2"><label for="d-payment">Monthly payment</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-payment" type="number" inputmode="decimal" min="0" step="0.01" required></div><div class="error" id="d-error" role="alert"></div></div>
         </div>
         <div class="row"><button type="button" class="btn ghost" id="d-cancel">Cancel</button><button type="submit" class="btn primary grow" id="d-save">Save debt</button></div>
@@ -752,9 +1018,10 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       <div class="form-grid">
         <div class="field"><label for="r-wr">Withdrawal rate</label><div class="input-wrap"><input class="input has-suffix num" id="r-wr" type="number" inputmode="decimal" min="0.5" max="20" step="0.1"><span class="suffix">%</span></div></div>
         <div class="field"><label for="r-return">Real return / yr</label><div class="input-wrap"><input class="input has-suffix num" id="r-return" type="number" inputmode="decimal" min="-20" max="30" step="0.1"><span class="suffix">%</span></div></div>
-        <div class="field span2"><label for="r-tax">Tax rate on 401k withdrawals</label><div class="input-wrap"><input class="input has-suffix num" id="r-tax" type="number" inputmode="decimal" min="0" max="60" step="1"><span class="suffix">%</span></div></div>
+        <div class="field span2"><div class="row between"><span class="help" id="r-return-help"></span><button type="button" class="link-btn xs" id="r-return-reset">Use fund history</button></div></div>
+        <div class="field span2"><label for="r-tax">Tax rate on 401k withdrawals</label><div class="input-wrap"><input class="input has-suffix num" id="r-tax" type="number" inputmode="decimal" min="0" max="60" step="1"><span class="suffix">%</span></div><span class="help" id="r-tax-help"></span></div>
       </div>
-      <div class="row" style="margin-top: var(--sp-3)"><button type="button" class="btn sm ghost" id="r-assume-reset">Reset to defaults (4% / 6% / 15%)</button></div>
+      <div class="row" style="margin-top: var(--sp-3)"><button type="button" class="btn sm ghost" id="r-assume-reset">Reset to defaults</button></div>
     </details>
 
     <div class="note-box">These numbers are rough estimates from simple formulas: a fixed real return, a fixed withdrawal rate and fixed contributions. They ignore inflation surprises, market swings, Social Security and fees. This is not financial advice.</div>
@@ -772,6 +1039,9 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     <button class="tab" role="tab" id="tab-charts" data-view="charts" aria-selected="false" aria-controls="view-charts">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>Charts
     </button>
+    <button class="tab" role="tab" id="tab-recurring" data-view="recurring" aria-selected="false" aria-controls="view-recurring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring
+    </button>
     <button class="tab" role="tab" id="tab-retirement" data-view="retirement" aria-selected="false" aria-controls="view-retirement">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/></svg>Retirement
     </button>
@@ -783,7 +1053,10 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 <dialog id="settings-dialog" aria-labelledby="settings-h">
   <div class="sheet">
     <h2 id="settings-h">Settings &amp; data</h2>
-    <p class="desc">Everything is stored only in this browser. Export a backup to keep it safe or move it to another device.</p>
+    <p class="desc" id="settings-desc">Everything is stored only in this browser. Export a backup to keep it safe or move it to another device.</p>
+    <div class="settings-row">
+      <div><div class="lbl">Where your data lives</div><div class="sub" id="sync-status">This device only</div></div>
+    </div>
     <div class="settings-row">
       <div><div class="lbl">Theme</div></div>
       <div class="seg" style="width:200px" id="theme-seg" role="group" aria-label="Theme">
@@ -809,6 +1082,15 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       <button class="btn sm danger" id="btn-wipe">Delete…</button>
     </div>
     <div class="actions"><button class="btn" id="settings-close">Done</button></div>
+  </div>
+</dialog>
+
+<dialog id="export-dialog" aria-labelledby="export-h">
+  <div class="sheet">
+    <h2 id="export-h">Backup JSON</h2>
+    <p class="desc">Copy this text and keep it somewhere safe (a note, an email to yourself). Paste it into a file named <span class="num">money-backup.json</span> to import it later.</p>
+    <textarea class="input num" id="export-text" rows="8" readonly aria-label="Backup JSON" style="font-size:11px;font-family:var(--font-mono)"></textarea>
+    <div class="actions"><button class="btn" id="export-close">Close</button><button class="btn primary" id="export-copy">Copy to clipboard</button></div>
   </div>
 </dialog>
 
@@ -840,6 +1122,31 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     retirement: { age: 30, targetAge: 65, spendingOverride: null, withdrawalRate: 4, returnRate: 6, taxRate: 15, contributionOverride: null }
   };
   var MAX_MONTHS = 1200; // 100 years
+  var COMPOUNDING = ['monthly', 'daily', 'simple', 'none'];
+  var FREQS = { weekly: 52, biweekly: 26, semimonthly: 24, monthly: 12, yearly: 1 };
+  var FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Every 2 weeks', semimonthly: 'Twice a month', monthly: 'Monthly', yearly: 'Yearly' };
+  // 2026 federal income tax (Rev. Proc. 2025-32): standard deduction and bracket tops. Used only to ESTIMATE withholding.
+  var TAX_2026 = {
+    single: { standardDeduction: 16100, brackets: [[12400, 0.10], [50400, 0.12], [105700, 0.22], [201775, 0.24], [256225, 0.32], [640600, 0.35], [Infinity, 0.37]] },
+    married: { standardDeduction: 32200, brackets: [[24800, 0.10], [100800, 0.12], [211400, 0.22], [403550, 0.24], [512450, 0.32], [768700, 0.35], [Infinity, 0.37]] },
+    socialSecurityRate: 0.062, socialSecurityWageBase: 184500, medicareRate: 0.0145, additionalMedicareRate: 0.009, additionalMedicareThreshold: 200000
+  };
+
+  // ---------- historical return data (percent, calendar years) ----------
+  // S&P 500 total return incl. dividends, 1928-2025. Source: Aswath Damodaran, NYU Stern, histretSP (updated Jan 2026).
+  var SP500 = { start: 1928, returns: [43.81, -8.30, -25.12, -43.84, -8.64, 49.98, -1.19, 46.74, 31.94, -35.34, 29.28, -1.10, -10.67, -12.77, 19.17, 25.06, 19.03, 35.82, -8.43, 5.20, 5.70, 18.30, 30.81, 23.68, 18.15, -1.21, 52.56, 32.60, 7.44, -10.46, 43.72, 12.06, 0.34, 26.64, -8.81, 22.61, 16.42, 12.40, -9.97, 23.80, 10.81, -8.24, 3.56, 14.22, 18.76, -14.31, -25.90, 37.00, 23.83, -6.98, 6.51, 18.52, 31.74, -4.70, 20.42, 22.34, 6.15, 31.24, 18.49, 5.81, 16.54, 31.48, -3.06, 30.23, 7.49, 9.97, 1.33, 37.20, 22.68, 33.10, 28.34, 20.89, -9.03, -11.85, -21.97, 28.36, 10.74, 4.83, 15.61, 5.48, -36.55, 25.94, 14.82, 2.10, 15.89, 32.15, 13.52, 1.38, 11.77, 21.61, -4.23, 31.21, 18.02, 28.47, -18.04, 26.06, 24.88, 17.78] };
+  var FUNDS = {
+    FXAIX: { ticker: 'FXAIX', name: 'Fidelity 500 Index Fund', expense: 0.015, beta: 1, start: 2012,
+      // Calendar-year total returns, Yahoo Finance / Morningstar annual return history (share class launched May 2011; fund dates to 1988).
+      returns: [15.99, 32.37, 13.66, 1.38, 11.97, 21.81, -4.40, 31.47, 18.40, 28.69, -18.13, 26.29, 25.00, 17.86],
+      desc: 'Tracks the S&P 500: 500 large US companies, 100% stocks. Expense ratio 0.015%.',
+      basisNote: 'Long-run basis: S&P 500 total returns 1928–2025 minus the 0.015% fee, with the fund\u2019s own returns for 2012–2025.' },
+    LFIKX: { ticker: 'LFIKX', name: 'MFS Lifetime 2055 Fund (R6)', expense: 0.40, beta: 0.85, start: 2016,
+      // Calendar-year total returns at NAV for class R6 (inception Aug 29, 2016), mfs.com fund page as of 12/31/2025.
+      returns: [9.15, 21.32, -7.85, 27.04, 13.44, 20.58, -15.44, 17.01, 13.33, 16.45],
+      desc: 'Target-date 2055 fund of MFS funds: about 95% stocks (62% US, 27% international), 5% bonds, 10% real estate & commodities. Net expense ratio 0.40%, beta 0.85 vs the S&P 500.',
+      basisNote: 'Long-run basis: the fund\u2019s own returns for 2016–2025; earlier years estimated as S&P 500 × beta 0.85 minus the 0.40% fee.' }
+  };
 
   // ---------- money ----------
   function toCents(x) { var n = Number(x); if (!isFinite(n)) return 0; return Math.round(n * 100 + (n < 0 ? -1e-7 : 1e-7)); } // nudge past binary half-rounding (1.005 -> 101)
@@ -881,12 +1188,40 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var date = isValidISO(e.date) ? e.date : today;
     var out = { id: typeof e.id === 'string' && e.id ? e.id : uid(), type: type, date: date, amount: amount, cat: cat, note: typeof e.note === 'string' ? e.note.slice(0, 120) : '' };
     if (e.sample) out.sample = true;
+    if (typeof e.recurring === 'string' && e.recurring) out.recurring = e.recurring;
     return out;
   }
   function num(v, fallback) { var n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? fallback : n; }
   function normalizeDebt(d) {
     d = d || {};
-    return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))) };
+    return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))), compounding: COMPOUNDING.indexOf(d.compounding) >= 0 ? d.compounding : 'monthly' };
+  }
+  function normalizePaycheck(p) {
+    p = (p && typeof p === 'object') ? p : {};
+    var money = function (v) { return Math.max(0, round2(num(v, 0))); };
+    return {
+      gross: money(p.gross), frequency: FREQS[p.frequency] ? p.frequency : 'biweekly', k401Type: p.k401Type === 'roth' ? 'roth' : 'traditional', nextPayDate: isValidISO(p.nextPayDate) ? p.nextPayDate : null, autoLog: p.autoLog !== false,
+      k401Pct: Math.min(100, money(p.k401Pct === undefined ? 6 : p.k401Pct)), k401Fixed: money(p.k401Fixed), matchPct: Math.min(500, money(p.matchPct === undefined ? 50 : p.matchPct)), matchCapPct: Math.min(100, money(p.matchCapPct === undefined ? 6 : p.matchCapPct)),
+      health: money(p.health), hsa: money(p.hsa), otherPretax: money(p.otherPretax), roth: money(p.roth), otherPosttax: money(p.otherPosttax),
+      filingStatus: p.filingStatus === 'married' ? 'married' : 'single', stateRate: Math.min(20, money(p.stateRate)), extraWithholding: money(p.extraWithholding),
+      taxMode: p.taxMode === 'manual' ? 'manual' : 'auto', federalManual: money(p.federalManual), stateManual: money(p.stateManual), ssManual: money(p.ssManual), medicareManual: money(p.medicareManual)
+    };
+  }
+  function normalizeRule(r, today) {
+    r = (r && typeof r === 'object') ? r : {};
+    var type = TYPES.indexOf(r.type) >= 0 ? r.type : 'expense'; var cats = CATS[type];
+    var next = isValidISO(r.nextDate) ? r.nextDate : today;
+    return { id: typeof r.id === 'string' && r.id ? r.id : uid(), name: typeof r.name === 'string' && r.name ? r.name.slice(0, 40) : 'Recurring', type: type, cat: cats.indexOf(r.cat) >= 0 ? r.cat : cats[cats.length - 1],
+      amount: Math.max(0, round2(num(r.amount, 0))), frequency: FREQS[r.frequency] ? r.frequency : 'monthly', nextDate: next, anchorDay: Math.min(31, Math.max(1, Math.round(num(r.anchorDay, +next.slice(8))))), active: r.active !== false, note: typeof r.note === 'string' ? r.note.slice(0, 120) : '' };
+  }
+  /** Effective interest charged per month, as a fraction of the balance (or of the original balance for simple interest). */
+  function monthlyDebtRate(debt) {
+    var apr = Math.max(0, Number(debt.rate) || 0) / 100;
+    switch (debt.compounding) {
+      case 'none': return 0;
+      case 'daily': return Math.pow(1 + apr / 365, 365 / 12) - 1;
+      default: return apr / 12; // 'monthly' and 'simple' both charge apr/12 per month; simple applies it to the original balance
+    }
   }
   function normalizeState(raw, today) {
     raw = (raw && typeof raw === 'object') ? raw : {};
@@ -902,17 +1237,24 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       savingsBalance: Math.max(0, round2(num(raw.savingsBalance, 0))),
       otherInvestments: Math.max(0, round2(num(raw.otherInvestments, 0))),
       debts: Array.isArray(raw.debts) ? raw.debts.map(normalizeDebt) : [],
+      paycheck: normalizePaycheck(raw.paycheck),
+      recurring: Array.isArray(raw.recurring) ? raw.recurring.map(function (x) { return normalizeRule(x, today); }) : [],
+      k401Fund: FUNDS[raw.k401Fund] || raw.k401Fund === 'custom' ? raw.k401Fund : 'FXAIX',
+      k401ReturnOverride: raw.k401ReturnOverride === null || raw.k401ReturnOverride === undefined || raw.k401ReturnOverride === '' ? null : num(raw.k401ReturnOverride, 0),
+      inflation: Math.min(30, Math.max(0, num(raw.inflation, 3))),
       retirement: {
         age: Math.min(99, Math.max(10, Math.round(num(r.age, rd.age)))),
         targetAge: Math.min(100, Math.max(11, Math.round(num(r.targetAge, rd.targetAge)))),
         spendingOverride: r.spendingOverride === null || r.spendingOverride === undefined || r.spendingOverride === '' ? null : Math.max(0, round2(num(r.spendingOverride, 0))),
         withdrawalRate: num(r.withdrawalRate, rd.withdrawalRate),
         returnRate: num(r.returnRate, rd.returnRate),
+        returnFromFund: r.returnFromFund !== false,
         taxRate: num(r.taxRate, rd.taxRate),
         contributionOverride: r.contributionOverride === null || r.contributionOverride === undefined || r.contributionOverride === '' ? null : round2(num(r.contributionOverride, 0))
       },
       entries: entries,
-      theme: ['system', 'light', 'dark'].indexOf(raw.theme) >= 0 ? raw.theme : 'system'
+      theme: ['system', 'light', 'dark'].indexOf(raw.theme) >= 0 ? raw.theme : 'dark',
+      updatedAt: Math.max(0, num(raw.updatedAt, 0))
     };
   }
 
@@ -1022,13 +1364,13 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 
   // ---------- debt ----------
   function debtPayoff(debt, startISO) {
-    var balance = Math.max(0, round2(debt.balance)), payment = Math.max(0, round2(debt.payment)), apr = Math.max(0, Number(debt.rate) || 0);
-    var r = apr / 100 / 12;
+    var balance = Math.max(0, round2(debt.balance)), payment = Math.max(0, round2(debt.payment));
+    var r = monthlyDebtRate(debt); var simple = debt.compounding === 'simple';
     if (balance <= 0) return { months: 0, interest: 0, totalPaid: 0, payoffDate: startISO || null, neverPaysOff: false };
     if (payment <= 0 || payment <= balance * r) return { months: Infinity, interest: Infinity, totalPaid: Infinity, payoffDate: null, neverPaysOff: true };
-    var b = toCents(balance), p = toCents(payment), interest = 0, paid = 0, months = 0;
+    var b = toCents(balance), b0 = b, p = toCents(payment), interest = 0, paid = 0, months = 0;
     while (b > 0 && months < MAX_MONTHS) {
-      var i = Math.round(b * r); interest += i; b += i;
+      var i = Math.round((simple ? b0 : b) * r); interest += i; b += i;
       var pay = Math.min(p, b); paid += pay; b -= pay; months++;
     }
     if (b > 0) return { months: Infinity, interest: Infinity, totalPaid: Infinity, payoffDate: null, neverPaysOff: true };
@@ -1044,16 +1386,17 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 
   /** Simulate month by month. Returns the net-worth path. */
   function simulate(assets0, debts, contribution, mr, months, target) {
+    var rateAt = typeof mr === 'function' ? mr : function () { return mr; };
     var assets = assets0; var contrib = contribution;
-    var ds = (debts || []).map(function (d) { return { b: Math.max(0, d.balance), r: Math.max(0, d.rate) / 100 / 12, p: Math.max(0, d.payment) }; });
+    var ds = (debts || []).map(function (d) { return { b: Math.max(0, d.balance), b0: Math.max(0, d.balance), r: monthlyDebtRate(d), simple: d.compounding === 'simple', p: Math.max(0, d.payment) }; });
     function debtSum() { var s = 0; for (var i = 0; i < ds.length; i++) s += ds[i].b; return s; }
     var path = [{ m: 0, nw: assets - debtSum(), assets: assets, debt: debtSum() }];
     var reached = (assets - debtSum()) >= target - 1e-6 ? 0 : null;
     for (var m = 1; m <= months; m++) {
-      assets = assets * (1 + mr) + contrib;
+      assets = assets * (1 + rateAt(m)) + contrib;
       for (var i = 0; i < ds.length; i++) {
         var d = ds[i]; if (d.b <= 0) continue;
-        d.b += d.b * d.r;
+        d.b += (d.simple ? d.b0 : d.b) * d.r;
         var pay = Math.min(d.p, d.b); d.b -= pay;
         if (d.b <= 0.005) { d.b = 0; assets += (d.p - pay); contrib += d.p; } // freed payment rolls into contributions
       }
@@ -1071,7 +1414,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var annualSpending = Math.max(0, num(inp.annualSpending, 0));
     var contribution = num(inp.monthlyContribution, 0);
     var target = wr > 0 ? annualSpending / wr : Infinity;
-    var assets = num(inp.k401Balance, 0) * (1 - tax) + num(inp.rothBalance, 0) + num(inp.savingsBalance, 0) + num(inp.otherInvestments, 0);
+    var k401Roth = inp.k401Type === 'roth';
+    var assets = num(inp.k401Balance, 0) * (k401Roth ? 1 : 1 - tax) + num(inp.rothBalance, 0) + num(inp.savingsBalance, 0) + num(inp.otherInvestments, 0);
     var debts = (inp.debts || []).map(normalizeDebt);
     var debtTotal = totalDebt(debts);
     var netWorth = round2(assets - debtTotal);
@@ -1095,7 +1439,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var projection = [];
     for (var y = 0; y <= years; y++) { var idx = Math.min(y * 12, sim.path.length - 1); projection.push({ year: y, age: age + y, netWorth: round2(sim.path[idx].nw) }); }
 
-    var debtInfo = debts.map(function (d) { var p = debtPayoff(d, inp.today); return { id: d.id, name: d.name, balance: d.balance, rate: d.rate, payment: d.payment, months: p.months, interest: p.interest, payoffDate: p.payoffDate, neverPaysOff: p.neverPaysOff }; })
+    var debtInfo = debts.map(function (d) { var p = debtPayoff(d, inp.today); return { id: d.id, name: d.name, balance: d.balance, rate: d.rate, payment: d.payment, compounding: d.compounding, months: p.months, interest: p.interest, payoffDate: p.payoffDate, neverPaysOff: p.neverPaysOff }; })
       .sort(function (a, b) { return b.rate - a.rate || b.balance - a.balance; });
     var totalInterest = 0, anyNever = false; debtInfo.forEach(function (d) { if (d.neverPaysOff) anyNever = true; else totalInterest += d.interest; });
 
@@ -1104,9 +1448,184 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       monthsToTarget: reached, yearsToTarget: yearsToTarget, ageAtTarget: ageAtTarget,
       monthsToTargetAge: monthsToTargetAge, netWorthAtTargetAge: round2(atTargetAge), gap: isFinite(gap) ? round2(gap) : Infinity, extraMonthly: isFinite(extraMonthly) ? round2(extraMonthly) : Infinity,
       projection: projection, debts: debtInfo, totalInterest: round2(totalInterest), anyDebtNeverPaysOff: anyNever,
-      contribution: contribution, annualSpending: annualSpending, monthlyRate: mr
+      contribution: contribution, annualSpending: annualSpending, monthlyRate: mr, k401Type: k401Roth ? 'roth' : 'traditional'
     };
   }
+
+  // ---------- funds: history, stats, forecast ----------
+  function sp500Series() { return SP500.returns.map(function (r, i) { return { year: SP500.start + i, r: r }; }); }
+  function fundSeries(key) { var f = FUNDS[key]; if (!f) return []; return f.returns.map(function (r, i) { return { year: f.start + i, r: r, actual: true }; }); }
+  /** Long-run series used for forecasting: the fund's own years where available, otherwise S&P 500 × beta − expense ratio. */
+  function fundBasisSeries(key) {
+    var f = FUNDS[key]; if (!f) return [];
+    var own = {}; fundSeries(key).forEach(function (p) { own[p.year] = p.r; });
+    return sp500Series().map(function (p) { return own[p.year] !== undefined ? { year: p.year, r: own[p.year], actual: true } : { year: p.year, r: round2(p.r * f.beta - f.expense), actual: false }; });
+  }
+  function seriesStats(series) {
+    var n = series.length; if (!n) return { years: 0, cagr: null, mean: null, stdev: null, best: null, worst: null, positiveShare: null, growth10k: null, from: null, to: null };
+    var prod = 1, sum = 0, best = series[0], worst = series[0], pos = 0;
+    series.forEach(function (p) { prod *= (1 + p.r / 100); sum += p.r; if (p.r > best.r) best = p; if (p.r < worst.r) worst = p; if (p.r > 0) pos++; });
+    var mean = sum / n; var v = 0; series.forEach(function (p) { v += (p.r - mean) * (p.r - mean); }); var stdev = Math.sqrt(v / (n > 1 ? n - 1 : 1));
+    return { years: n, cagr: (Math.pow(prod, 1 / n) - 1) * 100, mean: mean, stdev: stdev, best: best, worst: worst, positiveShare: pos / n, growth10k: round2(10000 * prod), from: series[0].year, to: series[n - 1].year };
+  }
+  function realRate(nominalPct, inflationPct) { return ((1 + nominalPct / 100) / (1 + inflationPct / 100) - 1) * 100; }
+  /** Deterministic balance path, monthly compounding, one point per year (year 0 = today). */
+  function forecastBalance(o) {
+    var bal = Math.max(0, num(o.balance, 0)), c = num(o.monthlyContribution, 0), years = Math.max(0, Math.round(num(o.years, 0)));
+    var mr = monthlyRate(num(o.annualReturnPct, 0)); var out = [{ year: 0, balance: round2(bal) }];
+    for (var y = 1; y <= years; y++) { for (var m = 0; m < 12; m++) bal = bal * (1 + mr) + c; out.push({ year: y, balance: round2(bal) }); }
+    return out;
+  }
+  function mulberry32(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  /** Bootstrap: resample annual returns from `returns` (percent) for each year; returns p10/p50/p90 per year. */
+  function bootstrapForecast(o) {
+    var rets = (o.returns || []).map(Number).filter(isFinite); var years = Math.max(0, Math.round(num(o.years, 0))); var runs = Math.max(1, Math.round(num(o.runs, 1000)));
+    var bal0 = Math.max(0, num(o.balance, 0)), c12 = num(o.monthlyContribution, 0) * 12;
+    if (!rets.length) return [];
+    var rnd = mulberry32(num(o.seed, 7));
+    var paths = []; for (var k = 0; k < runs; k++) { var b = bal0, path = [b]; for (var y = 1; y <= years; y++) { var r = rets[Math.floor(rnd() * rets.length)] / 100; b = b * (1 + r) + c12 * Math.sqrt(Math.max(0, 1 + r)); path.push(b); } paths.push(path); }
+    var out = [];
+    for (var yy = 0; yy <= years; yy++) {
+      var col = paths.map(function (p) { return p[yy]; }).sort(function (a, b) { return a - b; });
+      var q = function (f) { var i = Math.min(col.length - 1, Math.max(0, Math.round(f * (col.length - 1)))); return round2(col[i]); };
+      out.push({ year: yy, p10: q(0.1), p50: q(0.5), p90: q(0.9) });
+    }
+    return out;
+  }
+
+  /**
+   * Monte Carlo on the retirement projection: each run draws one historical year's return per
+   * projection year (deflated by inflation), applies it month by month to the same assets, debts
+   * and contributions as retirementCalc, and records net worth by year and when the target is hit.
+   */
+  function quantile(sorted, f) { if (!sorted.length) return null; var i = Math.min(sorted.length - 1, Math.max(0, Math.round(f * (sorted.length - 1)))); return sorted[i]; }
+  function retirementOdds(inp, opts) {
+    opts = opts || {};
+    var rets = (opts.returns || []).map(Number).filter(isFinite); if (!rets.length) return null;
+    var base = retirementCalc(inp); if (!isFinite(base.target)) return null;
+    var age = num(inp.age, 30), infl = num(opts.inflation, 0);
+    var monthly = rets.map(function (r) { var real = (1 + r / 100) / (1 + infl / 100) - 1; return Math.pow(Math.max(0.01, 1 + real), 1 / 12) - 1; });
+    var chartYears = base.projection.length - 1, mTarget = base.monthsToTargetAge;
+    var horizon = Math.min(MAX_MONTHS, Math.max(mTarget, Math.round((100 - age) * 12)));
+    var runs = Math.max(1, Math.round(num(opts.runs, 400))), rnd = mulberry32(num(opts.seed, 11));
+    var debts0 = (inp.debts || []).map(normalizeDebt), contrib0 = num(inp.monthlyContribution, 0), target = base.target;
+    var yearly = []; for (var y = 0; y <= chartYears; y++) yearly.push([]);
+    var reach = [], okByTarget = 0;
+    for (var k = 0; k < runs; k++) {
+      var assets = base.assets, contrib = contrib0, mr = 0;
+      var ds = debts0.map(function (d) { return { b: d.balance, b0: d.balance, r: monthlyDebtRate(d), simple: d.compounding === 'simple', p: d.payment }; });
+      var debt = 0; for (var i = 0; i < ds.length; i++) debt += ds[i].b;
+      var reached = assets - debt >= target ? 0 : null; yearly[0].push(assets - debt);
+      for (var m = 1; m <= horizon; m++) {
+        if ((m - 1) % 12 === 0) mr = monthly[Math.floor(rnd() * monthly.length)];
+        assets = assets * (1 + mr) + contrib; debt = 0;
+        for (i = 0; i < ds.length; i++) { var d = ds[i]; if (d.b > 0) { d.b += (d.simple ? d.b0 : d.b) * d.r; var pay = Math.min(d.p, d.b); d.b -= pay; if (d.b <= 0.005) { d.b = 0; assets += d.p - pay; contrib += d.p; } } debt += d.b; }
+        var nw = assets - debt;
+        if (m % 12 === 0 && m / 12 <= chartYears) yearly[m / 12].push(nw);
+        if (reached === null && nw >= target) reached = m;
+        if (reached !== null && m >= chartYears * 12 && m >= mTarget) break;
+      }
+      reach.push(reached === null ? Infinity : reached);
+      if (reached !== null && reached <= mTarget) okByTarget++;
+    }
+    reach.sort(function (a, b) { return a - b; });
+    var toAge = function (mm) { return mm === null || !isFinite(mm) ? null : age + mm / 12; };
+    return {
+      runs: runs, probByTargetAge: okByTarget / runs,
+      reachAge: { p10: toAge(quantile(reach, 0.1)), p50: toAge(quantile(reach, 0.5)), p90: toAge(quantile(reach, 0.9)) },
+      years: yearly.map(function (col, yy) { col.sort(function (a, b) { return a - b; }); return { year: yy, age: age + yy, p10: round2(quantile(col, 0.1)), p50: round2(quantile(col, 0.5)), p90: round2(quantile(col, 0.9)) }; })
+    };
+  }
+
+  // ---------- paycheck ----------
+  function periodsPerYear(freq) { return FREQS[freq] || 12; }
+  function monthlyize(amount, freq) { return round2(num(amount, 0) * periodsPerYear(freq) / 12); }
+  function federalTax(annualTaxableIncome, status) {
+    var t = TAX_2026[status] || TAX_2026.single; var inc = Math.max(0, annualTaxableIncome - t.standardDeduction);
+    var tax = 0, lower = 0;
+    for (var i = 0; i < t.brackets.length && inc > lower; i++) { var top = t.brackets[i][0], rate = t.brackets[i][1]; tax += (Math.min(inc, top) - lower) * rate; lower = top; }
+    return tax;
+  }
+  function paycheckBreakdown(p) {
+    p = normalizePaycheck(p); var ppy = periodsPerYear(p.frequency); var gross = p.gross;
+    var k401 = round2(gross * p.k401Pct / 100 + p.k401Fixed);
+    var match = round2(Math.min(k401, gross * p.matchCapPct / 100) * p.matchPct / 100);
+    var section125 = round2(p.health + p.hsa + p.otherPretax);
+    var roth401 = p.k401Type === 'roth';
+    var pretax = round2(section125 + (roth401 ? 0 : k401));
+    var taxable = Math.max(0, round2(gross - pretax));
+    var ficaWages = Math.max(0, round2(gross - section125));
+    var federal, state, ss, medicare;
+    if (p.taxMode === 'manual') { federal = p.federalManual; state = p.stateManual; ss = p.ssManual; medicare = p.medicareManual; }
+    else {
+      federal = round2(federalTax(taxable * ppy, p.filingStatus) / ppy + p.extraWithholding);
+      state = round2(taxable * p.stateRate / 100);
+      var annualFica = ficaWages * ppy;
+      ss = round2(Math.min(ficaWages, TAX_2026.socialSecurityWageBase / ppy) * TAX_2026.socialSecurityRate);
+      medicare = round2(ficaWages * TAX_2026.medicareRate + (annualFica > TAX_2026.additionalMedicareThreshold ? Math.max(0, (annualFica - TAX_2026.additionalMedicareThreshold) / ppy) * TAX_2026.additionalMedicareRate : 0));
+    }
+    var posttax = round2(p.roth + p.otherPosttax + (roth401 ? k401 : 0));
+    var taxes = round2(federal + state + ss + medicare);
+    var net = round2(gross - pretax - taxes - posttax);
+    var f = ppy / 12;
+    return { k401Type: p.k401Type, gross: gross, k401: k401, match: match, health: p.health, hsa: p.hsa, otherPretax: p.otherPretax, pretax: pretax, taxableWages: taxable, federal: federal, state: state, socialSecurity: ss, medicare: medicare, taxes: taxes, posttax: posttax, roth: p.roth, net: net, periodsPerYear: ppy, frequency: p.frequency, taxMode: p.taxMode,
+      effectiveTaxRate: gross > 0 ? taxes / gross : 0,
+      monthly: { gross: round2(gross * f), net: round2(net * f), k401: round2(k401 * f), match: round2(match * f), taxes: round2(taxes * f), pretax: round2(pretax * f) },
+      annual: { gross: round2(gross * ppy), net: round2(net * ppy), k401: round2(k401 * ppy), match: round2(match * ppy), taxes: round2(taxes * ppy) } };
+  }
+  /** Entries to log for one paycheck on `date`. */
+  function paycheckEntries(p, date, ruleId) {
+    var b = paycheckBreakdown(p); var out = [];
+    if (b.net > 0) out.push({ type: 'income', cat: 'Paycheck', amount: b.net, date: date, note: 'Paycheck · gross ' + fmtMoney(b.gross) + ' · taxes ' + fmtMoney(b.taxes), recurring: ruleId || 'paycheck' });
+    var mine = round2(b.k401 + b.roth);
+    if (mine > 0) out.push({ type: 'k401', cat: 'My contribution', amount: mine, date: date, note: 'From paycheck', recurring: ruleId || 'paycheck' });
+    if (b.match > 0) out.push({ type: 'k401', cat: 'Employer match', amount: b.match, date: date, note: 'From paycheck', recurring: ruleId || 'paycheck' });
+    return out.map(function (e) { return normalizeEntry(e, date); }).map(function (e, i) { e.recurring = out[i].recurring; return e; });
+  }
+
+  // ---------- recurring ----------
+  function clampDay(y, m, day) { var end = new Date(y, m + 1, 0).getDate(); return new Date(y, m, Math.min(day, end)); }
+  function advanceDate(iso, freq, anchorDay) {
+    var d = parseISO(iso); if (!d) return iso;
+    switch (freq) {
+      case 'weekly': return addDays(iso, 7);
+      case 'biweekly': return addDays(iso, 14);
+      case 'semimonthly': { var day = d.getDate(); if (day <= 15) return isoDate(clampDay(d.getFullYear(), d.getMonth(), day + 15)); return isoDate(clampDay(d.getFullYear(), d.getMonth() + 1, day - 15)); }
+      case 'yearly': return isoDate(clampDay(d.getFullYear() + 1, d.getMonth(), anchorDay || d.getDate()));
+      default: return isoDate(clampDay(d.getFullYear(), d.getMonth() + 1, anchorDay || d.getDate()));
+    }
+  }
+  /** Occurrences of a rule that are due on or before `today`; returns dates and the new nextDate. */
+  function dueDates(rule, today, cap) {
+    var dates = []; var next = rule.nextDate; var guard = 0;
+    while (next <= today && guard++ < (cap || 120)) { dates.push(next); next = advanceDate(next, rule.frequency, rule.anchorDay); }
+    return { dates: dates, nextDate: next };
+  }
+  /** Pure: given state and today, compute entries to add and updated rules/paycheck. Does not mutate. */
+  function postDue(state, today) {
+    var entries = []; var rules = []; var changed = false;
+    (state.recurring || []).forEach(function (r) {
+      if (!r.active || r.amount <= 0) { rules.push(r); return; }
+      var d = dueDates(r, today);
+      d.dates.forEach(function (date) { var e = normalizeEntry({ type: r.type, cat: r.cat, amount: r.amount, date: date, note: r.note || r.name }, date); e.recurring = r.id; entries.push(e); });
+      if (d.dates.length) { changed = true; rules.push(Object.assign({}, r, { nextDate: d.nextDate })); } else rules.push(r);
+    });
+    var pc = state.paycheck; var paycheck = pc;
+    if (pc && pc.autoLog && pc.gross > 0 && pc.nextPayDate) {
+      var pd = dueDates({ nextDate: pc.nextPayDate, frequency: pc.frequency, anchorDay: +pc.nextPayDate.slice(8) }, today);
+      pd.dates.forEach(function (date) { entries = entries.concat(paycheckEntries(pc, date, 'paycheck')); });
+      if (pd.dates.length) { changed = true; paycheck = Object.assign({}, pc, { nextPayDate: pd.nextDate }); }
+    }
+    return { entries: entries, recurring: rules, paycheck: paycheck, changed: changed };
+  }
+  function upcoming(state, today, days) {
+    var to = addDays(today, days || 30); var out = [];
+    (state.recurring || []).forEach(function (r) { if (!r.active) return; var next = r.nextDate; var guard = 0; while (next <= to && guard++ < 40) { if (next >= today) out.push({ date: next, name: r.name, amount: r.amount, type: r.type, cat: r.cat, id: r.id }); next = advanceDate(next, r.frequency, r.anchorDay); } });
+    var pc = state.paycheck;
+    if (pc && pc.gross > 0 && pc.nextPayDate) { var b = paycheckBreakdown(pc); var n = pc.nextPayDate, g = 0; while (n <= to && g++ < 10) { if (n >= today) out.push({ date: n, name: 'Paycheck', amount: b.net, type: 'income', cat: 'Paycheck', id: 'paycheck' }); n = advanceDate(n, pc.frequency); } }
+    return out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  }
+  function recurringMonthlyTotal(rules, type) { var c = 0; (rules || []).forEach(function (r) { if (r.active && (!type || r.type === type)) c += toCents(monthlyize(r.amount, r.frequency)); }); return fromCents(c); }
 
   // ---------- formatting (pure) ----------
   function fmtMoney(x, opts) {
@@ -1150,7 +1669,10 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     entriesInMonth: entriesInMonth, entriesInRange: entriesInRange, byType: byType, sortNewest: sortNewest,
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
-    debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
+    debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
+    retirementOdds: retirementOdds, quantile: quantile,
+    FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal,
+    SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
   };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1184,45 +1706,51 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     if (raw) { try { parsed = JSON.parse(raw); } catch (e) { parsed = null; try { localStorage.setItem(BACKUP_KEY + '-corrupt', raw); } catch (e2) {} } }
     var fresh = !parsed;
     state = C.normalizeState(parsed || {}, today());
-    if (fresh) { state.entries = makeSamples(); saveState(); }
+    if (fresh) { var sd = makeSeed(); state.entries = sd.entries; state.recurring = sd.recurring; state.paycheck = sd.paycheck; state.k401Balance = sd.k401Balance; state.k401UpdatedAt = sd.k401UpdatedAt; state.budget = sd.budget; state.debts = sd.debts; saveState({ keepTime: true }); state.updatedAt = 0; }
     try { var u = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); if (u && typeof u === 'object') { if (u.preset) ui.preset = u.preset; if (u.from) ui.from = u.from; if (u.to) ui.to = u.to; if (u.cat) ui.cat = Object.assign(ui.cat, u.cat); } } catch (e) {}
     try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); } catch (e) { storageOK = false; }
   }
-  function saveState() {
+  function saveState(opts) {
+    if (!(opts && opts.keepTime)) state.updatedAt = Date.now();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); storageOK = true; }
-    catch (e) { storageOK = false; toast('Could not save. Storage may be full or blocked.'); }
+    catch (e) { storageOK = false; if (!window.App || !App.cloudActive) toast('Could not save on this device. Storage may be full or blocked.'); }
     renderStorageStatus();
+    if (window.App && typeof App.onSaved === 'function') App.onSaved(opts || {});
   }
   function saveUI() { try { localStorage.setItem(UI_KEY, JSON.stringify({ preset: ui.preset, from: ui.from, to: ui.to, cat: ui.cat })); } catch (e) {} }
   function stashBackup() { try { localStorage.setItem(BACKUP_KEY, JSON.stringify(state)); } catch (e) {} }
   function commit() { saveState(); render(); }
   function renderStorageStatus() { $('page-sub').textContent = storageOK ? '' : 'Not saving — storage blocked'; }
 
-  // ---------- samples ----------
-  function makeSamples() {
-    var seed = 42; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  // ---------- first-run sample data ----------
+  // A realistic starting point: $125k in a 401k, $6,000/month gross pay run through the paycheck model,
+  // six monthly bills as recurring items, and six months of history. Entries are flagged sample:true.
+  function makeSeed() {
+    var t = today(), mk = C.monthKey(t); var nextFirst = C.monthStart(C.addMonths(mk, 1));
+    var bills = [['TV', 90, 'Bills'], ['Internet', 70, 'Bills'], ['Power', 150, 'Bills'], ['Water', 60, 'Bills'], ['Car insurance', 400, 'Transport'], ['Rent', 1900, 'Housing'], ['Car loan payment', 430, 'Transport'], ['Credit card payment', 250, 'Bills']];
+    var debts = [C.normalizeDebt({ id: 'debt-car', name: 'Car loan', balance: 22000, rate: 6.5, payment: 430, compounding: 'monthly' }), C.normalizeDebt({ id: 'debt-card', name: 'Credit card', balance: 7000, rate: 17, payment: 250, compounding: 'monthly' })];
+    var rules = bills.map(function (b, i) { return C.normalizeRule({ id: 'rule-' + (i + 1), name: b[0], type: 'expense', cat: b[2], amount: b[1], frequency: 'monthly', nextDate: nextFirst, anchorDay: 1, note: b[0] }, t); });
+    var paycheck = C.normalizePaycheck({ gross: 6000, frequency: 'monthly', nextPayDate: nextFirst, autoLog: true, k401Pct: 6, matchPct: 50, matchCapPct: 6, k401Type: 'roth' });
+    var seed = 11; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
     function pick(a) { return a[Math.floor(rnd() * a.length)]; }
     function amt(lo, hi) { return C.round2(lo + rnd() * (hi - lo)); }
-    var t = today(); var mk = C.monthKey(t); var out = []; var n = 0;
-    function push(type, date, amount, cat, note) { if (date > t) return; out.push({ id: 'sample-' + (++n), type: type, date: date, amount: C.round2(amount), cat: cat, note: note || '', sample: true }); }
+    var entries = []; var n = 0;
+    function push(type, date, amount, cat, note, recurring) { if (date > t) return; var e = C.normalizeEntry({ id: 'sample-' + (++n), type: type, date: date, amount: amount, cat: cat, note: note || '' }, t); e.sample = true; if (recurring) e.recurring = recurring; entries.push(e); }
     for (var i = 5; i >= 0; i--) {
-      var key = C.addMonths(mk, -i); var end = +C.monthEnd(key).slice(8);
+      var key = C.addMonths(mk, -i); var first = key + '-01'; var end = +C.monthEnd(key).slice(8);
       function d(day) { return key + '-' + (day < 10 ? '0' : '') + Math.min(day, end); }
-      push('income', d(1), 2450, 'Paycheck', 'Salary'); push('income', d(15), 2450, 'Paycheck', 'Salary');
-      if (rnd() < 0.5) push('income', d(Math.floor(5 + rnd() * 20)), amt(120, 400), 'Side work', pick(['Freelance design', 'Weekend gig', 'Tutoring']));
-      if (i % 3 === 0) push('income', d(28), amt(8, 20), 'Interest', 'Savings interest');
-      push('k401', d(1), 180, 'My contribution'); push('k401', d(1), 90, 'Employer match'); push('k401', d(15), 180, 'My contribution'); push('k401', d(15), 90, 'Employer match');
-      push('expense', d(1), 1450, 'Housing', 'Rent');
-      push('expense', d(Math.floor(3 + rnd() * 10)), amt(70, 120), 'Bills', 'Electric'); push('expense', d(20), 60, 'Bills', 'Internet'); push('expense', d(12), 45, 'Bills', 'Phone');
-      var g = 4 + Math.floor(rnd() * 2); for (var j = 0; j < g; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(32, 110), 'Groceries', pick(['Trader Joe\'s', 'Costco', 'Farmers market', 'Safeway', '']));
-      var dn = 3 + Math.floor(rnd() * 3); for (j = 0; j < dn; j++) push('expense', d(Math.floor(1 + rnd() * 28)), amt(12, 58), 'Dining', pick(['Lunch', 'Tacos', 'Coffee', 'Dinner with friends', 'Ramen', '']));
-      var tr = 2 + Math.floor(rnd() * 2); for (j = 0; j < tr; j++) push('expense', d(Math.floor(1 + rnd() * 28)), amt(25, 60), 'Transport', pick(['Gas', 'Transit pass', 'Parking', 'Rideshare']));
-      if (rnd() < 0.8) push('expense', d(Math.floor(1 + rnd() * 28)), amt(30, 140), 'Shopping', pick(['Shoes', 'Headphones', 'Amazon', 'Jacket']));
-      if (rnd() < 0.9) push('expense', d(Math.floor(1 + rnd() * 28)), amt(15, 90), 'Fun', pick(['Movies', 'Concert', 'Board games', 'Climbing gym']));
-      if (rnd() < 0.5) push('expense', d(Math.floor(1 + rnd() * 28)), amt(15, 75), 'Health', pick(['Pharmacy', 'Copay', 'Gym']));
-      if (rnd() < 0.4) push('expense', d(Math.floor(1 + rnd() * 28)), amt(10, 50), 'Other', pick(['Gift', 'Haircut', 'Donation']));
+      if (first <= t) {
+        C.paycheckEntries(paycheck, first, 'paycheck').forEach(function (e) { push(e.type, first, e.amount, e.cat, e.note, 'paycheck'); });
+        rules.forEach(function (r) { push('expense', first, r.amount, r.cat, r.name, r.id); });
+      }
+      for (var j = 0; j < 4; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(60, 140), 'Groceries', pick(['Costco', 'Kroger', 'Trader Joe’s', 'Aldi', '']));
+      for (j = 0; j < 3; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(14, 55), 'Dining', pick(['Lunch', 'Tacos', 'Coffee', 'Dinner out', '']));
+      for (j = 0; j < 2; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(40, 65), 'Transport', 'Gas');
+      if (rnd() < 0.8) push('expense', d(Math.floor(2 + rnd() * 27)), amt(20, 80), 'Fun', pick(['Movies', 'Concert', 'Golf', 'Games']));
+      if (rnd() < 0.6) push('expense', d(Math.floor(2 + rnd() * 27)), amt(30, 120), 'Shopping', pick(['Amazon', 'Clothes', 'Home Depot']));
+      if (rnd() < 0.4) push('expense', d(Math.floor(2 + rnd() * 27)), amt(15, 60), 'Health', pick(['Pharmacy', 'Copay']));
     }
-    return out;
+    return { entries: entries, recurring: rules, paycheck: paycheck, debts: debts, k401Balance: 125000, k401UpdatedAt: t, budget: 4500 };
   }
   function hasSamples() { return state.entries.some(function (e) { return e.sample; }); }
 
@@ -1286,7 +1814,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   }
 
   // ---------- navigation ----------
-  var TITLES = { overview: 'Overview', add: 'Add', charts: 'Charts', retirement: 'Retirement' };
+  var TITLES = { overview: 'Overview', add: 'Add', charts: 'Charts', recurring: 'Recurring', retirement: 'Retirement' };
   function showView(name) {
     ui.view = name;
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
@@ -1341,6 +1869,18 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var left = $('budget-left'); left.textContent = b.isOver ? money(b.over) + ' over budget' : money(b.left) + ' left';
     left.className = b.isOver ? 'danger-text' : b.level === 'warn' ? '' : '';
 
+    // recurring summary
+    var hasRec = state.recurring.length > 0 || state.paycheck.gross > 0;
+    $('recurring-card').hidden = !hasRec;
+    if (hasRec) {
+      var pb = C.paycheckBreakdown(state.paycheck);
+      setText('ov-pay', state.paycheck.gross > 0 ? tileMoney(pb.monthly.net) : '—');
+      setText('ov-pay-sub', state.paycheck.gross > 0 ? money(pb.net) + ' ' + C.FREQ_LABEL[state.paycheck.frequency].toLowerCase() + (state.paycheck.nextPayDate ? ' · next ' + C.fmtDateShort(state.paycheck.nextPayDate) : '') : 'set up on Recurring');
+      var bills = C.recurringMonthlyTotal(state.recurring, 'expense'); var nb = state.recurring.filter(function (r) { return r.active && r.type === 'expense'; }).length;
+      setText('ov-bills', tileMoney(bills)); setText('ov-bills-sub', nb + (nb === 1 ? ' active bill' : ' active bills') + (state.budget > 0 ? ' · ' + Math.round(bills / state.budget * 100) + '% of budget' : ''));
+      var up = C.upcoming(state, t0, 14).slice(0, 4); var ub = $('ov-upcoming'); clear(ub);
+      if (up.length) { ub.appendChild(h('div', { class: 'hud-label', style: 'margin-bottom:4px', text: 'Due in the next 14 days' })); up.forEach(function (u) { ub.appendChild(h('div', { class: 'upc' }, [h('span', { class: 'd', text: C.fmtDateShort(u.date) }), h('span', { class: 'n', text: u.name }), h('span', { class: 'num ' + (u.type === 'income' ? 'income-text' : ''), text: (u.type === 'income' ? '+' : '−') + money(u.amount) })])); }); }
+    }
     // breakdown
     var bd = C.categoryBreakdown(entries, 'expense'); var box = $('breakdown'); clear(box);
     if (!bd.length) box.appendChild(emptyState('🧺', 'No spending yet', 'Spending by category will show up here.'));
@@ -1385,7 +1925,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       h('div', { class: 'cat-icon ' + e.type, 'aria-hidden': 'true', text: ICONS[e.cat] || '•' }),
       h('button', { class: 'body', type: 'button', style: 'text-align:left;display:block', 'aria-label': 'Edit ' + TYPE_LABEL[e.type] + ' ' + money(e.amount) + ' ' + e.cat + (e.note ? ', ' + e.note : ''), onclick: function () { startEdit(e.id); } }, [
         h('div', { class: 'cat', text: e.cat }),
-        (e.note || e.sample) ? h('div', { class: 'note' }, [e.sample ? h('span', { class: 'sample-tag', text: 'sample' }) : null, e.note ? h('span', { text: e.note }) : null]) : null
+        (e.note || e.sample || e.recurring) ? h('div', { class: 'note' }, [e.sample ? h('span', { class: 'sample-tag', text: 'sample' }) : null, e.recurring ? h('span', { class: 'sample-tag', text: 'auto' }) : null, e.note ? h('span', { text: e.note }) : null]) : null
       ]),
       amt,
       h('div', { class: 'entry-actions' }, [del])
@@ -1408,6 +1948,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     toast('Deleted ' + money(removed.amount) + ' ' + removed.cat, { action: 'Undo', onAction: function () { state.entries.push(removed); commit(); } });
   }
 
+  $('recur-open').addEventListener('click', function () { showView('recurring'); });
   $('month-prev').addEventListener('click', function () { ui.month = C.addMonths(ui.month, -1); ui.deleteArmed = null; render(); });
   $('month-next').addEventListener('click', function () { ui.month = C.addMonths(ui.month, 1); ui.deleteArmed = null; render(); });
   $('month-today').addEventListener('click', function () { ui.month = C.monthKey(today()); render(); });
@@ -1457,6 +1998,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     ui.type = type;
     Array.prototype.forEach.call($('type-seg').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-type') === type)); });
     $('f-submit').textContent = 'Add ' + TYPE_LABEL[type];
+    $('repeat-fieldwrap').hidden = !!ui.editingId || type === 'k401';
     renderChips();
   }
   $('type-seg').addEventListener('click', function (e) { var b = e.target.closest('button[data-type]'); if (b) setType(b.getAttribute('data-type')); });
@@ -1466,6 +2008,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     setType(ui.type);
     if (!$('f-date').value) $('f-date').value = today();
     $('edit-actions').hidden = !ui.editingId; $('form-actions').hidden = !!ui.editingId;
+    $('repeat-fieldwrap').hidden = !!ui.editingId || ui.type === 'k401';
   };
   function resetForm() {
     ui.editingId = null; $('f-id').value = ''; $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today();
@@ -1502,11 +2045,16 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       return;
     }
     var entry = C.normalizeEntry({ type: ui.type, cat: ui.cat[ui.type], amount: v.amount, date: v.date, note: note }, today());
+    var repeat = $('f-repeat').value; var rule = null;
+    if (repeat && ui.type !== 'k401') {
+      rule = C.normalizeRule({ name: note || ui.cat[ui.type], type: ui.type, cat: ui.cat[ui.type], amount: v.amount, frequency: repeat, nextDate: C.advanceDate(v.date, repeat, +v.date.slice(8)), anchorDay: +v.date.slice(8), note: note }, today());
+      state.recurring.push(rule); entry.recurring = rule.id; $('f-repeat').value = '';
+    }
     state.entries.push(entry);
     $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today();
     ui.month = C.monthKey(entry.date);
     commit();
-    toast('Added ' + (entry.type === 'income' ? '+' : '') + money(entry.amount) + ' · ' + entry.cat, { action: 'Undo', onAction: function () { state.entries = state.entries.filter(function (x) { return x.id !== entry.id; }); commit(); } });
+    toast('Added ' + (entry.type === 'income' ? '+' : '') + money(entry.amount) + ' · ' + entry.cat + (rule ? ' · repeats ' + C.FREQ_LABEL[rule.frequency].toLowerCase() : ''), { action: 'Undo', onAction: function () { state.entries = state.entries.filter(function (x) { return x.id !== entry.id; }); if (rule) state.recurring = state.recurring.filter(function (x) { return x.id !== rule.id; }); commit(); } });
     $('f-amount').focus();
   });
   $('f-amount').addEventListener('input', function () { $('amount-fieldwrap').classList.remove('invalid'); });
@@ -1531,13 +2079,25 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var payload = Object.assign({ app: 'money-tracker', version: 2, exportedAt: new Date().toISOString() }, state);
     var text = JSON.stringify(payload, null, 2);
     var name = 'money-backup-' + today() + '.json';
+    if (window.claude && typeof window.claude.use === 'function') { // Claude viewer: ask before saving, else show the JSON to copy
+      window.claude.use('downloads').then(function (dl) {
+        if (!dl) { showExportSheet(text); return; }
+        dl.save({ filename: name, data: text }).then(function () { toast('Saved ' + name); }, function (err) { if (err && err.code === 'declined') return; showExportSheet(text); });
+      }, function () { showExportSheet(text); });
+      return;
+    }
     try {
       var blob = new Blob([text], { type: 'application/json' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
       toast('Exported ' + state.entries.length + ' entries to ' + name);
-    } catch (e) { copyText(text).then(function (ok) { toast(ok ? 'Download blocked; backup JSON copied to clipboard instead.' : 'Could not export.'); }); }
+    } catch (e) { showExportSheet(text); }
+  }
+  function showExportSheet(text) {
+    $('export-text').value = text; var d = $('export-dialog'); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    $('export-copy').onclick = function () { copyText(text).then(function (ok) { toast(ok ? 'Backup copied to clipboard' : 'Select the text and copy it manually'); if (!ok) { $('export-text').focus(); $('export-text').select(); } }); };
+    $('export-close').onclick = function () { if (d.close) d.close(); else d.removeAttribute('open'); };
   }
   $('btn-export').addEventListener('click', exportJSON);
   $('import-label').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('import-file').click(); } });
@@ -1570,7 +2130,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   $('btn-clear-samples').addEventListener('click', clearSamples);
   $('btn-clear-samples-2').addEventListener('click', clearSamples);
   $('btn-wipe').addEventListener('click', function () {
-    confirmDialog('Delete everything?', 'All ' + state.entries.length + ' entries, balances, debts and settings will be erased from this browser. Export a backup first if you might want it back.', 'Delete all data').then(function (ok) {
+    confirmDialog('Delete everything?', 'All ' + state.entries.length + ' entries, balances, debts and settings will be erased' + (App.cloudActive ? ' from this device and your Claude account' : ' from this browser') + '. Export a backup first if you might want it back.', 'Delete all data').then(function (ok) {
       if (!ok) return;
       stashBackup(); var prev = state;
       state = C.normalizeState({ theme: prev.theme }, today()); ui.month = C.monthKey(today()); resetForm(); commit();
@@ -1580,15 +2140,25 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   });
 
   // ---------- expose for charts/retirement modules & tests ----------
-  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
+  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
 
+  // ---------- post due recurring items ----------
+  function postDueItems() {
+    var r = C.postDue(state, today()); if (!r.changed) return;
+    var prevRules = state.recurring, prevPay = state.paycheck, added = r.entries.map(function (e) { return e.id; });
+    state.entries = state.entries.concat(r.entries); state.recurring = r.recurring; state.paycheck = r.paycheck;
+    saveState();
+    if (r.entries.length) toast('Logged ' + r.entries.length + ' recurring ' + (r.entries.length === 1 ? 'item' : 'items'), { action: 'Undo', duration: 8000, onAction: function () { state.entries = state.entries.filter(function (e) { return added.indexOf(e.id) < 0; }); state.recurring = prevRules; state.paycheck = prevPay; commit(); } });
+  }
   // ---------- boot ----------
   loadState();
+  var hasRuntime = !!(window.claude && typeof window.claude.use === 'function');
+  if (!hasRuntime) postDueItems(); // in the Claude viewer, the sync module posts due items after it has read your account
   applyTheme();
   renderStorageStatus();
   $('f-date').value = today();
   window.addEventListener('storage', function (e) { if (e.key === STORAGE_KEY && e.newValue) { try { state = C.normalizeState(JSON.parse(e.newValue), today()); render(); } catch (err) {} } });
-  window.addEventListener('pagehide', function () { saveState(); });
+  window.addEventListener('pagehide', function () { saveState({ keepTime: true }); });
   showView('overview');
 })();
 </script>
@@ -1622,6 +2192,11 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var out = []; for (var v = lo; v <= hi + step / 2; v += step) out.push(Math.abs(v) < step / 1e6 ? 0 : v);
     return { lo: lo, hi: hi, ticks: out };
   }
+  function barPathDown(x, yTop, w, hgt, r) {
+    r = Math.min(r, w / 2, hgt); if (hgt <= 0) return '';
+    var yb = yTop + hgt;
+    return 'M' + x + ',' + yTop + ' V' + (yb - r) + ' Q' + x + ',' + yb + ' ' + (x + r) + ',' + yb + ' H' + (x + w - r) + ' Q' + (x + w) + ',' + yb + ' ' + (x + w) + ',' + (yb - r) + ' V' + yTop + ' Z';
+  }
   function barPath(x, yTop, w, hgt, r) {
     r = Math.min(r, w / 2, hgt);
     if (hgt <= 0) return '';
@@ -1639,7 +2214,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     A.clear(container);
     var n = cfg.slots.length;
     var W = Math.max(280, Math.floor(container.clientWidth || container.parentNode.clientWidth || 320)), H = cfg.height || 220;
-    var bars = cfg.bars || [], lines = cfg.lines || [], points = cfg.points || [], hlines = cfg.hlines || [], vmarks = cfg.vmarks || [];
+    var bars = cfg.bars || [], lines = cfg.lines || [], points = cfg.points || [], hlines = cfg.hlines || [], vmarks = cfg.vmarks || [], bands = cfg.bands || [];
     var vals = [];
     for (var i = 0; i < n; i++) {
       if (cfg.stacked) { var s = 0; bars.forEach(function (b) { s += Math.max(0, b.values[i] || 0); }); vals.push(s); }
@@ -1647,6 +2222,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       lines.forEach(function (l) { if (l.values[i] != null && isFinite(l.values[i])) vals.push(l.values[i]); });
     }
     points.forEach(function (p) { vals.push(p.value); }); hlines.forEach(function (l) { vals.push(l.value); });
+    bands.forEach(function (b) { for (var j = 0; j < n; j++) { if (b.upper[j] != null) vals.push(b.upper[j]); if (b.lower[j] != null) vals.push(b.lower[j]); } });
     var min = vals.length ? Math.min.apply(null, vals) : 0, max = vals.length ? Math.max.apply(null, vals) : 1;
     var tk = ticks(min, max, cfg.yTicks || 4);
     var yFormat = cfg.yFormat || function (v) { return String(v); };
@@ -1676,6 +2252,15 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       gX.appendChild(sv('text', { x: xc(i), y: H - 6, 'text-anchor': 'middle', class: 'axis-text' }, [document.createTextNode(cfg.xLabel ? cfg.xLabel(i) : cfg.slots[i])]));
     }
     svg.appendChild(gX);
+    // bands (behind everything else)
+    bands.forEach(function (b) {
+      var up = '', lo = '';
+      for (var j = 0; j < n; j++) { if (b.upper[j] == null || b.lower[j] == null) continue; up += (up ? ' L' : 'M') + xc(j).toFixed(1) + ',' + y(b.upper[j]).toFixed(1); lo = 'L' + xc(j).toFixed(1) + ',' + y(b.lower[j]).toFixed(1) + ' ' + lo; }
+      if (!up) return;
+      svg.appendChild(sv('path', { d: up + ' ' + lo + 'Z', fill: b.color, class: 'band' }));
+      svg.appendChild(sv('path', { d: up, stroke: b.color, class: 'band-edge' }));
+      svg.appendChild(sv('path', { d: 'M' + lo.slice(1).trim(), stroke: b.color, class: 'band-edge' }));
+    });
     // bars
     var gBars = sv('g'); var barEls = [];
     if (bars.length) {
@@ -1699,7 +2284,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
             var v = b.values[i]; if (v == null || v === 0) return;
             var x0 = xc(i) - groupW / 2 + k * (bw2 + gap);
             var yt = v > 0 ? y(v) : y(0), hgt = Math.max(1, Math.abs(y(v) - y(0)));
-            var p = sv('path', { d: barPath(x0, yt, bw2, hgt, 4), fill: b.color, class: 'bar' }); gBars.appendChild(p); barEls.push({ i: i, el: p });
+            var fill = (v < 0 && b.negColor) ? b.negColor : b.color;
+            var p = sv('path', { d: v > 0 ? barPath(x0, yt, bw2, hgt, 4) : barPathDown(x0, yt, bw2, hgt, 4), fill: fill, class: 'bar' }); gBars.appendChild(p); barEls.push({ i: i, el: p });
           });
         }
       }
@@ -1773,7 +2359,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     // legend
     if (cfg.legend && cfg.legend.length > 1) {
       var lg = h('div', { class: 'legend' });
-      cfg.legend.forEach(function (l) { lg.appendChild(h('span', {}, [h('i', { class: l.kind === 'line' ? 'line' : '', style: 'background:' + l.color + (l.kind === 'dash' ? ';background:repeating-linear-gradient(90deg,' + l.color + ' 0 3px,transparent 3px 6px)' : '') }), l.name])); });
+      cfg.legend.forEach(function (l) { lg.appendChild(h('span', {}, [h('i', { class: l.kind === 'line' ? 'line' : '', style: 'background:' + l.color + (l.kind === 'dash' ? ';background:repeating-linear-gradient(90deg,' + l.color + ' 0 3px,transparent 3px 6px)' : l.kind === 'band' ? ';opacity:0.35' : '') }), l.name])); });
       container.appendChild(lg);
     }
     if (cfg.table) renderTable(container, cfg.table, cfg.tableKey);
@@ -1852,7 +2438,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     A.setText('rt-rate', tot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(tot.savingsRate));
     $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = sel ? 'Spending (filtered)' : 'Spending';
 
-    var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--accent');
+    var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--chart-accent');
     var monthTitle = function (b) { return b.mode === 'week' ? 'Week of ' + C.fmtDate(b.key, null) : C.fmtMonthKey(b.key, true); };
     var xl = function (b) { return b.mode === 'week' ? C.fmtDateShort(b.key) : C.fmtMonthShort(b.key); };
 
@@ -1931,10 +2517,19 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 (function () {
   'use strict';
   var C = window.FinanceCore, A = window.App, $ = A.$, h = A.h, money = A.money, ui = A.ui;
+  var COMP_LABEL = { monthly: 'monthly compounding', daily: 'daily compounding', simple: 'simple interest', none: 'no interest' };
+  var COMP_HELP = { monthly: 'Monthly interest = balance × APR ÷ 12.', daily: 'Interest compounds every day, as most credit cards do. Slightly more than monthly.', simple: 'Interest = original balance × APR ÷ 12 each month, and never compounds.', none: 'No interest is charged. The APR is ignored.' };
   var saveTimer = null;
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(A.saveState, 300); }
   function numOrNull(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
 
+  function fundNominal(st) { var f = C.FUNDS[st.k401Fund]; if (st.k401ReturnOverride !== null) return st.k401ReturnOverride; return f ? Math.round(C.seriesStats(C.fundBasisSeries(st.k401Fund)).cagr * 10) / 10 : 7; }
+  function effectiveReal(st) { return st.retirement.returnFromFund ? Math.round(C.realRate(fundNominal(st), st.inflation) * 10) / 10 : st.retirement.returnRate; }
+  function calcInputs(st, annualSpending, contribution) {
+    var r = st.retirement;
+    return { age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: effectiveReal(st), taxRate: r.taxRate, annualSpending: annualSpending, monthlyContribution: contribution,
+      k401Balance: st.k401Balance, k401Type: st.paycheck.k401Type, rothBalance: st.rothBalance, savingsBalance: st.savingsBalance, otherInvestments: st.otherInvestments, debts: st.debts, today: A.today() };
+  }
   function derived() {
     var st = A.state, t0 = A.today();
     var avg = C.averages(st.entries, t0);
@@ -1943,9 +2538,11 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var r = st.retirement;
     var annualSpending = r.spendingOverride === null ? defSpending : r.spendingOverride;
     var contribution = r.contributionOverride === null ? defContrib : r.contributionOverride;
-    var calc = C.retirementCalc({ age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: r.returnRate, taxRate: r.taxRate, annualSpending: annualSpending, monthlyContribution: contribution,
-      k401Balance: st.k401Balance, rothBalance: st.rothBalance, savingsBalance: st.savingsBalance, otherInvestments: st.otherInvestments, debts: st.debts, today: t0 });
-    return { avg: avg, defSpending: defSpending, defContrib: defContrib, annualSpending: annualSpending, contribution: contribution, calc: calc };
+    var inputs = calcInputs(st, annualSpending, contribution);
+    var calc = C.retirementCalc(inputs);
+    var f = C.FUNDS[st.k401Fund];
+    var odds = f ? C.retirementOdds(inputs, { returns: C.fundBasisSeries(st.k401Fund).map(function (p) { return p.r; }), inflation: st.inflation, runs: 400, seed: 11 }) : null;
+    return { avg: avg, defSpending: defSpending, defContrib: defContrib, annualSpending: annualSpending, contribution: contribution, calc: calc, odds: odds, inputs: inputs, realReturn: inputs.returnRate };
   }
 
   // ---------- inputs ----------
@@ -1955,7 +2552,13 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     setIf('r-age', r.age); setIf('r-target-age', r.targetAge);
     setIf('r-spending', d.annualSpending); setIf('r-contrib', d.contribution);
     setIf('r-k401', st.k401Balance || ''); setIf('r-roth', st.rothBalance || ''); setIf('r-savings', st.savingsBalance || ''); setIf('r-other', st.otherInvestments || '');
-    setIf('r-wr', r.withdrawalRate); setIf('r-return', r.returnRate); setIf('r-tax', r.taxRate);
+    setIf('r-wr', r.withdrawalRate); setIf('r-return', d.realReturn); setIf('r-tax', r.taxRate);
+    var f = C.FUNDS[st.k401Fund], roth = st.paycheck.k401Type === 'roth';
+    A.setText('r-return-help', r.returnFromFund ? 'From ' + (f ? f.ticker + ' history' : 'your custom rate') + ': ' + fundNominal(st).toFixed(1) + '% a year minus ' + st.inflation + '% inflation.' : 'Your own rate. Fund history would give ' + effectiveReal(Object.assign({}, st, { retirement: Object.assign({}, r, { returnFromFund: true }) })).toFixed(1) + '%.');
+    $('r-return-reset').hidden = r.returnFromFund;
+    A.setText('r-tax-help', roth ? 'Your 401k is Roth, so withdrawals are tax-free and this rate is not used.' : 'Applied to your traditional 401k balance.');
+    $('r-tax').disabled = roth;
+    if (document.activeElement !== $('r-k401type')) $('r-k401type').value = st.paycheck.k401Type;
     var n = d.avg.months;
     A.setText('r-spending-help', r.spendingOverride === null
       ? (n ? 'Tracker average ' + money(d.avg.expense, { whole: true }) + '/mo × 12, from ' + n + (n === 1 ? ' month' : ' months') + ' of entries.' : 'No entries yet, so this starts at $0. Type your own estimate.')
@@ -1965,10 +2568,10 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       ? (n ? 'Tracker average: ' + money(d.avg.k401, { whole: true }) + ' 401k + ' + money(d.avg.net, { whole: true }) + ' net savings per month.' : 'No entries yet. Type what you can save each month.')
       : 'Your override. Tracker average would be ' + money(d.defContrib, { whole: true }) + '/mo.');
     $('r-contrib-reset').hidden = r.contributionOverride === null;
-    A.setText('r-k401-help', st.k401UpdatedAt ? 'Shared with Overview · updated ' + C.fmtDate(st.k401UpdatedAt, A.today()) : 'Shared with Overview');
+    A.setText('r-k401-help', (st.paycheck.k401Type === 'roth' ? 'Roth · ' : 'Traditional · ') + (st.k401UpdatedAt ? 'updated ' + C.fmtDate(st.k401UpdatedAt, A.today()) : 'shared with Overview'));
   }
 
-  function bind(id, fn) { $(id).addEventListener('input', function () { fn(this.value); saveSoon(); renderOutputs(derived()); renderInputs(derived()); }); $(id).addEventListener('change', function () { fn(this.value); A.saveState(); A.render(); }); }
+  function bind(id, fn) { $(id).addEventListener('input', function () { fn(this.value); saveSoon(); var d = derived(); renderOutputs(d); renderInputs(d); renderFund(d); }); $(id).addEventListener('change', function () { fn(this.value); A.saveState(); A.render(); }); }
   bind('r-age', function (v) { var n = numOrNull(v); if (n !== null && n >= 10 && n <= 99) A.state.retirement.age = Math.round(n); });
   bind('r-target-age', function (v) { var n = numOrNull(v); if (n !== null && n >= 11 && n <= 100) A.state.retirement.targetAge = Math.round(n); });
   bind('r-spending', function (v) { var n = numOrNull(v); A.state.retirement.spendingOverride = n === null ? null : Math.max(0, C.round2(n)); });
@@ -1978,11 +2581,13 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   bind('r-savings', function (v) { A.state.savingsBalance = Math.max(0, C.round2(numOrNull(v) || 0)); });
   bind('r-other', function (v) { A.state.otherInvestments = Math.max(0, C.round2(numOrNull(v) || 0)); });
   bind('r-wr', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 100) A.state.retirement.withdrawalRate = n; });
-  bind('r-return', function (v) { var n = numOrNull(v); if (n !== null && n > -100 && n <= 100) A.state.retirement.returnRate = n; });
+  bind('r-return', function (v) { var n = numOrNull(v); if (n !== null && n > -100 && n <= 100) { A.state.retirement.returnRate = n; A.state.retirement.returnFromFund = false; } });
+  $('r-return-reset').addEventListener('click', function () { A.state.retirement.returnFromFund = true; A.commit(); });
+  $('r-k401type').addEventListener('change', function () { A.state.paycheck.k401Type = this.value === 'roth' ? 'roth' : 'traditional'; A.commit(); });
   bind('r-tax', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 100) A.state.retirement.taxRate = n; });
   $('r-spending-reset').addEventListener('click', function () { A.state.retirement.spendingOverride = null; A.commit(); });
   $('r-contrib-reset').addEventListener('click', function () { A.state.retirement.contributionOverride = null; A.commit(); });
-  $('r-assume-reset').addEventListener('click', function () { var r = A.state.retirement, d = C.DEFAULTS.retirement; r.withdrawalRate = d.withdrawalRate; r.returnRate = d.returnRate; r.taxRate = d.taxRate; A.commit(); A.toast('Assumptions reset to 4% / 6% / 15%'); });
+  $('r-assume-reset').addEventListener('click', function () { var r = A.state.retirement, d = C.DEFAULTS.retirement; r.withdrawalRate = d.withdrawalRate; r.returnFromFund = true; r.taxRate = d.taxRate; A.commit(); A.toast('Assumptions reset: 4% withdrawal, fund-history return, 15% tax'); });
 
   // ---------- debts ----------
   function renderDebtList() {
@@ -1999,22 +2604,25 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         setTimeout(function () { if (ui.debtArmed === d.id) { ui.debtArmed = null; A.render(); } }, 3500);
       });
       box.appendChild(h('div', { class: 'debt-row' }, [
-        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.rate + '% APR' }), h('span', { text: money(d.payment) + '/mo' }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
+        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.compounding === 'none' ? 'no interest' : d.rate + '% APR · ' + COMP_LABEL[d.compounding] }), h('span', { text: money(d.payment) + '/mo' }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
         h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openDebtForm(d); } }), del])
       ]));
     });
   }
   function openDebtForm(d) {
     ui.debtEditing = d ? d.id : 'new';
-    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : '';
+    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : ''; $('d-compound').value = d ? d.compounding : 'monthly'; syncCompoundHelp();
     $('d-error').style.display = 'none'; $('debt-form').hidden = false; $('d-add').hidden = true; A.setText('d-save', d ? 'Save changes' : 'Add debt');
     $('d-name').focus();
   }
   function closeDebtForm() { ui.debtEditing = null; $('debt-form').hidden = true; $('d-add').hidden = false; }
+  function syncCompoundHelp() { var v = $('d-compound').value; A.setText('d-compound-help', COMP_HELP[v] || ''); $('d-rate').disabled = v === 'none'; }
+  $('d-compound').addEventListener('change', syncCompoundHelp);
   $('d-add').addEventListener('click', function () { openDebtForm(null); });
   $('d-cancel').addEventListener('click', closeDebtForm);
   $('debt-form').addEventListener('submit', function (ev) {
     ev.preventDefault();
+    var compounding = $('d-compound').value; if (compounding === 'none' && $('d-rate').value === '') $('d-rate').value = '0';
     var name = $('d-name').value.trim(), balance = Number($('d-balance').value), rate = Number($('d-rate').value), payment = Number($('d-payment').value);
     var err = '';
     if (!name) err = 'Give the debt a name.';
@@ -2023,7 +2631,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     else if (!($('d-payment').value !== '' && isFinite(payment) && payment >= 0)) err = 'Monthly payment must be 0 or more.';
     if (err) { var e = $('d-error'); e.textContent = err; e.style.display = 'block'; return; }
     var st = A.state; var id = $('d-id').value;
-    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment });
+    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment, compounding: compounding });
     var i = st.debts.findIndex(function (x) { return x.id === id; });
     if (i >= 0) st.debts[i] = debt; else st.debts.push(debt);
     closeDebtForm(); A.commit();
@@ -2035,6 +2643,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   function fmtBig(x) { return isFinite(x) ? money(x, { compact: x >= 10000, whole: true }) : '—'; }
   function renderOutputs(d) {
     var st = A.state, r = st.retirement, c = d.calc, t0 = A.today();
+    A.setText('ret-years', r.targetAge > r.age ? (r.targetAge - r.age) + ' years to go' : 'at target age');
     A.setText('rt-target', fmtBig(c.target));
     A.setText('rt-target-sub', isFinite(c.target) ? money(c.annualSpending, { whole: true }) + '/yr ÷ ' + r.withdrawalRate + '%' : 'set a withdrawal rate');
     A.setText('rt-networth', money(c.netWorth, { compact: Math.abs(c.netWorth) >= 10000, whole: true }));
@@ -2064,22 +2673,35 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 
     // projection chart
     var proj = c.projection; var box = $('chart-proj');
-    var cAcc = Charts.cssVar('--accent'), cText = Charts.cssVar('--text-2'), cGood = Charts.cssVar('--income');
+    var cAcc = Charts.cssVar('--chart-accent'), cText = Charts.cssVar('--text-2'), cGood = Charts.cssVar('--income');
     var year0 = +t0.slice(0, 4);
-    var tbl = { caption: 'Projected net worth by year', columns: ['Age', 'Year', 'Net worth', 'Target'], rows: proj.map(function (p) { return [String(p.age), String(year0 + p.year), money(p.netWorth, { whole: true }), isFinite(c.target) ? money(c.target, { whole: true }) : '—']; }) };
-    if (!isFinite(c.target) || proj.length < 2) { Charts.emptyChart(box, 'Add balances, contributions and a withdrawal rate to see a projection.', tbl, 'ch5'); return; }
+    var od = d.odds, oy = od ? od.years : [];
+    var fund = C.FUNDS[st.k401Fund];
+    var tbl = { caption: 'Projected net worth by year', columns: ['Age', 'Year', 'Expected', 'Weak markets', 'Strong markets', 'Target'], rows: proj.map(function (p, i) { var o = oy[i]; return [String(p.age), String(year0 + p.year), money(p.netWorth, { whole: true }), o ? money(o.p10, { whole: true }) : '—', o ? money(o.p90, { whole: true }) : '—', isFinite(c.target) ? money(c.target, { whole: true }) : '—']; }) };
+    var oddsEl = $('rt-odds'); A.clear(oddsEl);
+    if (od && isFinite(c.target)) {
+      var pct = Math.round(od.probByTargetAge * 100), ra = od.reachAge;
+      var ageTxt = function (a) { return a === null ? '100+' : String(Math.ceil(a)); };
+      oddsEl.appendChild(document.createTextNode('Replaying ' + fund.ticker + '\u2019s yearly returns since 1928 in ' + od.runs + ' random orders: '));
+      oddsEl.appendChild(h('strong', { class: 'num', text: pct + '%' }));
+      oddsEl.appendChild(document.createTextNode(' of runs reach ' + fmtBig(c.target) + ' by age ' + r.targetAge + '. Typical age ' + ageTxt(ra.p50) + '; in weak markets ' + ageTxt(ra.p90) + ', in strong ones ' + ageTxt(ra.p10) + '.'));
+    } else if (isFinite(c.target)) oddsEl.textContent = 'Pick FXAIX or LFIKX under 401k & forecast to see the odds from historical returns.';
+    if (!isFinite(c.target) || proj.length < 2) Charts.emptyChart(box, 'Add balances, contributions and a withdrawal rate to see a projection.', tbl, 'ch5');
+    else {
     var tIdx = r.targetAge - r.age; var reachIdx = c.ageAtTarget !== null ? c.ageAtTarget - r.age : null;
     Charts.draw(box, {
       slots: proj.map(function (p) { return String(p.age); }), xLabel: function (i) { return String(proj[i].age); },
+      bands: oy.length ? [{ color: cAcc, upper: proj.map(function (p, i) { return oy[i] ? oy[i].p90 : null; }), lower: proj.map(function (p, i) { return oy[i] ? oy[i].p10 : null; }) }] : [],
       lines: [{ name: 'Net worth', color: cAcc, values: proj.map(function (p) { return p.netWorth; }), markers: proj.length <= 20 }],
       hlines: [{ value: c.target, label: 'Target ' + fmtBig(c.target) }],
       vmarks: tIdx >= 0 && tIdx <= proj.length - 1 ? [{ index: tIdx, label: 'Retire at ' + r.targetAge }] : [],
       points: reachIdx !== null && reachIdx <= proj.length - 1 && c.monthsToTarget > 0 ? [{ index: reachIdx, value: c.target, color: cGood, label: 'Age ' + Math.ceil(c.ageAtTarget) }] : [],
       yFormat: function (v) { return money(v, { compact: true, whole: true }); }, height: 240,
-      tooltip: function (i) { var p = proj[i]; return { title: 'Age ' + p.age + ' · ' + (year0 + p.year), rows: [{ label: 'Net worth', value: money(p.netWorth, { whole: true }), color: cAcc }, { label: 'Target', value: fmtBig(c.target), color: cText }, { label: isFinite(c.target) && p.netWorth >= c.target ? 'Ahead by' : 'Short by', value: money(Math.abs(c.target - p.netWorth), { whole: true }) }] }; },
-      legend: [{ name: 'Net worth', color: cAcc, kind: 'line' }, { name: 'Target', color: cText, kind: 'dash' }],
+      tooltip: function (i) { var p = proj[i], o = oy[i]; var rows = [{ label: 'Expected', value: money(p.netWorth, { whole: true }), color: cAcc }]; if (o) rows.push({ label: 'Weak–strong markets', value: money(o.p10, { compact: true, whole: true }) + ' – ' + money(o.p90, { compact: true, whole: true }) }); rows.push({ label: 'Target', value: fmtBig(c.target), color: cText }, { label: isFinite(c.target) && p.netWorth >= c.target ? 'Ahead by' : 'Short by', value: money(Math.abs(c.target - p.netWorth), { whole: true }) }); return { title: 'Age ' + p.age + ' · ' + (year0 + p.year), rows: rows }; },
+      legend: [{ name: 'Expected', color: cAcc, kind: 'line' }].concat(oy.length ? [{ name: 'Weak to strong markets (10th–90th pct)', color: cAcc, kind: 'band' }] : []).concat([{ name: 'Target', color: cText, kind: 'dash' }]),
       ariaLabel: 'Projected net worth by age against the target. Use arrow keys to read values.', table: tbl, tableKey: 'ch5'
     });
+    }
 
     // debt table
     var t = $('debt-table'); A.clear(t);
@@ -2088,20 +2710,344 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     t.appendChild(thead);
     var tb = h('tbody');
     c.debts.forEach(function (d) {
-      tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: d.name }), h('td', { class: 'num', text: money(d.balance) }), h('td', { class: 'num', text: d.rate + '%' }),
+      tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: d.name }), h('td', { class: 'num', text: money(d.balance, { whole: true }) }), h('td', { class: 'num' }, [d.compounding === 'none' ? '0%' : d.rate + '%', h('div', { class: 'xs muted', text: d.compounding === 'none' ? 'no interest' : d.compounding === 'simple' ? 'simple' : d.compounding })]),
         d.neverPaysOff ? h('td', { class: 'num danger-text', text: 'never' }) : h('td', { class: 'num' }, [C.fmtMonthKey(C.monthKey(d.payoffDate)), h('div', { class: 'xs muted', text: C.fmtMonthsDuration(d.months) })]),
-        h('td', { class: 'num', text: d.neverPaysOff ? '∞' : money(d.interest) })]));
+        h('td', { class: 'num', text: d.neverPaysOff ? '∞' : money(d.interest, { whole: true }) })]));
     });
-    tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: 'Total' }), h('td', { class: 'num', text: money(c.totalDebt) }), h('td'), h('td'), h('td', { class: 'num', text: c.anyDebtNeverPaysOff ? '∞' : money(c.totalInterest) })]));
+    tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: 'Total' }), h('td', { class: 'num', text: money(c.totalDebt, { whole: true }) }), h('td'), h('td'), h('td', { class: 'num', text: c.anyDebtNeverPaysOff ? '∞' : money(c.totalInterest, { whole: true }) })]));
     t.appendChild(tb);
   }
 
+
+  // ---------- 401k fund & forecast ----------
+  function fundDerived(d) {
+    var st = A.state, r = st.retirement; var key = st.k401Fund; var f = C.FUNDS[key];
+    var own = f ? C.fundSeries(key) : []; var basis = f ? C.fundBasisSeries(key) : [];
+    var ownStats = C.seriesStats(own), basisStats = C.seriesStats(basis);
+    var defaultReturn = f ? Math.round(basisStats.cagr * 10) / 10 : 7;
+    var expected = st.k401ReturnOverride === null ? defaultReturn : st.k401ReturnOverride;
+    var real = C.realRate(expected, st.inflation);
+    var years = Math.max(1, Math.min(70, r.targetAge - r.age));
+    var contrib = d.avg.k401;
+    var det = C.forecastBalance({ balance: st.k401Balance, monthlyContribution: contrib, years: years, annualReturnPct: expected });
+    var boot = f ? C.bootstrapForecast({ balance: st.k401Balance, monthlyContribution: contrib, years: years, returns: basis.map(function (p) { return p.r; }), runs: 1000, seed: 7 }) : [];
+    return { key: key, fund: f, own: own, basis: basis, ownStats: ownStats, basisStats: basisStats, defaultReturn: defaultReturn, expected: expected, real: real, years: years, contrib: contrib, det: det, boot: boot };
+  }
+  function renderFund(d) {
+    var st = A.state, r = st.retirement, fd = fundDerived(d), f = fd.fund, t0 = A.today();
+    if (document.activeElement !== $('k-fund')) $('k-fund').value = fd.key;
+    setIf('k-return', Math.round(fd.expected * 100) / 100); setIf('k-inflation', st.inflation);
+    A.setText('k-fund-desc', f ? f.desc : 'Enter the yearly return you expect.');
+    A.setText('k-return-help', st.k401ReturnOverride === null
+      ? (f ? 'Long-run average from ' + f.ticker + '\u2019s history. After ' + st.inflation + '% inflation: ' + fd.real.toFixed(1) + '%, used in your retirement projection.' : 'Default 7%. After inflation: ' + fd.real.toFixed(1) + '%.')
+      : 'Your override. Real return after ' + st.inflation + '% inflation: ' + fd.real.toFixed(1) + '%.' + (f ? ' Fund history would give ' + fd.defaultReturn + '%.' : ''));
+    $('k-return-reset').hidden = st.k401ReturnOverride === null;
+    $('k-return-reset').textContent = f ? 'Use fund history' : 'Use default';
+    var bs = fd.basisStats;
+    A.setText('k-summary', (st.paycheck.k401Type === 'roth' ? 'Roth' : 'Traditional') + (f ? ' · ' + f.ticker : ''));
+    A.setText('k-basis', f ? 'Forecast built from ' + f.ticker + '\u2019s yearly returns ' + bs.from + '–' + bs.to + (f.ticker === 'FXAIX' ? ' (S&P 500 history less its 0.015% fee)' : ' (its own returns since 2016; earlier years estimated from the S&P 500 at its 0.85 beta, less its 0.40% fee)') + '. The shaded range replays those years in 1,000 random orders. Past returns don\u2019t guarantee future ones.' : 'Using your custom rate only; pick a fund to forecast from historical returns.');
+    var cAcc = Charts.cssVar('--chart-accent'), cText = Charts.cssVar('--text-2');
+    // forecast chart
+    var det = fd.det, boot = fd.boot; var fbox = $('chart-fund-forecast'); var year0 = +t0.slice(0, 4);
+    var tblF = { caption: '401k forecast', columns: ['Age', 'Year', 'Expected', '10th pct', 'Median', '90th pct'], rows: det.map(function (p, i) { var b = boot[i]; return [String(r.age + p.year), String(year0 + p.year), money(p.balance, { whole: true }), b ? money(b.p10, { whole: true }) : '—', b ? money(b.p50, { whole: true }) : '—', b ? money(b.p90, { whole: true }) : '—']; }) };
+    if (st.k401Balance <= 0 && fd.contrib <= 0) Charts.emptyChart(fbox, 'Set a 401k balance or log 401k contributions to forecast growth.', tblF, 'ch7');
+    else Charts.draw(fbox, {
+      slots: det.map(function (p) { return String(r.age + p.year); }), xLabel: function (i) { return String(r.age + det[i].year); },
+      bands: boot.length ? [{ color: cAcc, upper: boot.map(function (b) { return b.p90; }), lower: boot.map(function (b) { return b.p10; }) }] : [],
+      lines: [{ name: 'Expected', color: cAcc, values: det.map(function (p) { return p.balance; }), markers: det.length <= 20 }].concat(boot.length ? [{ name: 'Median', color: cText, dash: true, markers: false, values: boot.map(function (b) { return b.p50; }) }] : []),
+      yFormat: function (v) { return money(v, { compact: true, whole: true }); }, height: 230,
+      tooltip: function (i) { var p = det[i], b = boot[i]; var rows = [{ label: 'Expected (' + fd.expected.toFixed(1) + '%)', value: money(p.balance, { whole: true }), color: cAcc }]; if (b) rows.push({ label: 'Historical median', value: money(b.p50, { whole: true }), color: cText }, { label: '10th–90th pct', value: money(b.p10, { compact: true, whole: true }) + ' – ' + money(b.p90, { compact: true, whole: true }) }); return { title: 'Age ' + (r.age + p.year) + ' · ' + (year0 + p.year), rows: rows }; },
+      legend: [{ name: 'Expected', color: cAcc, kind: 'line' }].concat(boot.length ? [{ name: 'Historical median', color: cText, kind: 'dash' }, { name: '10th–90th percentile', color: cAcc, kind: 'band' }] : []),
+      ariaLabel: '401k balance forecast by age. Use arrow keys to read values.', table: tblF, tableKey: 'ch7'
+    });
+    var last = det[det.length - 1]; var lb = boot[boot.length - 1];
+    var todays = last.balance / Math.pow(1 + st.inflation / 100, fd.years);
+    var line = $('k-forecast-line'); A.clear(line);
+    if (st.k401Balance <= 0 && fd.contrib <= 0) line.textContent = '';
+    else {
+      line.appendChild(document.createTextNode('At ' + money(fd.contrib, { whole: true }) + '/month' + (f ? ' into ' + f.ticker : '') + ' and ' + fd.expected.toFixed(1) + '%/yr, your 401k could reach about '));
+      line.appendChild(h('strong', { class: 'num', text: money(last.balance, { compact: true, whole: true }) }));
+      line.appendChild(document.createTextNode(' by age ' + r.targetAge + ' (' + money(todays, { compact: true, whole: true }) + ' in today’s dollars at ' + st.inflation + '% inflation).'));
+      if (lb) line.appendChild(document.createTextNode(' Resampling ' + f.ticker + '’s historical basis gives a 10th–90th percentile range of ' + money(lb.p10, { compact: true, whole: true }) + ' to ' + money(lb.p90, { compact: true, whole: true }) + '.'));
+      if (fd.contrib <= 0) line.appendChild(document.createTextNode(' Log 401k contributions on the Add tab to include them.'));
+    }
+  }
+  $('k-fund').addEventListener('change', function () { A.state.k401Fund = this.value; A.state.k401ReturnOverride = null; A.commit(); });
+  bind('k-return', function (v) { var n = numOrNull(v); A.state.k401ReturnOverride = n === null ? null : Math.max(-50, Math.min(50, n)); });
+  bind('k-inflation', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 30) A.state.inflation = n; });
+  $('k-return-reset').addEventListener('click', function () { A.state.k401ReturnOverride = null; A.commit(); });
+
+  A.retirementDerived = derived;
   A.renderers.retirement = function () {
     var d = derived();
     renderInputs(d); renderDebtList();
     if (ui.debtEditing === null) closeDebtForm();
-    renderOutputs(d);
+    renderOutputs(d); renderFund(d);
   };
+})();
+</script>
+<script>
+/* ============================================================
+   Recurring tab — paycheck setup, bills & subscriptions, upcoming
+   ============================================================ */
+(function () {
+  'use strict';
+  var C = window.FinanceCore, A = window.App, $ = A.$, h = A.h, money = A.money, ui = A.ui;
+  ui.ruleEditing = null; ui.ruleArmed = null; ui.ruleType = 'expense';
+  var saveTimer = null;
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(A.saveState, 300); }
+  function numOrNull(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
+  function setIf(id, v) { var el = $(id); if (document.activeElement !== el) el.value = (v === null || v === undefined) ? '' : v; }
+
+  // ---------- paycheck ----------
+  var PAY_FIELDS = { 'p-gross': 'gross', 'p-k401pct': 'k401Pct', 'p-k401fixed': 'k401Fixed', 'p-matchpct': 'matchPct', 'p-matchcap': 'matchCapPct', 'p-health': 'health', 'p-hsa': 'hsa', 'p-otherpre': 'otherPretax', 'p-otherpost': 'otherPosttax', 'p-staterate': 'stateRate', 'p-extra': 'extraWithholding', 'p-federal': 'federalManual', 'p-state': 'stateManual', 'p-ss': 'ssManual', 'p-medicare': 'medicareManual' };
+  Object.keys(PAY_FIELDS).forEach(function (id) {
+    var key = PAY_FIELDS[id];
+    $(id).addEventListener('input', function () { var n = numOrNull(this.value); A.state.paycheck[key] = n === null ? 0 : Math.max(0, n); saveSoon(); renderPayOutputs(); });
+    $(id).addEventListener('change', function () { A.state.paycheck = C.normalizePaycheck(A.state.paycheck); A.saveState(); A.render(); });
+  });
+  $('p-freq').addEventListener('change', function () { A.state.paycheck.frequency = this.value; A.commit(); });
+  $('p-k401type').addEventListener('change', function () { A.state.paycheck.k401Type = this.value === 'roth' ? 'roth' : 'traditional'; A.commit(); });
+  $('p-status').addEventListener('change', function () { A.state.paycheck.filingStatus = this.value; A.commit(); });
+  $('p-next').addEventListener('change', function () { A.state.paycheck.nextPayDate = C.isValidISO(this.value) ? this.value : null; A.commit(); });
+  $('pay-autolog').addEventListener('change', function () { A.state.paycheck.autoLog = this.checked; A.commit(); if (this.checked) A.postDueItems(); A.render(); });
+  $('p-taxmode').addEventListener('click', function (e) { var b = e.target.closest('button[data-mode]'); if (!b) return; A.state.paycheck.taxMode = b.getAttribute('data-mode'); A.commit(); });
+  $('pay-log').addEventListener('click', function () {
+    var pc = A.state.paycheck; if (pc.gross <= 0) { A.toast('Enter your gross pay first.'); $('p-gross').focus(); return; }
+    var date = pc.nextPayDate && pc.nextPayDate <= A.today() ? pc.nextPayDate : A.today();
+    var es = C.paycheckEntries(pc, date, 'paycheck'); var ids = es.map(function (e) { return e.id; });
+    A.state.entries = A.state.entries.concat(es);
+    if (pc.nextPayDate && pc.nextPayDate <= date) pc.nextPayDate = C.advanceDate(pc.nextPayDate, pc.frequency);
+    A.commit();
+    A.toast('Logged paycheck: +' + money(es[0].amount) + (es.length > 1 ? ' and 401k' : ''), { action: 'Undo', onAction: function () { A.state.entries = A.state.entries.filter(function (e) { return ids.indexOf(e.id) < 0; }); A.commit(); } });
+  });
+
+  function renderPayInputs() {
+    var p = A.state.paycheck;
+    Object.keys(PAY_FIELDS).forEach(function (id) { var v = p[PAY_FIELDS[id]]; setIf(id, v === 0 && id !== 'p-k401pct' && id !== 'p-matchpct' && id !== 'p-matchcap' ? '' : v); });
+    if (document.activeElement !== $('p-freq')) $('p-freq').value = p.frequency;
+    if (document.activeElement !== $('p-status')) $('p-status').value = p.filingStatus;
+    if (document.activeElement !== $('p-k401type')) $('p-k401type').value = p.k401Type;
+    A.setText('p-k401pct-help', p.k401Type === 'roth' ? 'of gross, after tax (Roth)' : 'of gross, before tax');
+    setIf('p-next', p.nextPayDate || '');
+    $('pay-autolog').checked = p.autoLog;
+    Array.prototype.forEach.call($('p-taxmode').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === p.taxMode)); });
+    var manual = p.taxMode === 'manual';
+    ['p-man-fed', 'p-man-state', 'p-man-ss', 'p-man-med'].forEach(function (id) { $(id).hidden = !manual; });
+    ['p-auto-state', 'p-auto-extra'].forEach(function (id) { $(id).hidden = manual; });
+  }
+  function renderPayOutputs() {
+    var p = A.state.paycheck, b = C.paycheckBreakdown(p), t0 = A.today();
+    A.setText('pay-next', p.gross > 0 ? (p.nextPayDate ? 'next pay ' + C.fmtDate(p.nextPayDate, t0) : 'set your next pay date') : 'not set up');
+    A.setText('pay-net-month', A.tileMoney(b.monthly.net));
+    A.setText('pay-net-period', p.gross > 0 ? money(b.net) + ' ' + C.FREQ_LABEL[p.frequency].toLowerCase() : 'enter gross pay below');
+    A.setText('pay-tax-month', A.tileMoney(b.monthly.taxes));
+    A.setText('pay-tax-rate', p.gross > 0 ? C.fmtPct(b.effectiveTaxRate, 1) + ' of gross' : '');
+    var bar = $('pay-segbar'), lg = $('pay-legend'); A.clear(bar); A.clear(lg);
+    var cInc = Charts.cssVar('--income'), cK = Charts.cssVar('--k401'), cTax = Charts.cssVar('--spend'), cOther = Charts.cssVar('--muted');
+    var parts = [['Take-home', b.net, cInc], ['401k', C.round2(b.k401 + b.roth), cK], ['Taxes', b.taxes, cTax], ['Benefits & other', C.round2(b.health + b.hsa + b.otherPretax + b.otherPosttax), cOther]];
+    if (b.gross > 0) { parts.forEach(function (pt) { if (pt[1] <= 0) return; bar.appendChild(h('span', { style: 'width:' + (pt[1] / b.gross * 100) + '%;background:' + pt[2], title: pt[0] + ' ' + money(pt[1]) })); lg.appendChild(h('span', {}, [h('i', { style: 'background:' + pt[2] }), pt[0] + ' ' + C.fmtPct(pt[1] / b.gross)])); }); }
+    bar.setAttribute('aria-label', 'Paycheck split: ' + parts.map(function (pt) { return pt[0] + ' ' + money(pt[1]); }).join(', '));
+    var lines = $('pay-lines'); A.clear(lines);
+    function line(k, v, cls) { lines.appendChild(h('div', { class: 'pay-line ' + (cls || '') }, [h('span', { text: k }), h('span', { class: 'num', text: v })])); }
+    if (b.gross <= 0) { lines.appendChild(h('p', { class: 'small text-2', text: 'Enter your gross pay and deductions below (straight off a pay stub) to see your take-home pay, taxes and 401k per paycheck and per month.' })); }
+    else {
+      line('Gross pay', money(b.gross));
+      var k401Label = (b.k401Type === 'roth' ? 'Roth 401k (' : '401k (') + p.k401Pct + '%' + (p.k401Fixed ? ' + ' + money(p.k401Fixed) : '') + ')';
+      if (b.pretax > 0) { line('Pre-tax deductions', '−' + money(b.pretax)); if (b.k401 > 0 && b.k401Type !== 'roth') line(k401Label, '−' + money(b.k401), 'sub'); if (b.health > 0) line('Health insurance', '−' + money(b.health), 'sub'); if (b.hsa > 0) line('HSA / FSA', '−' + money(b.hsa), 'sub'); if (b.otherPretax > 0) line('Other pre-tax', '−' + money(b.otherPretax), 'sub'); }
+      line('Taxes' + (b.taxMode === 'auto' ? ' (estimated)' : ''), '−' + money(b.taxes));
+      line('Federal income tax', '−' + money(b.federal), 'sub'); line('Social Security 6.2%', '−' + money(b.socialSecurity), 'sub'); line('Medicare 1.45%', '−' + money(b.medicare), 'sub'); if (b.state > 0) line('State income tax', '−' + money(b.state), 'sub');
+      if (b.posttax > 0) { line('After-tax deductions', '−' + money(b.posttax)); if (b.k401 > 0 && b.k401Type === 'roth') line(k401Label, '−' + money(b.k401), 'sub'); if (b.roth > 0) line('Roth 401k extra', '−' + money(b.roth), 'sub'); if (p.otherPosttax > 0) line('Other', '−' + money(p.otherPosttax), 'sub'); }
+      line('Take-home pay', money(b.net), 'total');
+      if (b.match > 0) line('Employer 401k match (not in your pay)', '+' + money(b.match), 'sub');
+      line('Per month: ' + money(b.monthly.net) + ' take-home · ' + money(C.round2(b.monthly.k401 + b.monthly.match)) + ' into 401k · ' + money(b.annual.net) + '/yr', '', 'sub');
+    }
+    $('pay-log').disabled = b.gross <= 0;
+  }
+
+  // ---------- rules ----------
+  function ruleCats() { var sel = $('u-cat'); A.clear(sel); C.CATS[ui.ruleType].forEach(function (c) { sel.appendChild(h('option', { value: c, text: (A.ICONS[c] || '') + ' ' + c })); }); }
+  $('u-type').addEventListener('click', function (e) { var b = e.target.closest('button[data-type]'); if (!b) return; ui.ruleType = b.getAttribute('data-type'); Array.prototype.forEach.call($('u-type').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x === b)); }); var prev = $('u-cat').value; ruleCats(); if (C.CATS[ui.ruleType].indexOf(prev) >= 0) $('u-cat').value = prev; });
+  function openRuleForm(r) {
+    ui.ruleEditing = r ? r.id : 'new'; ui.ruleType = r ? r.type : 'expense';
+    Array.prototype.forEach.call($('u-type').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-type') === ui.ruleType)); });
+    ruleCats();
+    $('u-id').value = r ? r.id : ''; $('u-name').value = r ? r.name : ''; $('u-amount').value = r ? r.amount : ''; $('u-freq').value = r ? r.frequency : 'monthly'; $('u-next').value = r ? r.nextDate : A.today(); $('u-cat').value = r ? r.cat : (ui.ruleType === 'expense' ? 'Bills' : 'Paycheck');
+    $('u-error').style.display = 'none'; $('rule-form').hidden = false; $('u-add').hidden = true; A.setText('u-save', r ? 'Save changes' : 'Add');
+    $('u-name').focus();
+  }
+  function closeRuleForm() { ui.ruleEditing = null; $('rule-form').hidden = true; $('u-add').hidden = false; }
+  $('u-add').addEventListener('click', function () { openRuleForm(null); });
+  $('u-cancel').addEventListener('click', closeRuleForm);
+  $('rule-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var name = $('u-name').value.trim(), amount = Number($('u-amount').value), next = $('u-next').value;
+    var err = !name ? 'Give it a name.' : !($('u-amount').value !== '' && isFinite(amount) && amount > 0) ? 'Amount must be greater than 0.' : !C.isValidISO(next) ? 'Pick the next due date.' : '';
+    if (err) { var e = $('u-error'); e.textContent = err; e.style.display = 'block'; return; }
+    var id = $('u-id').value; var existing = A.state.recurring.find(function (x) { return x.id === id; });
+    var rule = C.normalizeRule({ id: id || undefined, name: name, type: ui.ruleType, cat: $('u-cat').value, amount: amount, frequency: $('u-freq').value, nextDate: next, anchorDay: existing && existing.nextDate === next ? existing.anchorDay : +next.slice(8), active: existing ? existing.active : true, note: name }, A.today());
+    var i = A.state.recurring.findIndex(function (x) { return x.id === id; });
+    if (i >= 0) A.state.recurring[i] = rule; else A.state.recurring.push(rule);
+    closeRuleForm(); A.saveState(); A.postDueItems(); A.render();
+    A.toast(name + ' saved · ' + money(C.monthlyize(rule.amount, rule.frequency)) + '/mo');
+  });
+  function renderRules() {
+    var st = A.state, box = $('rule-list'), t0 = A.today(); A.clear(box);
+    var bills = C.recurringMonthlyTotal(st.recurring, 'expense'), inc = C.recurringMonthlyTotal(st.recurring, 'income');
+    A.setText('rec-total', st.recurring.length ? money(bills, { whole: true }) + '/mo' + (inc > 0 ? ' · +' + money(inc, { whole: true }) + ' income' : '') : '');
+    if (!st.recurring.length) { box.appendChild(A.emptyState('🔁', 'No recurring items yet', 'Add subscriptions, rent, utilities or side income here, or pick “Repeat” when adding an entry. They are logged automatically on their due dates.')); return; }
+    st.recurring.slice().sort(function (a, b) { return a.nextDate < b.nextDate ? -1 : a.nextDate > b.nextDate ? 1 : 0; }).forEach(function (r) {
+      var del = h('button', { type: 'button', class: 'btn icon sm del-btn', 'aria-label': 'Delete ' + r.name, text: '✕' });
+      if (ui.ruleArmed === r.id) { del.textContent = 'Delete'; del.className = 'btn sm del-btn confirm'; del.style.width = 'auto'; }
+      del.addEventListener('click', function () {
+        if (ui.ruleArmed === r.id) { ui.ruleArmed = null; var removed = r; st.recurring = st.recurring.filter(function (x) { return x.id !== r.id; }); A.commit(); A.toast('Deleted ' + removed.name + ' (logged entries are kept)', { action: 'Undo', onAction: function () { A.state.recurring.push(removed); A.commit(); } }); return; }
+        ui.ruleArmed = r.id; A.render(); var again = $('rule-list').querySelector('.del-btn.confirm'); if (again) again.focus();
+        setTimeout(function () { if (ui.ruleArmed === r.id) { ui.ruleArmed = null; A.render(); } }, 3500);
+      });
+      box.appendChild(h('div', { class: 'rule-row' + (r.active ? '' : ' paused') }, [
+        h('div', {}, [h('div', { class: 'name' }, [h('span', { 'aria-hidden': 'true', text: A.ICONS[r.cat] || '' }), r.name, r.active ? null : h('span', { class: 'pill', text: 'paused' })]),
+          h('div', { class: 'meta num' }, [h('span', { class: r.type === 'income' ? 'income-text' : '', text: (r.type === 'income' ? '+' : '') + money(r.amount) + ' ' + C.FREQ_LABEL[r.frequency].toLowerCase() }), h('span', { text: money(C.monthlyize(r.amount, r.frequency)) + '/mo' }), h('span', { text: 'next ' + C.fmtDate(r.nextDate, t0) })])]),
+        h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', 'aria-label': (r.active ? 'Pause ' : 'Resume ') + r.name, text: r.active ? 'Pause' : 'Resume', onclick: function () { r.active = !r.active; if (r.active && r.nextDate < t0) r.nextDate = t0; A.commit(); } }), h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openRuleForm(r); } }), del])
+      ]));
+    });
+  }
+  function renderUpcoming() {
+    var st = A.state, t0 = A.today(), box = $('upcoming'); A.clear(box);
+    var up = C.upcoming(st, t0, 30); var out = 0, inc = 0;
+    up.forEach(function (u) { if (u.type === 'income') inc += C.toCents(u.amount); else if (u.type === 'expense') out += C.toCents(u.amount); });
+    A.setText('upc-total', up.length ? '−' + money(C.fromCents(out), { whole: true }) + (inc ? ' · +' + money(C.fromCents(inc), { whole: true }) : '') : '');
+    if (!up.length) { box.appendChild(h('p', { class: 'small text-2', text: 'Nothing due in the next 30 days.' })); return; }
+    up.forEach(function (u) { box.appendChild(h('div', { class: 'upc' }, [h('span', { class: 'd', text: C.fmtDateShort(u.date) }), h('span', { class: 'n' }, [h('span', { 'aria-hidden': 'true', text: (A.ICONS[u.cat] || '') + ' ' }), u.name]), h('span', { class: 'num ' + (u.type === 'income' ? 'income-text' : ''), text: (u.type === 'income' ? '+' : '−') + money(u.amount) })])); });
+  }
+
+  A.renderers.recurring = function () {
+    renderPayInputs(); renderPayOutputs(); renderRules();
+    if (ui.ruleEditing === null) closeRuleForm();
+    renderUpcoming();
+  };
+})();
+</script>
+<script>
+/* ============================================================
+   Account sync — in the Claude viewer, keep the whole app in the
+   signed-in person's private db folder (data/users/<id>/), one
+   document for settings and one per month of entries, so history
+   follows them to any device. Outside the viewer this does nothing.
+   ============================================================ */
+(function () {
+  'use strict';
+  var C = window.FinanceCore, A = window.App, $ = A.$;
+  A.cloudActive = false;
+  if (!(window.claude && typeof window.claude.use === 'function')) return;
+  var SYNC_KEY = 'money-tracker-v2-sync';
+  var rec = {}; try { rec = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}') || {}; } catch (e) { rec = {}; }
+  if (!rec.deviceId) rec.deviceId = 'dev-' + Math.random().toString(36).slice(2, 10);
+  function writeRec() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(rec)); } catch (e) {} }
+  writeRec();
+  var settingsRef = null, monthsCol = null, ready = false, pushing = false, queued = false, pushTimer = null, lastPushed = {}, retried = false, postedDue = false;
+  var LABEL = { connecting: 'Connecting', syncing: 'Saving', synced: 'Synced', offline: 'Offline', error: 'Sync failed', full: 'Storage full', local: '' };
+  var DETAIL = {
+    connecting: 'Connecting to your Claude account…',
+    syncing: 'Saving to your Claude account…',
+    synced: 'Saved to your Claude account. Open this page signed in on any device to see the same data.',
+    offline: 'Can’t reach your Claude account right now. Changes are kept on this device and sync when it’s back.',
+    error: 'The last sync didn’t go through. It retries on your next change; export a backup if this keeps happening.',
+    full: 'Your account storage for this page is full. Export a backup and clear old entries.',
+    local: 'This device only. Sign in to Claude to keep your history in your account.'
+  };
+  function setStatus(st) {
+    A.syncStatus = st;
+    var chip = $('sync-chip'); chip.hidden = !LABEL[st]; chip.textContent = LABEL[st] || ''; chip.setAttribute('data-s', st);
+    $('sync-status').textContent = DETAIL[st] || '';
+    $('settings-desc').textContent = A.cloudActive
+      ? 'Your data is saved in your Claude account, private to you, and in this browser for speed. Export a backup if you also want a copy of your own.'
+      : 'Everything is stored only in this browser. Export a backup to keep it safe or move it to another device.';
+  }
+  setStatus('connecting');
+  function postDueOnce() { if (postedDue) return; postedDue = true; A.postDueItems(); A.render(); }
+  var giveUp = setTimeout(function () { if (!ready) { setStatus('offline'); postDueOnce(); } }, 10000);
+
+  function byMonth(entries) { var m = {}; entries.forEach(function (e) { var k = e.date.slice(0, 7); (m[k] = m[k] || []).push(e); }); return m; }
+  function adopt(cloud, entries, note) {
+    A.stashBackup();
+    var theme = A.state.theme;
+    var st = C.normalizeState(Object.assign({}, cloud.state || {}, { entries: entries, theme: theme }), A.today());
+    st.updatedAt = cloud.updatedAt || 0;
+    A.state = st; rec.syncedAt = st.updatedAt; writeRec();
+    A.saveState({ keepTime: true, fromCloud: true });
+    A.applyTheme(); A.render();
+    if (note) A.toast(note);
+  }
+  async function readMonths() {
+    var snap = await monthsCol.get(); var entries = []; lastPushed = {};
+    snap.docs.forEach(function (d) { var data = d.data() || {}; var arr = Array.isArray(data.entries) ? data.entries : []; lastPushed[d.id] = JSON.stringify(arr); entries = entries.concat(arr); });
+    return entries;
+  }
+  async function push() {
+    if (!ready) return;
+    if (pushing) { queued = true; return; }
+    pushing = true; setStatus('syncing');
+    try {
+      var st = A.state, at = st.updatedAt || Date.now(), months = byMonth(st.entries);
+      var keys = Object.keys(months).concat(Object.keys(lastPushed).filter(function (k) { return !months[k]; }));
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i], arr = months[k] || [], js = JSON.stringify(arr);
+        if (lastPushed[k] === js) continue;
+        if (arr.length) { await monthsCol.doc(k).set({ entries: JSON.parse(js), updatedAt: at }); lastPushed[k] = js; }
+        else { await monthsCol.doc(k).delete(); delete lastPushed[k]; }
+      }
+      var settings = JSON.parse(JSON.stringify(st)); delete settings.entries; delete settings.theme;
+      await settingsRef.set({ v: 1, state: settings, updatedAt: at, writer: rec.deviceId, months: Object.keys(months).sort() });
+      rec.syncedAt = at; writeRec(); retried = false; setStatus('synced');
+    } catch (e) {
+      var code = e && e.code;
+      if (code === 'quota_exceeded') setStatus('full');
+      else if (code === 'unavailable' && !retried) { retried = true; setStatus('offline'); setTimeout(function () { schedule(0); }, 2000 + Math.random() * 2000); }
+      else setStatus(code === 'revoked' || code === 'not_granted' ? 'local' : 'error');
+    }
+    pushing = false;
+    if (queued) { queued = false; schedule(0); }
+  }
+  function schedule(delay) { clearTimeout(pushTimer); pushTimer = setTimeout(push, delay === undefined ? 1200 : delay); }
+  A.onSaved = function (opts) { if (ready && !opts.keepTime) schedule(); };
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && ready && (A.state.updatedAt || 0) > (rec.syncedAt || 0)) push(); });
+
+  async function pullNewer(d) {
+    try { var entries = await readMonths(); adopt(d, entries, 'Updated with changes from another device'); setStatus('synced'); } catch (e) { setStatus('error'); }
+  }
+  async function init() {
+    var got = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    var db = got[0], user = got[1];
+    var uid = user ? await user.id() : null;
+    if (!db || !uid) { clearTimeout(giveUp); setStatus('local'); postDueOnce(); return; }
+    settingsRef = db.doc('data/users/' + uid + '/state');
+    monthsCol = settingsRef.collection('months');
+    var snap = await settingsRef.get();
+    var cloud = snap.exists ? snap.data() : null;
+    A.cloudActive = true; ready = true; clearTimeout(giveUp);
+    if (!cloud) {
+      lastPushed = {};
+      postDueOnce(); schedule(0);
+    } else {
+      var entries = await readMonths();
+      var cloudAt = cloud.updatedAt || 0, localAt = A.state.updatedAt || 0, synced = rec.syncedAt;
+      var localDirty = synced !== undefined && localAt > synced;
+      var cloudChanged = cloudAt !== synced;
+      if (synced === undefined) adopt(cloud, entries, null);                                   // first time on this device: your account wins
+      else if (cloudChanged && (!localDirty || cloudAt >= localAt)) adopt(cloud, entries, 'Loaded your latest data from your account');
+      else if (localDirty) schedule(0);
+      setStatus('synced');
+      postDueOnce();
+    }
+    settingsRef.onSnapshot(function (sn) {
+      if (!sn.exists || sn.metadata.hasPendingWrites || sn.metadata.fromCache) return;
+      var d = sn.data() || {};
+      if ((d.updatedAt || 0) <= (rec.syncedAt || 0) || d.writer === rec.deviceId) return;
+      if ((A.state.updatedAt || 0) > (rec.syncedAt || 0)) return; // unsynced edits here; this device's next save wins
+      pullNewer(d);
+    }, function () { setStatus('offline'); });
+  }
+  init().catch(function () { clearTimeout(giveUp); setStatus('offline'); postDueOnce(); });
 })();
 </script>
 </body>
