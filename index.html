@@ -222,10 +222,9 @@ main { max-width: var(--max-w); margin: 0 auto; padding: var(--sp-4); }
 /* Tiles */
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .tiles.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 480px) { .tiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .tile { background: var(--surface-2); border-radius: var(--radius-sm); padding: var(--sp-3); min-width: 0; }
 .tile .label { font-size: var(--fs-xs); color: var(--text-2); display: flex; align-items: center; gap: 6px; }
-.tile .value { font-size: var(--fs-lg); font-weight: 650; letter-spacing: -0.01em; margin-top: 2px; overflow-wrap: anywhere; }
+.tile .value { font-size: var(--fs-lg); font-weight: 650; letter-spacing: -0.01em; margin-top: 2px; white-space: nowrap; }
 .tile .sub { font-size: var(--fs-xs); color: var(--muted); margin-top: 2px; }
 .tile.big .value { font-size: var(--fs-xl); }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
@@ -468,6 +467,8 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .data-table th:first-child, .data-table td:first-child { text-align: left; }
 .data-table th { color: var(--muted); font-weight: 600; }
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#debt-table th, #debt-table td { white-space: normal; padding: 6px 4px; }
+#debt-table th:first-child, #debt-table td:first-child { overflow-wrap: anywhere; }
 .table-toggle { font-size: var(--fs-xs); color: var(--accent); font-weight: 600; min-height: 32px; padding: 0 6px; border-radius: 6px; }
 .table-toggle:hover { background: var(--accent-soft); }
 
@@ -732,7 +733,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         <div class="form-grid">
           <div class="field span2"><label for="d-name">Name</label><input class="input" id="d-name" type="text" maxlength="40" placeholder="e.g. Car loan" required></div>
           <div class="field"><label for="d-balance">Balance</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-balance" type="number" inputmode="decimal" min="0" step="0.01" required></div></div>
-          <div class="field"><label for="d-rate">Interest rate</label><div class="input-wrap"><input class="input has-suffix num" id="d-rate" type="number" inputmode="decimal" min="0" max="100" step="0.01" required><span class="suffix">%</span></div></div>
+          <div class="field"><label for="d-rate">Interest rate</label><div class="input-wrap"><input class="input has-suffix num" id="d-rate" type="number" inputmode="decimal" min="0" max="999" step="0.01" required><span class="suffix">%</span></div></div>
           <div class="field span2"><label for="d-payment">Monthly payment</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-payment" type="number" inputmode="decimal" min="0" step="0.01" required></div><div class="error" id="d-error" role="alert"></div></div>
         </div>
         <div class="row"><button type="button" class="btn ghost" id="d-cancel">Cancel</button><button type="submit" class="btn primary grow" id="d-save">Save debt</button></div>
@@ -1227,6 +1228,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 
   // ---------- helpers ----------
   function money(x, o) { return C.fmtMoney(x, o); }
+  function tileMoney(x) { return Math.abs(x) >= 1e5 ? C.fmtMoney(x, { compact: true, whole: true }) : C.fmtMoney(x); }
   function setText(id, text) { $(id).textContent = text; }
   function h(tag, attrs, children) {
     var el = document.createElement(tag);
@@ -1323,7 +1325,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var entries = C.entriesInMonth(state.entries, ui.month);
     var t = C.totals(entries);
     setText('summary-count', t.count.all === 0 ? '' : t.count.expense + (t.count.expense === 1 ? ' purchase' : ' purchases') + ' · ' + t.count.all + (t.count.all === 1 ? ' entry' : ' entries'));
-    setText('sum-income', money(t.income)); setText('sum-expense', money(t.expense)); setText('sum-k401', money(t.k401)); setText('sum-net', money(t.net));
+    setText('sum-income', tileMoney(t.income)); setText('sum-expense', tileMoney(t.expense)); setText('sum-k401', tileMoney(t.k401)); setText('sum-net', tileMoney(t.net));
     $('sum-net').className = 'value num ' + (t.net < 0 ? 'danger-text' : t.net > 0 ? 'income-text' : '');
     setText('sum-rate', C.fmtPct(t.savingsRate));
     $('sum-rate').className = 'hero num ' + (t.savingsRate === null ? 'muted' : t.savingsRate < 0 ? 'danger-text' : '');
@@ -1578,7 +1580,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   });
 
   // ---------- expose for charts/retirement modules & tests ----------
-  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
+  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
 
   // ---------- boot ----------
   loadState();
@@ -1725,7 +1727,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     // points
     points.forEach(function (p) {
       svg.appendChild(sv('circle', { cx: xc(p.index), cy: y(p.value), r: 5.5, fill: p.color, class: 'marker', stroke: surface }));
-      if (p.label) { var anchor = xc(p.index) > W * 0.7 ? 'end' : 'start'; svg.appendChild(sv('text', { x: xc(p.index) + (anchor === 'end' ? -9 : 9), y: y(p.value) + 4, class: 'label-text', 'text-anchor': anchor }, [document.createTextNode(p.label)])); }
+      if (p.label) { var anchor = xc(p.index) > W * 0.7 ? 'end' : xc(p.index) < W * 0.3 ? 'start' : 'middle'; svg.appendChild(sv('text', { x: xc(p.index), y: y(p.value) - 11, class: 'label-text', 'text-anchor': anchor }, [document.createTextNode(p.label)])); }
     });
     // crosshair
     var cross = sv('line', { x1: 0, x2: 0, y1: padT, y2: padT + plotH, class: 'crosshair', opacity: 0 });
@@ -1845,7 +1847,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var sel = ui.catFilter;
     var filtered = sel ? inRange.filter(function (e) { return e.type !== 'expense' || sel.indexOf(e.cat) >= 0; }) : inRange;
     var tot = C.totals(filtered);
-    A.setText('rt-income', money(tot.income)); A.setText('rt-expense', money(tot.expense)); A.setText('rt-net', money(tot.net)); A.setText('rt-k401', money(tot.k401));
+    A.setText('rt-income', A.tileMoney(tot.income)); A.setText('rt-expense', A.tileMoney(tot.expense)); A.setText('rt-net', A.tileMoney(tot.net)); A.setText('rt-k401', A.tileMoney(tot.k401));
     $('rt-net').className = 'value num ' + (tot.net < 0 ? 'danger-text' : tot.net > 0 ? 'income-text' : '');
     A.setText('rt-rate', tot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(tot.savingsRate));
     $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = sel ? 'Spending (filtered)' : 'Spending';
@@ -1920,6 +1922,186 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   var rt = null;
   window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { if (ui.view === 'charts' || ui.view === 'retirement') A.render(); }, 150); });
   if (window.matchMedia) { try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (ui.view === 'charts' || ui.view === 'retirement') A.render(); }); } catch (e) {} }
+})();
+</script>
+<script>
+/* ============================================================
+   Retirement tab — target, debts, projection
+   ============================================================ */
+(function () {
+  'use strict';
+  var C = window.FinanceCore, A = window.App, $ = A.$, h = A.h, money = A.money, ui = A.ui;
+  var saveTimer = null;
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(A.saveState, 300); }
+  function numOrNull(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
+
+  function derived() {
+    var st = A.state, t0 = A.today();
+    var avg = C.averages(st.entries, t0);
+    var defSpending = C.round2(avg.expense * 12);
+    var defContrib = C.round2(avg.k401 + avg.net);
+    var r = st.retirement;
+    var annualSpending = r.spendingOverride === null ? defSpending : r.spendingOverride;
+    var contribution = r.contributionOverride === null ? defContrib : r.contributionOverride;
+    var calc = C.retirementCalc({ age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: r.returnRate, taxRate: r.taxRate, annualSpending: annualSpending, monthlyContribution: contribution,
+      k401Balance: st.k401Balance, rothBalance: st.rothBalance, savingsBalance: st.savingsBalance, otherInvestments: st.otherInvestments, debts: st.debts, today: t0 });
+    return { avg: avg, defSpending: defSpending, defContrib: defContrib, annualSpending: annualSpending, contribution: contribution, calc: calc };
+  }
+
+  // ---------- inputs ----------
+  function setIf(id, v) { var el = $(id); if (document.activeElement !== el) el.value = (v === null || v === undefined) ? '' : v; }
+  function renderInputs(d) {
+    var st = A.state, r = st.retirement;
+    setIf('r-age', r.age); setIf('r-target-age', r.targetAge);
+    setIf('r-spending', d.annualSpending); setIf('r-contrib', d.contribution);
+    setIf('r-k401', st.k401Balance || ''); setIf('r-roth', st.rothBalance || ''); setIf('r-savings', st.savingsBalance || ''); setIf('r-other', st.otherInvestments || '');
+    setIf('r-wr', r.withdrawalRate); setIf('r-return', r.returnRate); setIf('r-tax', r.taxRate);
+    var n = d.avg.months;
+    A.setText('r-spending-help', r.spendingOverride === null
+      ? (n ? 'Tracker average ' + money(d.avg.expense, { whole: true }) + '/mo × 12, from ' + n + (n === 1 ? ' month' : ' months') + ' of entries.' : 'No entries yet, so this starts at $0. Type your own estimate.')
+      : 'Your override. Tracker average would be ' + money(d.defSpending, { whole: true }) + '/yr.');
+    $('r-spending-reset').hidden = r.spendingOverride === null;
+    A.setText('r-contrib-help', r.contributionOverride === null
+      ? (n ? 'Tracker average: ' + money(d.avg.k401, { whole: true }) + ' 401k + ' + money(d.avg.net, { whole: true }) + ' net savings per month.' : 'No entries yet. Type what you can save each month.')
+      : 'Your override. Tracker average would be ' + money(d.defContrib, { whole: true }) + '/mo.');
+    $('r-contrib-reset').hidden = r.contributionOverride === null;
+    A.setText('r-k401-help', st.k401UpdatedAt ? 'Shared with Overview · updated ' + C.fmtDate(st.k401UpdatedAt, A.today()) : 'Shared with Overview');
+  }
+
+  function bind(id, fn) { $(id).addEventListener('input', function () { fn(this.value); saveSoon(); renderOutputs(derived()); renderInputs(derived()); }); $(id).addEventListener('change', function () { fn(this.value); A.saveState(); A.render(); }); }
+  bind('r-age', function (v) { var n = numOrNull(v); if (n !== null && n >= 10 && n <= 99) A.state.retirement.age = Math.round(n); });
+  bind('r-target-age', function (v) { var n = numOrNull(v); if (n !== null && n >= 11 && n <= 100) A.state.retirement.targetAge = Math.round(n); });
+  bind('r-spending', function (v) { var n = numOrNull(v); A.state.retirement.spendingOverride = n === null ? null : Math.max(0, C.round2(n)); });
+  bind('r-contrib', function (v) { var n = numOrNull(v); A.state.retirement.contributionOverride = n === null ? null : C.round2(n); });
+  bind('r-k401', function (v) { var n = numOrNull(v); var nv = Math.max(0, C.round2(n || 0)); if (nv !== A.state.k401Balance) { A.state.k401Balance = nv; A.state.k401UpdatedAt = A.today(); } });
+  bind('r-roth', function (v) { A.state.rothBalance = Math.max(0, C.round2(numOrNull(v) || 0)); });
+  bind('r-savings', function (v) { A.state.savingsBalance = Math.max(0, C.round2(numOrNull(v) || 0)); });
+  bind('r-other', function (v) { A.state.otherInvestments = Math.max(0, C.round2(numOrNull(v) || 0)); });
+  bind('r-wr', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 100) A.state.retirement.withdrawalRate = n; });
+  bind('r-return', function (v) { var n = numOrNull(v); if (n !== null && n > -100 && n <= 100) A.state.retirement.returnRate = n; });
+  bind('r-tax', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 100) A.state.retirement.taxRate = n; });
+  $('r-spending-reset').addEventListener('click', function () { A.state.retirement.spendingOverride = null; A.commit(); });
+  $('r-contrib-reset').addEventListener('click', function () { A.state.retirement.contributionOverride = null; A.commit(); });
+  $('r-assume-reset').addEventListener('click', function () { var r = A.state.retirement, d = C.DEFAULTS.retirement; r.withdrawalRate = d.withdrawalRate; r.returnRate = d.returnRate; r.taxRate = d.taxRate; A.commit(); A.toast('Assumptions reset to 4% / 6% / 15%'); });
+
+  // ---------- debts ----------
+  function renderDebtList() {
+    var st = A.state; var box = $('debt-list'); A.clear(box);
+    A.setText('debt-summary', st.debts.length ? st.debts.length + (st.debts.length === 1 ? ' debt · ' : ' debts · ') + money(C.totalDebt(st.debts), { whole: true }) : '');
+    if (!st.debts.length) { box.appendChild(h('p', { class: 'small text-2', text: 'No debts. Add loans, cards or anything with a balance to see payoff dates and how they affect your plan.' })); }
+    st.debts.forEach(function (d) {
+      var p = C.debtPayoff(d, A.today());
+      var del = h('button', { type: 'button', class: 'btn icon sm del-btn', 'aria-label': 'Delete ' + d.name, text: '✕' });
+      if (ui.debtArmed === d.id) { del.textContent = 'Delete'; del.className = 'btn sm del-btn confirm'; del.style.width = 'auto'; }
+      del.addEventListener('click', function () {
+        if (ui.debtArmed === d.id) { ui.debtArmed = null; var removed = d; st.debts = st.debts.filter(function (x) { return x.id !== d.id; }); A.commit(); A.toast('Deleted ' + removed.name, { action: 'Undo', onAction: function () { A.state.debts.push(removed); A.commit(); } }); return; }
+        ui.debtArmed = d.id; A.render(); var again = $('debt-list').querySelector('.del-btn.confirm'); if (again) again.focus();
+        setTimeout(function () { if (ui.debtArmed === d.id) { ui.debtArmed = null; A.render(); } }, 3500);
+      });
+      box.appendChild(h('div', { class: 'debt-row' }, [
+        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.rate + '% APR' }), h('span', { text: money(d.payment) + '/mo' }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
+        h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openDebtForm(d); } }), del])
+      ]));
+    });
+  }
+  function openDebtForm(d) {
+    ui.debtEditing = d ? d.id : 'new';
+    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : '';
+    $('d-error').style.display = 'none'; $('debt-form').hidden = false; $('d-add').hidden = true; A.setText('d-save', d ? 'Save changes' : 'Add debt');
+    $('d-name').focus();
+  }
+  function closeDebtForm() { ui.debtEditing = null; $('debt-form').hidden = true; $('d-add').hidden = false; }
+  $('d-add').addEventListener('click', function () { openDebtForm(null); });
+  $('d-cancel').addEventListener('click', closeDebtForm);
+  $('debt-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var name = $('d-name').value.trim(), balance = Number($('d-balance').value), rate = Number($('d-rate').value), payment = Number($('d-payment').value);
+    var err = '';
+    if (!name) err = 'Give the debt a name.';
+    else if (!($('d-balance').value !== '' && isFinite(balance) && balance >= 0)) err = 'Balance must be 0 or more.';
+    else if (!($('d-rate').value !== '' && isFinite(rate) && rate >= 0 && rate <= 999)) err = 'Interest rate must be between 0 and 999%.';
+    else if (!($('d-payment').value !== '' && isFinite(payment) && payment >= 0)) err = 'Monthly payment must be 0 or more.';
+    if (err) { var e = $('d-error'); e.textContent = err; e.style.display = 'block'; return; }
+    var st = A.state; var id = $('d-id').value;
+    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment });
+    var i = st.debts.findIndex(function (x) { return x.id === id; });
+    if (i >= 0) st.debts[i] = debt; else st.debts.push(debt);
+    closeDebtForm(); A.commit();
+    var p = C.debtPayoff(debt, A.today());
+    A.toast(p.neverPaysOff ? name + ' saved. At ' + money(payment) + '/mo it never pays off — the payment doesn’t cover interest.' : name + ' saved · paid off in ' + C.fmtMonthsDuration(p.months), { duration: 6000 });
+  });
+
+  // ---------- outputs ----------
+  function fmtBig(x) { return isFinite(x) ? money(x, { compact: x >= 10000, whole: true }) : '—'; }
+  function renderOutputs(d) {
+    var st = A.state, r = st.retirement, c = d.calc, t0 = A.today();
+    A.setText('rt-target', fmtBig(c.target));
+    A.setText('rt-target-sub', isFinite(c.target) ? money(c.annualSpending, { whole: true }) + '/yr ÷ ' + r.withdrawalRate + '%' : 'set a withdrawal rate');
+    A.setText('rt-networth', money(c.netWorth, { compact: Math.abs(c.netWorth) >= 10000, whole: true }));
+    $('rt-networth').className = 'value num ' + (c.netWorth < 0 ? 'danger-text' : '');
+    A.setText('rt-networth-sub', money(c.assets, { compact: c.assets >= 10000, whole: true }) + ' assets − ' + money(c.totalDebt, { compact: c.totalDebt >= 10000, whole: true }) + ' debt');
+    A.setText('rt-progress', isFinite(c.target) && c.target > 0 ? C.fmtPct(Math.max(0, c.progress), c.progress < 0.1 ? 1 : 0) : '—');
+    var pct = isFinite(c.target) && c.target > 0 ? Math.min(100, Math.max(0, c.progress * 100)) : 0;
+    $('rt-fill').style.width = pct + '%'; $('rt-meter').setAttribute('aria-valuenow', String(Math.round(pct)));
+    if (c.ageAtTarget !== null) {
+      var yrs = c.yearsToTarget;
+      A.setText('rt-age', 'Age ' + (c.monthsToTarget === 0 ? r.age : Math.ceil(c.ageAtTarget)));
+      A.setText('rt-age-sub', c.monthsToTarget === 0 ? 'you’re there' : 'in ' + C.fmtMonthsDuration(c.monthsToTarget) + (yrs >= 1 ? ' (' + (+t0.slice(0, 4) + Math.ceil(yrs)) + ')' : ''));
+    } else { A.setText('rt-age', isFinite(c.target) ? '100+' : '—'); A.setText('rt-age-sub', isFinite(c.target) ? 'not within 100 years' : ''); }
+
+    var plain = $('rt-plain'); A.clear(plain);
+    var contribStr = money(c.contribution, { whole: true });
+    if (!isFinite(c.target)) plain.appendChild(document.createTextNode('Set a withdrawal rate above 0% under Assumptions to compute a target.'));
+    else if (c.monthsToTarget === 0) plain.appendChild(document.createTextNode('You already have enough to cover ' + money(c.annualSpending, { whole: true }) + ' a year at a ' + r.withdrawalRate + '% withdrawal rate.'));
+    else if (c.ageAtTarget !== null) { plain.appendChild(document.createTextNode('At ')); plain.appendChild(h('strong', { text: contribStr + '/month' })); plain.appendChild(document.createTextNode(' you reach ')); plain.appendChild(h('strong', { text: fmtBig(c.target) })); plain.appendChild(document.createTextNode(' by age ')); plain.appendChild(h('strong', { text: String(Math.ceil(c.ageAtTarget)) })); plain.appendChild(document.createTextNode(', in ' + C.fmtMonthsDuration(c.monthsToTarget) + '.')); }
+    else { plain.appendChild(document.createTextNode('At ')); plain.appendChild(h('strong', { text: contribStr + '/month' })); plain.appendChild(document.createTextNode(' you don’t reach ' + fmtBig(c.target) + ' within 100 years.' + (c.contribution <= 0 ? ' Contributions are ' + (c.contribution < 0 ? 'negative' : 'zero') + ', so nothing is being added.' : ''))); }
+
+    var gap = $('rt-gap');
+    if (!isFinite(c.target)) gap.textContent = '';
+    else if (c.monthsToTargetAge === 0) gap.textContent = 'You’re at your target age of ' + r.targetAge + ' with ' + fmtBig(c.netWorthAtTargetAge) + (c.gap > 0 ? ', ' + fmtBig(c.gap) + ' short of the target.' : ', ahead of the target.');
+    else if (c.gap > 0) gap.textContent = 'At your target age of ' + r.targetAge + ' you’d have about ' + fmtBig(c.netWorthAtTargetAge) + ', which is ' + fmtBig(c.gap) + ' short. ' + (isFinite(c.extraMonthly) ? 'An extra ' + money(c.extraMonthly, { whole: true }) + '/month closes the gap.' : '');
+    else gap.textContent = 'At your target age of ' + r.targetAge + ' you’d have about ' + fmtBig(c.netWorthAtTargetAge) + ', ' + fmtBig(c.netWorthAtTargetAge - c.target) + ' ahead of the target.';
+
+    // projection chart
+    var proj = c.projection; var box = $('chart-proj');
+    var cAcc = Charts.cssVar('--accent'), cText = Charts.cssVar('--text-2'), cGood = Charts.cssVar('--income');
+    var year0 = +t0.slice(0, 4);
+    var tbl = { caption: 'Projected net worth by year', columns: ['Age', 'Year', 'Net worth', 'Target'], rows: proj.map(function (p) { return [String(p.age), String(year0 + p.year), money(p.netWorth, { whole: true }), isFinite(c.target) ? money(c.target, { whole: true }) : '—']; }) };
+    if (!isFinite(c.target) || proj.length < 2) { Charts.emptyChart(box, 'Add balances, contributions and a withdrawal rate to see a projection.', tbl, 'ch5'); return; }
+    var tIdx = r.targetAge - r.age; var reachIdx = c.ageAtTarget !== null ? c.ageAtTarget - r.age : null;
+    Charts.draw(box, {
+      slots: proj.map(function (p) { return String(p.age); }), xLabel: function (i) { return String(proj[i].age); },
+      lines: [{ name: 'Net worth', color: cAcc, values: proj.map(function (p) { return p.netWorth; }), markers: proj.length <= 20 }],
+      hlines: [{ value: c.target, label: 'Target ' + fmtBig(c.target) }],
+      vmarks: tIdx >= 0 && tIdx <= proj.length - 1 ? [{ index: tIdx, label: 'Retire at ' + r.targetAge }] : [],
+      points: reachIdx !== null && reachIdx <= proj.length - 1 && c.monthsToTarget > 0 ? [{ index: reachIdx, value: c.target, color: cGood, label: 'Age ' + Math.ceil(c.ageAtTarget) }] : [],
+      yFormat: function (v) { return money(v, { compact: true, whole: true }); }, height: 240,
+      tooltip: function (i) { var p = proj[i]; return { title: 'Age ' + p.age + ' · ' + (year0 + p.year), rows: [{ label: 'Net worth', value: money(p.netWorth, { whole: true }), color: cAcc }, { label: 'Target', value: fmtBig(c.target), color: cText }, { label: isFinite(c.target) && p.netWorth >= c.target ? 'Ahead by' : 'Short by', value: money(Math.abs(c.target - p.netWorth), { whole: true }) }] }; },
+      legend: [{ name: 'Net worth', color: cAcc, kind: 'line' }, { name: 'Target', color: cText, kind: 'dash' }],
+      ariaLabel: 'Projected net worth by age against the target. Use arrow keys to read values.', table: tbl, tableKey: 'ch5'
+    });
+
+    // debt table
+    var t = $('debt-table'); A.clear(t);
+    if (!c.debts.length) { t.appendChild(h('tbody', {}, [h('tr', {}, [h('td', { colspan: '5', class: 'text-2', style: 'text-align:left', text: 'No debts added.' })])])); return; }
+    var thead = h('thead', {}, [h('tr', {}, ['Debt', 'Balance', 'Rate', 'Payoff', 'Interest'].map(function (c2) { return h('th', { scope: 'col', text: c2 }); }))]);
+    t.appendChild(thead);
+    var tb = h('tbody');
+    c.debts.forEach(function (d) {
+      tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: d.name }), h('td', { class: 'num', text: money(d.balance) }), h('td', { class: 'num', text: d.rate + '%' }),
+        d.neverPaysOff ? h('td', { class: 'num danger-text', text: 'never' }) : h('td', { class: 'num' }, [C.fmtMonthKey(C.monthKey(d.payoffDate)), h('div', { class: 'xs muted', text: C.fmtMonthsDuration(d.months) })]),
+        h('td', { class: 'num', text: d.neverPaysOff ? '∞' : money(d.interest) })]));
+    });
+    tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: 'Total' }), h('td', { class: 'num', text: money(c.totalDebt) }), h('td'), h('td'), h('td', { class: 'num', text: c.anyDebtNeverPaysOff ? '∞' : money(c.totalInterest) })]));
+    t.appendChild(tb);
+  }
+
+  A.renderers.retirement = function () {
+    var d = derived();
+    renderInputs(d); renderDebtList();
+    if (ui.debtEditing === null) closeDebtForm();
+    renderOutputs(d);
+  };
 })();
 </script>
 </body>

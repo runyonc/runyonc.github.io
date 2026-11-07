@@ -1,0 +1,13 @@
+{
+  "name": "money-tracker",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Single-file personal finance tracker: spending, income, 401k, charts and a retirement target.",
+  "scripts": {
+    "test": "node test/core.test.js",
+    "test:ui": "node test/ui.test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}
