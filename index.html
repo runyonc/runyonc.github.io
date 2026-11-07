@@ -1158,7 +1158,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     retirement: { age: 30, targetAge: 65, spendingOverride: null, withdrawalRate: 4, returnRate: 6, taxRate: 15, contributionOverride: null }
   };
   var MAX_MONTHS = 1200; // 100 years
-  var SCHEMA = 3;
+  var SCHEMA = 4;
   // Renamed categories: older entries are mapped on load.
   var CAT_ALIASES = { Bills: 'Utilities', Fun: 'Recreation' };
   // One-time re-categorization (schema 1 -> 2) by keyword in the note or name.
@@ -1175,7 +1175,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   var DEFAULT_TAGS = ['food', 'groceries', 'doordash', 'streaming', 'subscription', 'gaming', 'recreational'];
   var CAT_TAGS = { Groceries: ['groceries'], Dining: ['food'], 'Food delivery': ['food'], Streaming: ['streaming'], Gaming: ['gaming'], Recreation: ['recreational'] };
   var TAG_RULES = [
-    [/netflix|hulu|spotify|disney|hbo|\bmax\b|youtube|peacock|paramount|apple ?tv|sling|fubo|crunchyroll|pandora|sirius|\btv\b/i, ['streaming', 'subscription']],
+    [/netflix|hulu|spotify|disney|hbo|\bmax\b|youtube|twitch|peacock|paramount|apple ?tv|sling|fubo|crunchyroll|pandora|sirius|\btv\b/i, ['streaming', 'subscription']],
     [/door ?dash/i, ['doordash', 'food']],
     [/uber ?eats|grubhub|postmates|caviar|seamless/i, ['food']],
     [/game ?pass|xbox live|ps plus|playstation plus|nintendo online/i, ['gaming', 'subscription']],
@@ -1310,7 +1310,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var rd = DEFAULTS.retirement;
     var entries = Array.isArray(raw.entries) ? raw.entries.map(function (e) { return normalizeEntry(e, today); }) : [];
     var seen = {}; entries = entries.filter(function (e) { if (seen[e.id]) return false; seen[e.id] = true; return true; });
-    return migrateTags(migrateCategories({
+    return migrateStreaming(migrateTags(migrateCategories({
       budget: Math.max(0, round2(num(raw.budget, DEFAULTS.budget))),
       k401Balance: Math.max(0, round2(num(raw.k401Balance, 0))),
       k401UpdatedAt: isValidISO(raw.k401UpdatedAt) ? raw.k401UpdatedAt : null,
@@ -1337,7 +1337,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       theme: ['system', 'light', 'dark'].indexOf(raw.theme) >= 0 ? raw.theme : 'dark',
       updatedAt: Math.max(0, num(raw.updatedAt, 0)),
       schema: SCHEMA
-    }, fromSchema), fromSchema);
+    }, fromSchema), fromSchema), fromSchema, today);
   }
 
   /** Schema 1 -> 2: move bills, subscriptions and the like into the new categories. Runs once. */
@@ -1363,6 +1363,40 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       var t = e.recurring && ruleTags[e.recurring] ? ruleTags[e.recurring] : suggestTags(e.note, e.cat);
       if (t.length) e.tags = t.slice();
     });
+    return st;
+  }
+
+  /**
+   * The sample streaming subscriptions, dated from `today`: YouTube Premium Lite for the past two
+   * years, YouTube TV for the past three months through March 2027, and Twitch Turbo alongside the
+   * six months of sample history. They replaced a single $90 "TV" bill.
+   */
+  function seedStreamingRules(today) {
+    var mk = monthKey(today), day = Math.min(+today.slice(8), 28), dd = (day < 10 ? '0' : '') + day;
+    var at = function (n) { return addMonths(mk, n) + '-' + dd; };
+    return [
+      { id: 'rule-yt-lite', name: 'YouTube Premium Lite', amount: 12, startDate: at(-23) },
+      { id: 'rule-yt-tv', name: 'YouTube TV', amount: 60, startDate: at(-2), endDate: '2027-03-31' },
+      { id: 'rule-twitch', name: 'Twitch Turbo', amount: 13, startDate: at(-5) }
+    ].map(function (r) { return normalizeRule(Object.assign({ type: 'expense', cat: 'Streaming', frequency: 'monthly', anchorDay: day, nextDate: r.startDate, note: r.name, tags: suggestTags(r.name, 'Streaming') }, r), today); });
+  }
+  /** Add a rule and its past payments (from its start date) to a state. Pure helper; returns the entries added. */
+  function addRuleWithHistory(st, rule, today, sample) {
+    var rc = reconcileRule(rule, st.entries, today);
+    rule.nextDate = rc.nextDate;
+    rc.add.forEach(function (e) { if (sample) e.sample = true; });
+    st.entries = st.entries.concat(rc.add); st.recurring.push(rule);
+    return rc.add;
+  }
+  /** Schema 3 -> 4: swap the sample data's $90 "TV" bill for the three streaming subscriptions. Runs once. */
+  function migrateStreaming(st, fromSchema, today) {
+    if (fromSchema >= 4) return st;
+    var tv = st.recurring.filter(function (r) { return r.id === 'rule-1' && /^tv$/i.test(r.name) && r.amount === 90; })[0];
+    if (!tv) return st;
+    var wasSample = st.entries.some(function (e) { return e.recurring === 'rule-1' && e.sample; });
+    st.recurring = st.recurring.filter(function (r) { return r !== tv; });
+    st.entries = st.entries.filter(function (e) { return e.recurring !== 'rule-1'; });
+    seedStreamingRules(today).forEach(function (r) { if (!st.recurring.some(function (x) { return x.id === r.id; })) addRuleWithHistory(st, r, today, wasSample); });
     return st;
   }
 
@@ -1823,7 +1857,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
-    retirementOdds: retirementOdds, quantile: quantile, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag,
+    retirementOdds: retirementOdds, quantile: quantile, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag,
     FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
@@ -1881,10 +1915,10 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   // six monthly bills as recurring items, and six months of history. Entries are flagged sample:true.
   function makeSeed() {
     var t = today(), mk = C.monthKey(t); var nextFirst = C.monthStart(C.addMonths(mk, 1));
-    var bills = [['TV', 90, 'Streaming'], ['Internet', 70, 'Utilities'], ['Power', 150, 'Utilities'], ['Water', 60, 'Utilities'], ['Car insurance', 400, 'Insurance'], ['Rent', 1900, 'Housing'], ['Car loan payment', 430, 'Debt payments'], ['Credit card payment', 250, 'Debt payments']];
+    var bills = [['rule-2', 'Internet', 70, 'Utilities'], ['rule-3', 'Power', 150, 'Utilities'], ['rule-4', 'Water', 60, 'Utilities'], ['rule-5', 'Car insurance', 400, 'Insurance'], ['rule-6', 'Rent', 1900, 'Housing'], ['rule-7', 'Car loan payment', 430, 'Debt payments'], ['rule-8', 'Credit card payment', 250, 'Debt payments']];
     var debts = [C.normalizeDebt({ id: 'debt-car', name: 'Car loan', balance: 22000, rate: 6.5, payment: 430, compounding: 'monthly' }), C.normalizeDebt({ id: 'debt-card', name: 'Credit card', balance: 7000, rate: 17, payment: 250, compounding: 'monthly' })];
     var firstMonth = C.monthStart(C.addMonths(mk, -5));
-    var rules = bills.map(function (b, i) { return C.normalizeRule({ id: 'rule-' + (i + 1), name: b[0], type: 'expense', cat: b[2], amount: b[1], frequency: 'monthly', startDate: firstMonth, nextDate: nextFirst, anchorDay: 1, note: b[0], tags: C.suggestTags(b[0], b[2]) }, t); });
+    var rules = bills.map(function (b) { return C.normalizeRule({ id: b[0], name: b[1], type: 'expense', cat: b[3], amount: b[2], frequency: 'monthly', startDate: firstMonth, nextDate: nextFirst, anchorDay: 1, note: b[1], tags: C.suggestTags(b[1], b[3]) }, t); });
     var paycheck = C.normalizePaycheck({ gross: 6000, frequency: 'monthly', nextPayDate: nextFirst, autoLog: true, k401Pct: 6, matchPct: 50, matchCapPct: 6, k401Type: 'roth' });
     var seed = 11; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
     function pick(a) { return a[Math.floor(rnd() * a.length)]; }
@@ -1907,7 +1941,9 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       if (rnd() < 0.6) push('expense', d(Math.floor(2 + rnd() * 27)), amt(30, 120), 'Shopping', pick(['Amazon', 'Clothes', 'Home Depot']));
       if (rnd() < 0.4) push('expense', d(Math.floor(2 + rnd() * 27)), amt(15, 60), 'Health', pick(['Pharmacy', 'Copay']));
     }
-    return { entries: entries, recurring: rules, paycheck: paycheck, debts: debts, k401Balance: 125000, k401UpdatedAt: t, budget: 4500 };
+    var withStreaming = { entries: entries, recurring: rules };
+    C.seedStreamingRules(t).forEach(function (r) { C.addRuleWithHistory(withStreaming, r, t, true); });
+    return { entries: withStreaming.entries, recurring: withStreaming.recurring, paycheck: paycheck, debts: debts, k401Balance: 125000, k401UpdatedAt: t, budget: 4500 };
   }
   function hasSamples() { return state.entries.some(function (e) { return e.sample; }); }
 

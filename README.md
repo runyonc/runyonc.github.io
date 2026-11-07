@@ -70,7 +70,11 @@ Settings), with monospace figures and a validated colour-blind-safe chart
 palette in both themes.
 
 Sample entries are seeded on first run (flagged `sample: true`) and can be
-cleared with one tap.
+cleared with one tap. The sample bills include three streaming subscriptions:
+YouTube Premium Lite ($12/month for the past two years), YouTube TV
+($60/month for the past three months, ending March 2027) and Twitch Turbo
+($13/month). Data saved before they were added has its old $90 "TV" sample
+bill swapped for them once.
 
 ## Where data is saved
 

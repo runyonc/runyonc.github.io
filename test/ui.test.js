@@ -76,7 +76,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   console.log('first run & samples');
   await test('seeds flagged sample data with a banner, and Clear samples removes only samples', O, async (page) => {
     assert.ok(await page.isVisible('#sample-banner'));
-    assert.deepStrictEqual(await page.evaluate(() => [App.state.k401Balance, App.state.paycheck.gross, App.state.recurring.map(r => r.name + ' ' + r.amount)]), [125000, 6000, ['TV 90', 'Internet 70', 'Power 150', 'Water 60', 'Car insurance 400', 'Rent 1900', 'Car loan payment 430', 'Credit card payment 250']]);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.k401Balance, App.state.paycheck.gross, App.state.recurring.map(r => r.name + ' ' + r.amount)]), [125000, 6000, ['Internet 70', 'Power 150', 'Water 60', 'Car insurance 400', 'Rent 1900', 'Car loan payment 430', 'Credit card payment 250', 'YouTube Premium Lite 12', 'YouTube TV 60', 'Twitch Turbo 13']]);
     assert.deepStrictEqual(await page.evaluate(() => App.state.debts.map(d => [d.name, d.balance, d.rate, d.payment])), [['Car loan', 22000, 6.5, 430], ['Credit card', 7000, 17, 250]]);
     const n = await page.evaluate(() => App.state.entries.filter(e => e.sample).length);
     assert.ok(n > 30, 'has samples');
@@ -191,7 +191,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     const label = await text(page, '#month-label');
     await page.click('#month-prev'); assert.notStrictEqual(await text(page, '#month-label'), label);
     assert.ok(await page.isVisible('#month-today'));
-    for (let i = 0; i < 12; i++) await page.click('#month-prev');
+    for (let i = 0; i < 26; i++) await page.click('#month-prev'); // past the 2-year YouTube Premium Lite history
     assert.ok((await text(page, '#entries')).includes('Nothing logged in'));
     assert.ok(await page.isDisabled('#btn-csv'));
     await page.click('#month-today'); assert.strictEqual(await text(page, '#month-label'), label);
@@ -608,7 +608,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await tab(page, 'add');
     const chips = await page.$$eval('#cat-chips button', bs => bs.map(b => b.textContent.trim().replace(/^\S+\s/, '')));
     for (const c of ['Groceries', 'Dining', 'Food delivery', 'Streaming', 'Gaming', 'Recreation', 'Utilities', 'Insurance', 'Debt payments']) assert.ok(chips.includes(c), c + ' in ' + chips.join(','));
-    assert.deepStrictEqual(await page.evaluate(() => App.state.recurring.map(r => r.name + ':' + r.cat)), ['TV:Streaming', 'Internet:Utilities', 'Power:Utilities', 'Water:Utilities', 'Car insurance:Insurance', 'Rent:Housing', 'Car loan payment:Debt payments', 'Credit card payment:Debt payments']);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.recurring.map(r => r.name + ':' + r.cat)), ['Internet:Utilities', 'Power:Utilities', 'Water:Utilities', 'Car insurance:Insurance', 'Rent:Housing', 'Car loan payment:Debt payments', 'Credit card payment:Debt payments', 'YouTube Premium Lite:Streaming', 'YouTube TV:Streaming', 'Twitch Turbo:Streaming']);
     assert.ok(await page.evaluate(() => App.state.entries.some(e => e.cat === 'Food delivery') && App.state.entries.some(e => e.cat === 'Streaming')));
     await tab(page, 'charts');
     assert.ok((await text(page, '#chart-cats')).includes('Streaming'));
@@ -659,6 +659,24 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(await page.isVisible('#u-error'), 'end before start is rejected');
   });
 
+
+
+  await test('phone data saved before this update gets the TV bill swapped for the streaming subscriptions', { browser, init: () => {
+      if (localStorage.getItem('money-tracker-v2')) return;
+      const t = new Date(); const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const m = (n) => iso(new Date(t.getFullYear(), t.getMonth() + n, 1));
+      localStorage.setItem('money-tracker-v2', JSON.stringify({ schema: 3, entries: [{ id: 'tv1', type: 'expense', date: m(-1), amount: 90, cat: 'Streaming', note: 'TV', recurring: 'rule-1', sample: true }, { id: 'keep', type: 'expense', date: m(0), amount: 25, cat: 'Dining', note: 'Lunch' }],
+        recurring: [{ id: 'rule-1', name: 'TV', type: 'expense', cat: 'Streaming', amount: 90, frequency: 'monthly', startDate: m(-1), nextDate: m(1), anchorDay: 1 }] }));
+    } }, async (page) => {
+    const names = await page.evaluate(() => App.state.recurring.map(r => r.name));
+    assert.deepStrictEqual(names, ['YouTube Premium Lite', 'YouTube TV', 'Twitch Turbo']);
+    assert.ok(!(await page.evaluate(() => App.state.entries.some(e => e.note === 'TV'))));
+    assert.ok(await page.evaluate(() => App.state.entries.some(e => e.id === 'keep')), 'your own entries are kept');
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.note === 'YouTube Premium Lite').length), 24);
+    await tab(page, 'recurring');
+    const yttv = await text(page, '.rule-row:has-text("YouTube TV")');
+    assert.ok(yttv.includes('ends Mar 2027'), yttv);
+  });
 
   console.log('tags');
   await test('tags: suggested from category and note, custom tags, saved, editable, shown on the entry', O, async (page) => {
@@ -723,7 +741,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#btn-csv'); await page.waitForTimeout(80);
     const csv = await page.evaluate(() => window.__copied);
     assert.ok(csv.startsWith('date,type,category,amount,note,tags\n'));
-    assert.ok(/,expense,Streaming,-90\.00,TV,streaming;subscription/.test(csv), csv.slice(0, 400));
+    assert.ok(/,expense,Streaming,-60\.00,YouTube TV,streaming;subscription/.test(csv), csv.slice(0, 600));
   });
 
   console.log('account sync');

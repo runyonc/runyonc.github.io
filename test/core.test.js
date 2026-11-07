@@ -475,14 +475,14 @@ test('schema 1 data is re-categorized once by keyword; schema 2 data is left alo
       { id: 'a', date: TODAY, amount: 15.99, cat: 'Fun', note: 'Netflix' },
       { id: 'b', date: TODAY, amount: 32, cat: 'Dining', note: 'DoorDash' },
       { id: 'c', date: TODAY, amount: 60, cat: 'Fun', note: 'Steam sale' },
-      { id: 'd', date: TODAY, amount: 90, cat: 'Bills', note: 'TV', recurring: 'rule-1' },
+      { id: 'd', date: TODAY, amount: 85, cat: 'Bills', note: 'TV', recurring: 'rule-1' },
       { id: 'e', date: TODAY, amount: 20, cat: 'Fun', note: 'Movies' },
       { id: 'f', date: TODAY, amount: 120, cat: 'Groceries', note: 'Costco' }],
-    recurring: [{ id: 'rule-1', name: 'TV', cat: 'Bills', amount: 90, nextDate: TODAY }, { id: 'rule-5', name: 'Car insurance', cat: 'Transport', amount: 400, nextDate: TODAY }, { id: 'rule-7', name: 'Car loan payment', cat: 'Transport', amount: 430, nextDate: TODAY }, { id: 'rule-2', name: 'Power', cat: 'Bills', amount: 150, nextDate: TODAY }] };
+    recurring: [{ id: 'rule-1', name: 'TV', cat: 'Bills', amount: 85, nextDate: TODAY }, { id: 'rule-5', name: 'Car insurance', cat: 'Transport', amount: 400, nextDate: TODAY }, { id: 'rule-7', name: 'Car loan payment', cat: 'Transport', amount: 430, nextDate: TODAY }, { id: 'rule-2', name: 'Power', cat: 'Bills', amount: 150, nextDate: TODAY }] };
   const st = C.normalizeState(raw, TODAY);
   assert.deepStrictEqual(st.entries.map(e => e.cat), ['Streaming', 'Food delivery', 'Gaming', 'Streaming', 'Recreation', 'Groceries']);
   assert.deepStrictEqual(st.recurring.map(r => r.cat), ['Streaming', 'Insurance', 'Debt payments', 'Utilities']);
-  assert.strictEqual(st.schema, 3);
+  assert.strictEqual(st.schema, 4);
   const again = C.normalizeState(Object.assign({}, st, { entries: [{ id: 'z', date: TODAY, amount: 15.99, cat: 'Utilities', note: 'Netflix', tags: ['bills'] }] }), TODAY);
   assert.strictEqual(again.entries[0].cat, 'Utilities', 'a choice made after the migration sticks');
 });
@@ -571,6 +571,33 @@ test('recurring rules pass their tags to every logged payment', () => {
   assert.ok(C.reconcileRule(rule, [], TODAY).add.every(e => e.tags.join() === 'streaming,subscription'));
   const due = C.postDue({ recurring: [rule], entries: [] }, TODAY);
   assert.ok(due.entries.length === 3 && due.entries.every(e => e.tags.join() === 'streaming,subscription'));
+});
+
+
+console.log('sample streaming');
+test('sample streaming subscriptions: Premium Lite 2 years, YouTube TV 3 months to March 2027, Twitch Turbo', () => {
+  const rules = C.seedStreamingRules(TODAY);
+  const got = rules.map(r => { const rc = C.reconcileRule(r, [], TODAY); return [r.name, r.amount, r.cat, rc.add.length, r.endDate]; });
+  assert.deepStrictEqual(got, [['YouTube Premium Lite', 12, 'Streaming', 24, null], ['YouTube TV', 60, 'Streaming', 3, '2027-03-31'], ['Twitch Turbo', 13, 'Streaming', 6, null]]);
+  const yttv = rules[1];
+  assert.deepStrictEqual(C.occurrences(yttv, '2027-12-31').slice(-1), ['2027-03-07'], 'last YouTube TV charge is in March 2027');
+  assert.ok(rules.every(r => r.tags.includes('streaming') && r.tags.includes('subscription')));
+  assert.ok(rules[2].tags.includes('gaming'));
+});
+test('schema 3 data swaps the sample $90 TV bill for the three streaming subscriptions, once', () => {
+  const raw = { schema: 3, recurring: [{ id: 'rule-1', name: 'TV', cat: 'Streaming', amount: 90, nextDate: '2026-12-01', startDate: '2026-06-01' }, { id: 'rule-2', name: 'Internet', cat: 'Utilities', amount: 70, nextDate: '2026-12-01' }],
+    entries: [{ id: 't1', date: '2026-10-01', amount: 90, cat: 'Streaming', note: 'TV', recurring: 'rule-1', sample: true }, { id: 'i1', date: '2026-10-01', amount: 70, cat: 'Utilities', note: 'Internet', recurring: 'rule-2', sample: true }] };
+  const st = C.normalizeState(raw, TODAY);
+  assert.deepStrictEqual(st.recurring.map(r => r.name), ['Internet', 'YouTube Premium Lite', 'YouTube TV', 'Twitch Turbo']);
+  assert.ok(!st.entries.some(e => e.recurring === 'rule-1'), 'old TV payments removed');
+  assert.strictEqual(st.entries.filter(e => e.recurring === 'rule-yt-lite').length, 24);
+  assert.strictEqual(st.entries.filter(e => e.recurring === 'rule-yt-tv').length, 3);
+  assert.ok(st.entries.filter(e => e.recurring && e.recurring.startsWith('rule-yt')).every(e => e.sample), 'still flagged as sample');
+  assert.ok(st.recurring.find(r => r.id === 'rule-yt-tv').nextDate === '2026-12-07');
+  const again = C.normalizeState(st, TODAY);
+  assert.strictEqual(again.entries.length, st.entries.length, 'no second swap');
+  const mine = C.normalizeState({ schema: 3, recurring: [{ id: 'abc', name: 'TV', amount: 90, nextDate: TODAY }] }, TODAY);
+  assert.deepStrictEqual(mine.recurring.map(r => r.name), ['TV'], 'a TV bill you made yourself is left alone');
 });
 
 console.log('formatting');
