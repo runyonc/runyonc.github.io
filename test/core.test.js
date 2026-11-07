@@ -156,9 +156,17 @@ test('cumulative 401k stacks mine and match', () => {
   assert.strictEqual(c[2].cumTotal, 250);
 });
 test('averages over months with data', () => {
-  const a = C.averages([E('expense', '2026-09-01', 1000), E('expense', '2026-11-01', 2000), E('income', '2026-11-02', 4500), E('k401', '2026-11-03', 300)], TODAY);
+  const a = C.averages([E('expense', '2026-09-01', 1000), E('expense', '2026-11-01', 2000), E('income', '2026-11-02', 4500), E('k401', '2026-11-03', 300)], '2026-12-15');
   assert.strictEqual(a.months, 2); assert.strictEqual(a.expense, 1500); assert.strictEqual(a.income, 2250); assert.strictEqual(a.k401, 150); assert.strictEqual(a.net, 750);
   assert.strictEqual(C.averages([], TODAY).months, 0);
+});
+test('averages leave out the current, unfinished month when finished months exist', () => {
+  const es = [E('expense', '2026-10-05', 3000), E('income', '2026-10-28', 6000), E('expense', '2026-11-03', 200)];
+  const a = C.averages(es, TODAY);
+  assert.strictEqual(a.months, 1); assert.strictEqual(a.expense, 3000); assert.strictEqual(a.income, 6000);
+  const d = C.averages([E('expense', '2026-10-01', 413, 'Debt payments'), E('expense', '2026-10-02', 587, 'Housing')], TODAY);
+  assert.strictEqual(d.debtPayments, 413); assert.strictEqual(d.expense, 1000);
+  assert.strictEqual(C.averages([E('expense', '2026-11-03', 200)], TODAY).months, 1, 'a brand-new account still uses this month');
 });
 
 test('averages ignore months that only hold auto-filled recurring history', () => {
@@ -680,6 +688,76 @@ test('tips: missed match, never-paying debt, overspending, and nothing silly on 
   const broke = tipState(); broke.entries.push({ id: 'big', type: 'expense', date: '2026-10-20', amount: 9000, cat: 'Shopping', note: 'Oops' });
   assert.ok(C.insights({ state: broke, today: TODAY }).some(t => t.id === 'negative'));
   assert.deepStrictEqual(C.insights({ state: C.normalizeState({}, TODAY), today: TODAY }), []);
+});
+
+
+console.log('adding transactions');
+const mergeBase = () => C.normalizeState({ schema: 5,
+  recurring: [{ id: 'rent', name: 'Rent', cat: 'Housing', amount: 1900, startDate: '2026-06-01', nextDate: '2026-12-01', anchorDay: 1 }, { id: 'gym', name: 'Gym', cat: 'Recreation', amount: 30, startDate: '2026-06-03', nextDate: '2026-12-03' }],
+  debts: [{ id: 'car', name: 'Car loan', balance: 22000, rate: 6.5, payment: 430 }],
+  entries: [{ id: 's1', date: '2026-09-01', amount: 1900, cat: 'Housing', note: 'Rent', recurring: 'rent', sample: true }, { id: 'mine', date: '2026-10-03', amount: 42, cat: 'Dining', note: 'Lunch' }] }, TODAY);
+const mergeFile = { kind: 'transactions', clearSamples: true,
+  entries: [
+    { importId: 'b1', type: 'expense', date: '2026-10-01', amount: 1700, cat: 'Housing', note: 'Rent (Example Co)', recurring: 'rent' },
+    { importId: 'b2', type: 'expense', date: '2026-10-13', amount: 31.00, cat: 'Food delivery', note: 'DoorDash', tags: ['food', 'doordash'] },
+    { importId: 'b3', type: 'income', date: '2026-10-28', amount: 5200.00, cat: 'Paycheck', note: 'Payroll' },
+    { type: 'expense', date: '2026-10-03', amount: 42, cat: 'Dining', note: 'Lunch' }],
+  updates: { debts: [{ id: 'car', balance: 18000, rate: 7.25, payment: 390 }, { id: 'new', name: 'Store card', balance: 500, rate: 25, payment: 50 }],
+    recurring: [{ id: 'rent', name: 'Rent (Example Co)', amount: 1700, startDate: '2026-10-01' }, { id: 'prime', name: 'Amazon Prime', type: 'expense', cat: 'Shopping', amount: 16.41, frequency: 'monthly', startDate: '2026-10-26', tags: ['subscription'] }],
+    paycheck: { gross: 7800, frequency: 'monthly', nextPayDate: '2026-11-28' }, balances: { savingsBalance: 3000 } } };
+test('mergeImport adds transactions, keeps your own entries, and skips duplicates', () => {
+  const { state: st, summary } = C.mergeImport(mergeBase(), mergeFile, TODAY);
+  assert.strictEqual(summary.added, 3); assert.strictEqual(summary.skipped, 1, 'the lunch already logged by hand');
+  assert.strictEqual(summary.removedSamples, 1);
+  assert.ok(st.entries.some(e => e.id === 'mine'));
+  assert.strictEqual(st.entries.filter(e => e.note === 'Lunch').length, 1);
+  assert.strictEqual(summary.from, '2026-10-01'); assert.strictEqual(summary.to, '2026-10-28');
+  const again = C.mergeImport(st, mergeFile, TODAY);
+  assert.strictEqual(again.summary.added, 0, 're-importing the same file adds nothing');
+  assert.strictEqual(again.state.entries.length, st.entries.length);
+});
+test('mergeImport updates bills, fills in what is due since their start, and leaves other bills alone', () => {
+  const { state: st, summary } = C.mergeImport(mergeBase(), mergeFile, TODAY);
+  const rent = st.recurring.find(r => r.id === 'rent');
+  assert.deepStrictEqual([rent.name, rent.amount, rent.startDate, rent.nextDate], ['Rent (Example Co)', 1700, '2026-10-01', '2026-12-01']);
+  const rentPaid = st.entries.filter(e => e.recurring === 'rent').map(e => e.date).sort();
+  assert.deepStrictEqual(rentPaid, ['2026-10-01', '2026-11-01'], 'October from the bank, November filled in, no sample September');
+  const prime = st.recurring.find(r => r.id === 'prime');
+  assert.strictEqual(prime.nextDate, '2026-11-26'); assert.strictEqual(st.entries.filter(e => e.recurring === 'prime').length, 1);
+  assert.strictEqual(summary.rulesUpdated, 1); assert.strictEqual(summary.rulesAdded, 1); assert.strictEqual(summary.filledIn, 2);
+  assert.strictEqual(st.recurring.find(r => r.id === 'gym').nextDate, '2026-12-03', 'untouched rule unchanged');
+});
+test('mergeImport updates debts, pay setup and balances', () => {
+  const { state: st, summary } = C.mergeImport(mergeBase(), mergeFile, TODAY);
+  assert.deepStrictEqual(st.debts.map(d => [d.id, d.balance, d.rate, d.payment]), [['car', 18000, 7.25, 390], ['new', 500, 25, 50]]);
+  assert.strictEqual(st.debts[0].name, 'Car loan', 'fields not in the file are kept');
+  assert.strictEqual(st.paycheck.gross, 7800); assert.strictEqual(st.paycheck.nextPayDate, '2026-11-28');
+  assert.strictEqual(st.savingsBalance, 3000);
+  assert.deepStrictEqual([summary.debtsUpdated, summary.debtsAdded, summary.paycheck, summary.balances], [1, 1, true, ['savingsBalance']]);
+});
+test('mergeImport keeps identical purchases in one file, but skips copies of entries already here', () => {
+  const tickets = { kind: 'transactions', entries: [1, 2, 3, 4].map(i => ({ importId: 't' + i, type: 'expense', date: '2026-10-21', amount: 14.4, cat: 'Recreation', note: 'Cinema' })) };
+  const first = C.mergeImport(C.normalizeState({ schema: 5 }, TODAY), tickets, TODAY);
+  assert.strictEqual(first.summary.added, 4);
+  const sameNoIds = { kind: 'transactions', entries: tickets.entries.map(e => Object.assign({}, e, { importId: undefined })) };
+  const again = C.mergeImport(first.state, sameNoIds, TODAY);
+  assert.strictEqual(again.summary.added, 0); assert.strictEqual(again.summary.skipped, 4, 'matched one-for-one against what is already there');
+  const five = { kind: 'transactions', entries: sameNoIds.entries.concat([{ type: 'expense', date: '2026-10-21', amount: 14.4, cat: 'Recreation', note: 'Cinema' }]) };
+  assert.strictEqual(C.mergeImport(first.state, five, TODAY).summary.added, 1, 'a fifth ticket is new');
+});
+test('tips use tracked months only, and delivery means restaurant delivery', () => {
+  const st = tipState();
+  // two years of a filled-in $12 subscription must not change what "usual" means
+  for (let i = 0; i < 24; i++) st.entries.push({ id: 'h' + i, type: 'expense', date: C.addMonths('2024-08', i) + '-05', amount: 12, cat: 'Streaming', note: 'Old sub', recurring: 'old' });
+  st.entries.push({ id: 'g1', type: 'expense', date: '2026-10-09', amount: 200, cat: 'Groceries', note: 'DoorDash · Costco', tags: ['groceries', 'doordash'] });
+  const tips = C.insights({ state: st, today: TODAY });
+  assert.strictEqual(tips.find(t => t.id === 'delivery').yearly, 720, 'grocery delivery is not counted');
+  assert.ok(!tips.some(t => t.id === 'negative'), 'no false overspending warning');
+});
+test('mergeImport never mutates the state it is given', () => {
+  const base = mergeBase(); const before = JSON.stringify(base);
+  C.mergeImport(base, mergeFile, TODAY);
+  assert.strictEqual(JSON.stringify(base), before);
 });
 
 console.log('formatting');

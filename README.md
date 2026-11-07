@@ -85,6 +85,30 @@ YouTube Premium Lite ($12/month for the past two years), YouTube TV
 ($13/month). Data saved before they were added has its old $90 "TV" sample
 bill swapped for them once.
 
+## Adding transactions from your bank
+
+**Settings → Add transactions** merges a transactions file into your data
+instead of replacing it. It shows what will change first, and Undo puts
+everything back. Entries already in the app are skipped one-for-one, so adding
+the same file twice changes nothing, while identical purchases in one file all
+stay. A transactions file can also update bills (their amounts and start dates;
+payments due since then are filled in), debts, the pay setup and balances, and
+can clear the sample entries. Picking one under **Import backup** routes it here
+too, so it can never wipe your data.
+
+File shape (`kind: "transactions"`):
+
+```json
+{ "kind": "transactions", "clearSamples": true,
+  "entries": [{ "importId": "bank-123", "type": "expense", "date": "2026-10-13", "amount": 31.0,
+                "cat": "Food delivery", "note": "DoorDash", "tags": ["food", "doordash"], "recurring": "rule-id?" }],
+  "updates": { "recurring": [{ "id": "rule-6", "amount": 1700, "startDate": "2026-10-01" }],
+               "debts": [{ "id": "debt-car", "balance": 18000 }], "paycheck": {}, "balances": { "savingsBalance": 3000 } } }
+```
+
+Transaction files made from real statements are personal; keep them out of
+this repository.
+
 ## Where data is saved
 
 - **On GitHub Pages or as a local file**: in that browser's `localStorage`

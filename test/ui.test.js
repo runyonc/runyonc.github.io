@@ -767,6 +767,56 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(/,expense,Streaming,-60\.00,YouTube TV,streaming;subscription/.test(csv), csv.slice(0, 600));
   });
 
+
+  console.log('adding transactions');
+  const txFile = (today) => ({ app: 'money-tracker', kind: 'transactions', clearSamples: true,
+    entries: [
+      { importId: 'x1', type: 'expense', date: today.slice(0, 8) + '01', amount: 1500, cat: 'Housing', note: 'Rent (Example Co)', recurring: 'rule-6' },
+      { importId: 'x2', type: 'expense', date: today.slice(0, 8) + '02', amount: 25.5, cat: 'Food delivery', note: 'DoorDash · Example', tags: ['food', 'doordash'] },
+      { importId: 'x3', type: 'expense', date: today.slice(0, 8) + '02', amount: 9, cat: 'Recreation', note: 'Movie' },
+      { importId: 'x4', type: 'expense', date: today.slice(0, 8) + '02', amount: 9, cat: 'Recreation', note: 'Movie' }],
+    updates: { recurring: [{ id: 'rule-6', name: 'Rent (Example Co)', amount: 1500, startDate: today.slice(0, 8) + '01' }], debts: [{ id: 'debt-car', balance: 15000 }], balances: { savingsBalance: 2500 } } });
+  await test('Add transactions previews, merges without replacing, and can be undone', O, async (page) => {
+    const t0 = await page.evaluate(() => App.today());
+    await addEntry(page, { amount: 7, cat: 'Recreation', note: 'MineKeep' });
+    const before = await page.evaluate(() => App.state.entries.length);
+    await page.click('#btn-settings');
+    await page.setInputFiles('#merge-file', { name: 'tx.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(txFile(t0))) });
+    await page.waitForTimeout(100);
+    const desc = await text(page, '#confirm-desc');
+    assert.ok(desc.includes('Adds 4 transactions') && desc.includes('sample entries') && desc.includes('Updates 1 bill') && desc.includes('cash balance'), desc);
+    await page.click('#confirm-cancel'); await page.waitForTimeout(50);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), before, 'cancel changes nothing');
+    await page.setInputFiles('#merge-file', { name: 'tx.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(txFile(t0))) });
+    await page.waitForTimeout(100); await page.click('#confirm-ok'); await page.waitForTimeout(120);
+    const st = await page.evaluate(() => ({ samples: App.state.entries.filter(e => e.sample).length, mine: App.state.entries.some(e => e.note === 'MineKeep'), movies: App.state.entries.filter(e => e.note === 'Movie').length, rent: App.state.recurring.find(r => r.id === 'rule-6'), rentPaid: App.state.entries.filter(e => e.recurring === 'rule-6').length, car: App.state.debts.find(d => d.id === 'debt-car').balance, cash: App.state.savingsBalance }));
+    assert.strictEqual(st.samples, 0); assert.ok(st.mine, 'your own entry kept'); assert.strictEqual(st.movies, 2, 'two identical purchases both kept');
+    assert.deepStrictEqual([st.rent.name, st.rent.amount, st.rentPaid], ['Rent (Example Co)', 1500, 1]);
+    assert.strictEqual(st.car, 15000); assert.strictEqual(st.cash, 2500);
+    assert.ok(await page.isHidden('#settings-dialog'));
+    assert.ok((await text(page, '#toast-msg')).startsWith('Added 4 transactions'));
+    await page.click('#toast-action'); await page.waitForTimeout(80);
+    assert.ok(await page.evaluate(() => App.state.entries.some(e => e.sample)), 'undo brings everything back');
+  });
+  await test('Import backup routes a transactions file to the merge instead of replacing everything', O, async (page) => {
+    const t0 = await page.evaluate(() => App.today());
+    const n = await page.evaluate(() => App.state.entries.filter(e => !e.sample).length);
+    await page.click('#btn-settings');
+    await page.setInputFiles('#import-file', { name: 'tx.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(txFile(t0))) });
+    await page.waitForTimeout(100);
+    assert.strictEqual(await text(page, '#confirm-h'), 'Add these transactions?');
+    await page.click('#confirm-ok'); await page.waitForTimeout(120);
+    assert.ok(await page.evaluate(() => App.state.debts.length) >= 2, 'debts were kept, not replaced');
+    assert.ok(await page.evaluate((n) => App.state.entries.filter(e => !e.sample).length >= n + 4, n));
+    await page.click('#btn-settings');
+    await page.setInputFiles('#merge-file', { name: 'tx.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(txFile(t0))) });
+    await page.waitForTimeout(100);
+    assert.ok((await text(page, '#toast-msg')).includes('already here'), 'adding the same file twice changes nothing');
+    await page.setInputFiles('#merge-file', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ budget: 1, entries: [] })) });
+    await page.waitForTimeout(100);
+    assert.ok((await text(page, '#toast-msg')).includes('isn’t a transactions file'));
+  });
+
   console.log('account sync');
   let cloudAfterA = null;
   await test('first device with an empty account uploads its data, then syncs each change', { browser, init: fakeRuntime, initArg: {} }, async (page) => {

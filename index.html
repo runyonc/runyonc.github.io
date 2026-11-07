@@ -878,6 +878,10 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       <button class="btn sm" id="btn-export">Export</button>
     </div>
     <div class="settings-row">
+      <div><div class="lbl">Add transactions</div><div class="sub">Merge a transactions file (from Claude) into your data. Nothing is replaced, and duplicates are skipped.</div></div>
+      <label class="btn sm primary" for="merge-file" tabindex="0" id="merge-label">Add<input type="file" id="merge-file" accept="application/json,.json" class="visually-hidden"></label>
+    </div>
+    <div class="settings-row">
       <div><div class="lbl">Import backup</div><div class="sub">Replaces current data after confirmation.</div></div>
       <label class="btn sm" for="import-file" tabindex="0" id="import-label">Import<input type="file" id="import-file" accept="application/json,.json" class="visually-hidden"></label>
     </div>
@@ -1042,6 +1046,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (e.sample) out.sample = true;
     if (typeof e.recurring === 'string' && e.recurring) out.recurring = e.recurring;
     var tags = normalizeTags(e.tags); if (tags.length) out.tags = tags;
+    if (typeof e.importId === 'string' && e.importId) out.importId = e.importId.slice(0, 120);
     return out;
   }
   function num(v, fallback) { var n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? fallback : n; }
@@ -1292,17 +1297,26 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var cm = 0, cx = 0;
     return buckets.map(function (b) { cm += toCents(b.k401Mine); cx += toCents(b.k401Match); return { key: b.key, mine: b.k401Mine, match: b.k401Match, cumMine: fromCents(cm), cumMatch: fromCents(cx), cumTotal: fromCents(cm + cx) }; });
   }
+  /** Months you actually tracked: with income or something you logged yourself (not only auto-filled recurring
+   *  history). The current, unfinished month is left out when finished months exist. Falls back to any month. */
+  function trackedMonths(entries, today) {
+    var tracked = {}, any = {};
+    entries.forEach(function (e) { var k = monthKey(e.date); any[k] = true; if (!e.recurring || e.type === 'income') tracked[k] = true; });
+    var months = Object.assign({}, Object.keys(tracked).length ? tracked : any);
+    var cur = today ? monthKey(today) : null;
+    if (cur && months[cur] && Object.keys(months).length > 1) delete months[cur];
+    return months;
+  }
   function averages(entries, today) {
     // Average per month over the months you actually tracked: ones with income or something you logged yourself.
     // A month holding only auto-filled recurring history (e.g. two years of a $12 subscription) would otherwise
     // count as a full month and drag every average down. Falls back to any month with entries.
-    var tracked = {}, any = {};
-    entries.forEach(function (e) { var k = monthKey(e.date); any[k] = true; if (!e.recurring || e.type === 'income') tracked[k] = true; });
-    var months = Object.keys(tracked).length ? tracked : any;
+    var months = trackedMonths(entries, today);
     var n = Object.keys(months).length;
     var t = totals(entries.filter(function (e) { return months[monthKey(e.date)]; }));
-    if (n === 0) return { months: 0, expense: 0, income: 0, k401: 0, net: 0 };
-    return { months: n, expense: round2(t.expense / n), income: round2(t.income / n), k401: round2(t.k401 / n), net: round2(t.net / n) };
+    if (n === 0) return { months: 0, expense: 0, income: 0, k401: 0, net: 0, debtPayments: 0 };
+    var debtPay = sumAmounts(entries.filter(function (e) { return months[monthKey(e.date)] && e.type === 'expense' && e.cat === 'Debt payments'; }));
+    return { months: n, expense: round2(t.expense / n), income: round2(t.income / n), k401: round2(t.k401 / n), net: round2(t.net / n), debtPayments: round2(debtPay / n) };
   }
 
   // ---------- debt ----------
@@ -1497,11 +1511,12 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   function insights(o) {
     var st = o.state, today = o.today, tips = [];
     var mk = monthKey(today), from = monthStart(addMonths(mk, -3)), to = monthEnd(addMonths(mk, -1));
-    var past = entriesInRange(st.entries, from, to), months = {};
-    past.forEach(function (e) { months[monthKey(e.date)] = 1; });
-    var nm = Object.keys(months).length;
-    if (!nm) { past = st.entries.filter(function (e) { return e.date <= today; }); past.forEach(function (e) { months[monthKey(e.date)] = 1; }); nm = Object.keys(months).length; }
-    nm = Math.max(1, nm);
+    // "usual" = the last three finished months you actually tracked, or every tracked month if none of those
+    var tracked = trackedMonths(st.entries, today);
+    var inWindow = Object.keys(tracked).filter(function (m) { return m >= monthKey(from) && m <= monthKey(to); });
+    var use = {}; (inWindow.length ? inWindow : Object.keys(tracked)).forEach(function (m) { use[m] = 1; });
+    var past = st.entries.filter(function (e) { return use[monthKey(e.date)] && e.date <= today; });
+    var nm = Math.max(1, Object.keys(use).length);
     var pm = function (f) { return round2(sumAmounts(past.filter(f)) / nm); };
     var spendPM = pm(function (e) { return e.type === 'expense'; }), incomePM = pm(function (e) { return e.type === 'income'; });
     var surplus = round2(incomePM - spendPM);
@@ -1546,7 +1561,8 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     }
 
     // Food delivery
-    var del = past.filter(function (e) { return e.type === 'expense' && (e.cat === 'Food delivery' || hasAnyTag(e, ['doordash'])); });
+    // restaurant delivery only; groceries delivered by DoorDash are still groceries
+    var del = past.filter(function (e) { return e.type === 'expense' && e.cat === 'Food delivery' && !hasAnyTag(e, ['subscription']); });
     var delPM = round2(sumAmounts(del) / nm);
     if (delPM >= 20) tips.push({ id: 'delivery', kind: 'save', icon: '🛵', title: 'Halve food delivery', detail: 'About ' + $(delPM) + '/mo on ' + Math.max(1, Math.round(del.length / nm)) + ' orders. Fees and tips make it the priciest way to eat.', yearly: round2(delPM / 2 * 12), action: { view: 'charts', label: 'See spending' } });
 
@@ -1591,6 +1607,56 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
 
     var rank = function (t) { return t.kind === 'good' ? -1 : (t.priority || 0) * 1e6 + (t.yearly || 0); };
     return tips.sort(function (a, b) { return rank(b) - rank(a); });
+  }
+
+  // ---------- adding transactions from a file ----------
+  function entryFingerprint(e) { return [e.date, e.type, toCents(e.amount), String(e.note || '').toLowerCase().replace(/\s+/g, ' ').trim()].join('|'); }
+  /**
+   * Merge a transactions file into a state without replacing it. Pure: returns {state, summary}.
+   * file: { kind: 'transactions', clearSamples?, entries: [...], updates?: { debts, recurring, paycheck, balances } }
+   * - entries already present (same importId, or same date/type/amount/note) are skipped, so re-importing is safe
+   * - recurring updates are upserted by id; each one's history is then reconciled from its start date to today
+   *   (imported payments that carry the rule's id count, missing ones are filled in, nothing doubles up)
+   */
+  function mergeImport(state, file, today) {
+    var st = JSON.parse(JSON.stringify(state)), u = (file && file.updates) || {}, sum = { added: 0, skipped: 0, removedSamples: 0, rulesUpdated: 0, rulesAdded: 0, filledIn: 0, debtsUpdated: 0, debtsAdded: 0, paycheck: false, balances: [], from: null, to: null };
+    if (file && file.clearSamples) { var before = st.entries.length; st.entries = st.entries.filter(function (e) { return !e.sample; }); sum.removedSamples = before - st.entries.length; }
+    (Array.isArray(u.debts) ? u.debts : []).forEach(function (d) {
+      var i = st.debts.findIndex(function (x) { return x.id === d.id; });
+      if (i >= 0) { st.debts[i] = normalizeDebt(Object.assign({}, st.debts[i], d)); sum.debtsUpdated++; } else { st.debts.push(normalizeDebt(d)); sum.debtsAdded++; }
+    });
+    var touched = [];
+    (Array.isArray(u.recurring) ? u.recurring : []).forEach(function (r) {
+      var i = st.recurring.findIndex(function (x) { return x.id === r.id; });
+      var base = i >= 0 ? st.recurring[i] : {};
+      var start = r.startDate || base.startDate;
+      var rule = normalizeRule(Object.assign({}, base, r, { nextDate: start, anchorDay: r.anchorDay || (start ? +start.slice(8) : base.anchorDay) }), today);
+      if (i >= 0) { st.recurring[i] = rule; sum.rulesUpdated++; } else { st.recurring.push(rule); sum.rulesAdded++; }
+      touched.push(rule.id);
+    });
+    if (u.paycheck && typeof u.paycheck === 'object') { st.paycheck = normalizePaycheck(Object.assign({}, st.paycheck, u.paycheck)); sum.paycheck = true; }
+    var b = u.balances || {};
+    ['k401Balance', 'rothBalance', 'savingsBalance', 'otherInvestments'].forEach(function (k) { if (b[k] !== undefined && isFinite(Number(b[k]))) { st[k] = Math.max(0, round2(b[k])); sum.balances.push(k); if (k === 'k401Balance') st.k401UpdatedAt = isValidISO(b.k401UpdatedAt) ? b.k401UpdatedAt : today; } });
+    // A file entry is "already here" if its importId is, or if an existing entry has the same date, type,
+    // amount and note. Matching is one-for-one, so four identical $14.40 tickets in a file stay four.
+    var ids = {}, have = {};
+    st.entries.forEach(function (e) { if (e.importId) ids[e.importId] = 1; var f = entryFingerprint(e); have[f] = (have[f] || 0) + 1; });
+    (Array.isArray(file && file.entries) ? file.entries : []).forEach(function (raw) {
+      var e = normalizeEntry(raw, today);
+      if (raw && typeof raw.recurring === 'string') e.recurring = raw.recurring;
+      if (e.importId && ids[e.importId]) { sum.skipped++; return; }
+      var f = entryFingerprint(e);
+      if (have[f] > 0) { have[f]--; sum.skipped++; return; }
+      st.entries.push(e); sum.added++; if (e.importId) ids[e.importId] = 1;
+      if (!sum.from || e.date < sum.from) sum.from = e.date; if (!sum.to || e.date > sum.to) sum.to = e.date;
+    });
+    touched.forEach(function (id) {
+      var rule = st.recurring.filter(function (x) { return x.id === id; })[0];
+      var rc = reconcileRule(rule, st.entries, today);
+      st.entries = st.entries.filter(function (e) { return rc.remove.indexOf(e.id) < 0; }).concat(rc.add);
+      rule.nextDate = rc.nextDate; sum.filledIn += rc.add.length;
+    });
+    return { state: normalizeState(st, today), summary: sum };
   }
 
   // ---------- paycheck ----------
@@ -1752,7 +1818,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
-    retirementOdds: retirementOdds, quantile: quantile, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag,
+    retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths,
     FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
@@ -2269,6 +2335,41 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     $('export-close').onclick = function () { if (d.close) d.close(); else d.removeAttribute('open'); };
   }
   $('btn-export').addEventListener('click', exportJSON);
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  function startMerge(file) {
+    var res = C.mergeImport(state, file, today()), m = res.summary;
+    var same = function (a) { var c = Object.assign({}, a); delete c.updatedAt; delete c.theme; return JSON.stringify(c); };
+    if (!m.added && same(res.state) === same(C.normalizeState(state, today()))) { toast('Nothing new: everything in that file is already here.'); return; }
+    var parts = [];
+    if (m.added) parts.push('Adds ' + plural(m.added, 'transaction', 'transactions') + ' (' + C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) + ')' + (m.skipped ? ', skipping ' + m.skipped + ' already here' : '') + '.');
+    if (m.removedSamples) parts.push('Removes the ' + m.removedSamples + ' sample entries.');
+    var rules = m.rulesUpdated + m.rulesAdded;
+    if (rules) parts.push('Updates ' + plural(rules, 'bill', 'bills') + ' to match your statements' + (m.filledIn ? ' and logs ' + plural(m.filledIn, 'payment', 'payments') + ' due since' : '') + '.');
+    if (m.debtsUpdated + m.debtsAdded) parts.push('Updates ' + plural(m.debtsUpdated + m.debtsAdded, 'debt', 'debts') + '.');
+    if (m.paycheck) parts.push('Updates your pay setup.');
+    if (m.balances.length) parts.push('Updates your ' + m.balances.map(function (k) { return { k401Balance: '401k', rothBalance: 'Roth IRA', savingsBalance: 'cash', otherInvestments: 'investments' }[k]; }).join(' and ') + ' balance.');
+    confirmDialog('Add these transactions?', parts.join(' '), 'Add transactions', false).then(function (ok) {
+      if (!ok) return;
+      var prev = state; stashBackup();
+      state = res.state; state.theme = prev.theme; commit(); postDueItems(); render();
+      var d = $('settings-dialog'); if (d.open && d.close) d.close();
+      toast('Added ' + plural(m.added, 'transaction', 'transactions'), { action: 'Undo', duration: 9000, onAction: function () { state = prev; commit(); } });
+    });
+  }
+  function readJSONFile(input, then) {
+    var file = input.files && input.files[0]; input.value = ''; if (!file) return;
+    var reader = new FileReader();
+    reader.onerror = function () { toast('Could not read that file.'); };
+    reader.onload = function () { var parsed; try { parsed = JSON.parse(String(reader.result)); } catch (e) { toast('That file is not valid JSON.'); return; } then(parsed); };
+    reader.readAsText(file);
+  }
+  $('merge-file').addEventListener('change', function () {
+    readJSONFile(this, function (parsed) {
+      if (!parsed || parsed.kind !== 'transactions' || !Array.isArray(parsed.entries)) { toast('That isn’t a transactions file. To restore a full backup, use Import backup.'); return; }
+      startMerge(parsed);
+    });
+  });
+  $('merge-label').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('merge-file').click(); } });
   $('import-label').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('import-file').click(); } });
   $('import-file').addEventListener('change', function () {
     var file = this.files && this.files[0]; this.value = ''; if (!file) return;
@@ -2276,6 +2377,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     reader.onerror = function () { toast('Could not read that file.'); };
     reader.onload = function () {
       var parsed; try { parsed = JSON.parse(String(reader.result)); } catch (e) { toast('That file is not valid JSON.'); return; }
+      if (parsed && parsed.kind === 'transactions') { startMerge(parsed); return; } // never replace your data with a transactions file
       if (!parsed || typeof parsed !== 'object' || (!Array.isArray(parsed.entries) && !('budget' in parsed))) { toast('That file does not look like a Money backup.'); return; }
       var incoming = C.normalizeState(parsed, today());
       confirmDialog('Replace all data?', 'This replaces your ' + state.entries.length + ' entries, balances and debts with the file’s ' + incoming.entries.length + ' entries. Your current data is kept as a one-step backup.', 'Replace').then(function (ok) {
@@ -2722,7 +2824,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   function derived() {
     var st = A.state, t0 = A.today();
     var avg = C.averages(st.entries, t0);
-    var defSpending = C.round2(avg.expense * 12);
+    var defSpending = C.round2((avg.expense - avg.debtPayments) * 12); // loan and card payments end before retirement
     var defContrib = C.round2(avg.k401 + avg.net);
     var r = st.retirement;
     var annualSpending = r.spendingOverride === null ? defSpending : r.spendingOverride;
@@ -2750,7 +2852,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (document.activeElement !== $('r-k401type')) $('r-k401type').value = st.paycheck.k401Type;
     var n = d.avg.months;
     A.setText('r-spending-help', r.spendingOverride === null
-      ? (n ? 'Tracker average ' + money(d.avg.expense, { whole: true }) + '/mo × 12, from ' + n + (n === 1 ? ' month' : ' months') + ' of entries.' : 'No entries yet, so this starts at $0. Type your own estimate.')
+      ? (n ? 'Tracker average ' + money(C.round2(d.avg.expense - d.avg.debtPayments), { whole: true }) + '/mo × 12, from ' + n + (n === 1 ? ' month' : ' months') + ' of entries' + (d.avg.debtPayments > 0 ? ', leaving out ' + money(d.avg.debtPayments, { whole: true }) + '/mo of debt payments' : '') + '.' : 'No entries yet, so this starts at $0. Type your own estimate.')
       : 'Your override. Tracker average would be ' + money(d.defSpending, { whole: true }) + '/yr.');
     $('r-spending-reset').hidden = r.spendingOverride === null;
     A.setText('r-contrib-help', r.contributionOverride === null
