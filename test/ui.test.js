@@ -620,6 +620,33 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await debtTip.click(); await page.waitForTimeout(80);
     assert.strictEqual(await page.evaluate(() => App.ui.view), 'retirement');
   });
+  await test('Accounts card: every balance in one place, editable, with net worth', O, async (page) => {
+    await page.fill('#ab-roth', '5000'); await page.fill('#ab-stock', '30000'); await page.fill('#ab-cash', '2000');
+    assert.strictEqual(await text(page, '#acct-inv'), await page.evaluate(() => FinanceCore.fmtMoney(App.state.k401Balance + 35000)), 'investment total updates as you type');
+    await page.click('#k401-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await text(page, '#toast-msg'), 'Saved 3 balances');
+    const st = await page.evaluate(() => [App.state.rothBalance, App.state.stockBalance, App.state.savingsBalance, App.state.balanceDates.stockBalance === App.today()]);
+    assert.deepStrictEqual(st, [5000, 30000, 2000, true]);
+    const nw = await page.evaluate(() => FinanceCore.round2(App.state.k401Balance + 5000 + 30000 + 2000 - FinanceCore.totalDebt(App.state.debts)));
+    assert.strictEqual(await text(page, '#acct-networth'), FinanceCore_fmt(nw).replace(/\.\d\d$/, ''));
+    assert.ok((await text(page, '#d-ab-stock')).includes('as of Today'));
+    assert.ok((await text(page, '#acct-debts')).includes('Car loan'));
+    await page.click('#toast-action'); await page.waitForTimeout(50);
+    assert.strictEqual(await page.evaluate(() => App.state.stockBalance), 0, 'undo');
+    await tab(page, 'retirement');
+    assert.ok(await page.$('#r-stock') && await page.$('#r-hsa') && await page.$('#r-brokerage'));
+    await page.fill('#r-stock', '12000'); await page.waitForTimeout(80);
+    const d = await page.evaluate(() => App.retirementDerived().calc.assets);
+    assert.strictEqual(d, await page.evaluate(() => App.state.k401Balance + 12000), 'company stock counts toward retirement assets');
+  });
+  await test('HSA contributions from pay count as monthly savings in the projection', O, async (page) => {
+    const before = await page.evaluate(() => App.retirementDerived().defContrib);
+    await page.evaluate(() => { App.state.paycheck.hsa = 400; App.state.paycheck.frequency = 'monthly'; App.commit(); });
+    const after = await page.evaluate(() => App.retirementDerived().defContrib);
+    assert.strictEqual(Math.round((after - before) * 100), 40000);
+    await tab(page, 'retirement');
+    assert.ok((await text(page, '#r-contrib-help')).includes('+ $400 HSA'));
+  });
   await test('current age defaults to 33', O, async (page) => {
     await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#r-age'), '33');

@@ -683,6 +683,8 @@ test('tips: missed match, never-paying debt, overspending, and nothing silly on 
   const low = C.insights({ state: tipState({ paycheck: { gross: 6000, frequency: 'monthly', k401Pct: 2, matchPct: 50, matchCapPct: 6 } }), today: TODAY });
   const match = low.find(t => t.id === 'match');
   assert.strictEqual(match.yearly, 1440); // 4% of 6000 x 50% x 12
+  const fixed = C.insights({ state: tipState({ paycheck: { gross: 10000, frequency: 'monthly', k401Pct: 0, k401Fixed: 1500, matchPct: 50, matchCapPct: 6, k401Type: 'roth' } }), today: TODAY });
+  assert.ok(!fixed.some(t => t.id === 'match') && fixed.some(t => t.id === 'match-ok'), 'a fixed $1,500 (15%) contribution gets the full match');
   const stuck = C.insights({ state: tipState({ debts: [{ id: 'x', name: 'Store card', balance: 10000, rate: 25, payment: 100 }] }), today: TODAY });
   assert.strictEqual(stuck[0].id, 'debt-stuck-x');
   const broke = tipState(); broke.entries.push({ id: 'big', type: 'expense', date: '2026-10-20', amount: 9000, cat: 'Shopping', note: 'Oops' });
@@ -795,6 +797,14 @@ test('tip: stop new purchases on a card that carries a balance', () => {
   st.entries.push({ id: 'c1', type: 'expense', date: '2026-10-12', amount: 300, cat: 'Shopping', note: 'Amazon', tags: ['citi'] }, { id: 'c2', type: 'expense', date: '2026-10-27', amount: 140, cat: 'Debt payments', note: 'Card interest', tags: ['citi', 'interest'] });
   const tip = C.insights({ state: st, today: TODAY }).find(t => t.id === 'card-new-citi');
   assert.ok(tip && tip.detail.startsWith('You charged $300 to it last month'), tip && tip.detail);
+});
+test('estimated paychecks show in history but never make a month count for averages', () => {
+  const es = [E('income', '2026-03-28', 6585.8, 'Paycheck', { tags: ['estimated'] }), E('expense', '2026-03-10', 900, 'Shopping'),
+    E('income', '2026-10-28', 6000, 'Paycheck'), E('expense', '2026-10-05', 3000, 'Housing')];
+  assert.deepStrictEqual(Object.keys(C.paidMonths(es)), ['2026-10']);
+  const a = C.averages(es, TODAY);
+  assert.deepStrictEqual([a.months, a.income, a.expense], [1, 6000, 3000]);
+  assert.ok(C.isEstimate(es[0]) && !C.isEstimate(es[2]));
 });
 test('mergeImport never mutates the state it is given', () => {
   const base = mergeBase(); const before = JSON.stringify(base);

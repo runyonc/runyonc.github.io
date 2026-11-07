@@ -411,6 +411,19 @@ details.card[open] > summary::after { transform: rotate(-135deg); }
 details.card[open] > summary { margin-bottom: var(--sp-3); }
 details:not(.card) > summary { list-style: none; }
 details:not(.card) > summary::-webkit-details-marker { display: none; }
+.acct-nw { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border); }
+.acct-nw .hero { font-size: var(--fs-2xl); }
+.acct-group { padding-top: var(--sp-3); }
+.acct-gh { display: flex; justify-content: space-between; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+.acct-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: 4px 0; }
+.acct-row label { display: flex; flex-direction: column; min-width: 0; }
+.acct-row .an { font-weight: 600; font-size: var(--fs-sm); }
+.acct-row .ad { font-size: var(--fs-xs); color: var(--muted); }
+.acct-row .input-wrap { width: 148px; flex: none; }
+.acct-row .input { min-height: 38px; text-align: right; }
+.acct-debt { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 6px 0; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.acct-debt .dn { font-weight: 600; }
+.acct-debt .dv { color: var(--danger-text); }
 .pill { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
 .pay-lines { display: flex; flex-direction: column; font-size: var(--fs-sm); }
 .pay-line { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 6px 0; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
@@ -445,6 +458,24 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       <span>Showing <strong>sample data</strong> so you can explore. Clear it when you're ready.</span>
       <button class="btn sm" id="btn-clear-samples">Clear samples</button>
     </div>
+
+    <section class="card" id="accounts-card" aria-labelledby="acct-h">
+      <div class="card-head"><h2 id="acct-h">Accounts</h2><button type="button" class="link-btn" id="acct-debts-link">Edit debts</button></div>
+      <div class="acct-nw"><div><div class="small text-2" style="font-weight:600">Net worth</div><div class="xs muted" id="acct-nw-sub"></div></div><div class="hero num" id="acct-networth">$0</div></div>
+      <div class="acct-group"><div class="acct-gh"><span>Investments</span><span class="num" id="acct-inv">$0</span></div>
+      <div class="acct-row" data-key="k401Balance"><label for="k401-balance"><span class="an" id="acct-k401-name">Roth 401k</span><span class="ad" id="k401-updated"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="k401-balance" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="rothBalance"><label for="ab-roth"><span class="an">Roth IRA</span><span class="ad" id="d-ab-roth"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-roth" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="stockBalance"><label for="ab-stock"><span class="an">Company stock</span><span class="ad" id="d-ab-stock"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-stock" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="brokerageBalance"><label for="ab-brokerage"><span class="an">Brokerage</span><span class="ad" id="d-ab-brokerage"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-brokerage" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="hsaBalance"><label for="ab-hsa"><span class="an">HSA</span><span class="ad" id="d-ab-hsa"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-hsa" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="otherInvestments"><label for="ab-other"><span class="an">Other investments</span><span class="ad" id="d-ab-other"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      </div>
+      <div class="acct-group"><div class="acct-gh"><span>Cash</span><span class="num" id="acct-cash">$0</span></div>
+      <div class="acct-row" data-key="savingsBalance"><label for="ab-cash"><span class="an">Checking & savings</span><span class="ad" id="d-ab-cash"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-cash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      </div>
+      <div class="acct-group"><div class="acct-gh"><span>Debts</span><span class="num" id="acct-debt">$0</span></div><div id="acct-debts"></div></div>
+      <div class="row between" style="margin-top: var(--sp-3)"><span class="xs muted">Change any amount, then save.</span><button type="button" class="btn primary sm" id="k401-save">Save balances</button></div>
+    </section>
 
     <div class="month-nav card" style="padding: var(--sp-2) var(--sp-2);">
       <button class="btn icon ghost" id="month-prev" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
@@ -509,14 +540,6 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       <div id="tag-breakdown"></div>
     </section>
 
-    <section class="card" aria-labelledby="k401-h">
-      <div class="card-head"><h2 id="k401-h">401k balance</h2><span class="hint" id="k401-updated"></span></div>
-      <div class="row">
-        <div class="input-wrap grow"><span class="prefix">$</span><input class="input has-prefix num" id="k401-balance" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" aria-label="401k balance"></div>
-        <button class="btn" id="k401-save">Update</button>
-      </div>
-      <div class="xs muted" style="margin-top:6px">Saving sets “last updated” to today. Used on the Retirement tab.</div>
-    </section>
 
     <section class="card flush" aria-labelledby="entries-h">
       <div class="card-head" style="padding: var(--sp-4) var(--sp-4) 0;">
@@ -771,6 +794,9 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
         <div class="field"><label for="r-k401">401k</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-k401" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help" id="r-k401-help"></span></div>
         <div class="field"><label for="r-roth">Roth IRA</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-roth" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
         <div class="field"><label for="r-savings">Savings / cash</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-savings" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="r-stock">Company stock</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-stock" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="r-brokerage">Brokerage</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-brokerage" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="r-hsa">HSA</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-hsa" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
         <div class="field"><label for="r-other">Other investments</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="optional"></div></div>
       </div>
     </details>
@@ -1102,6 +1128,10 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       rothBalance: Math.max(0, round2(num(raw.rothBalance, 0))),
       savingsBalance: Math.max(0, round2(num(raw.savingsBalance, 0))),
       otherInvestments: Math.max(0, round2(num(raw.otherInvestments, 0))),
+      stockBalance: Math.max(0, round2(num(raw.stockBalance, 0))),
+      brokerageBalance: Math.max(0, round2(num(raw.brokerageBalance, 0))),
+      hsaBalance: Math.max(0, round2(num(raw.hsaBalance, 0))),
+      balanceDates: (function (d) { var o = {}; if (d && typeof d === 'object') Object.keys(d).forEach(function (k) { if (isValidISO(d[k])) o[k] = d[k]; }); return o; })(raw.balanceDates),
       debts: Array.isArray(raw.debts) ? raw.debts.map(normalizeDebt) : [],
       paycheck: normalizePaycheck(raw.paycheck),
       recurring: Array.isArray(raw.recurring) ? raw.recurring.map(function (x) { return normalizeRule(x, today); }) : [],
@@ -1306,14 +1336,16 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
    *  yourself, then any month. The current, unfinished month is left out when finished months exist. */
   function trackedMonths(entries, today) {
     var paid = {}, tracked = {}, any = {};
-    entries.forEach(function (e) { var k = monthKey(e.date); any[k] = true; if (e.type === 'income' && e.cat === 'Paycheck') paid[k] = true; if (!e.recurring || e.type === 'income') tracked[k] = true; });
+    // estimated entries (e.g. paychecks filled in from year-to-date totals) never make a month count as tracked
+    entries.forEach(function (e) { var k = monthKey(e.date); any[k] = true; if (isEstimate(e)) return; if (e.type === 'income' && e.cat === 'Paycheck') paid[k] = true; if (!e.recurring || e.type === 'income') tracked[k] = true; });
     var months = Object.assign({}, Object.keys(paid).length ? paid : Object.keys(tracked).length ? tracked : any);
     var cur = today ? monthKey(today) : null;
     if (cur && months[cur] && Object.keys(months).length > 1) delete months[cur];
     return months;
   }
   /** Months that have a paycheck logged. A savings rate only means something in those months. */
-  function paidMonths(entries) { var m = {}; entries.forEach(function (e) { if (e.type === 'income' && e.cat === 'Paycheck') m[monthKey(e.date)] = true; }); return m; }
+  function isEstimate(e) { return !!e.tags && e.tags.indexOf('estimated') >= 0; }
+  function paidMonths(entries) { var m = {}; entries.forEach(function (e) { if (e.type === 'income' && e.cat === 'Paycheck' && !isEstimate(e)) m[monthKey(e.date)] = true; }); return m; }
   function averages(entries, today) {
     // Average per month over the months you actually tracked: ones with income or something you logged yourself.
     // A month holding only auto-filled recurring history (e.g. two years of a $12 subscription) would otherwise
@@ -1379,7 +1411,8 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var contribution = num(inp.monthlyContribution, 0);
     var target = wr > 0 ? annualSpending / wr : Infinity;
     var k401Roth = inp.k401Type === 'roth';
-    var assets = num(inp.k401Balance, 0) * (k401Roth ? 1 : 1 - tax) + num(inp.rothBalance, 0) + num(inp.savingsBalance, 0) + num(inp.otherInvestments, 0);
+    var assets = num(inp.k401Balance, 0) * (k401Roth ? 1 : 1 - tax) + num(inp.rothBalance, 0) + num(inp.savingsBalance, 0) + num(inp.otherInvestments, 0)
+      + num(inp.stockBalance, 0) + num(inp.brokerageBalance, 0) + num(inp.hsaBalance, 0);
     var debts = (inp.debts || []).map(normalizeDebt);
     var debtTotal = totalDebt(debts);
     var netWorth = round2(assets - debtTotal);
@@ -1559,9 +1592,10 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     // 401k match
     var p = st.paycheck;
     if (p && p.gross > 0 && p.matchPct > 0) {
-      if (p.k401Pct < p.matchCapPct) {
-        var lost = round2(p.gross * (p.matchCapPct - p.k401Pct) / 100 * p.matchPct / 100 * periodsPerYear(p.frequency));
-        tips.push({ id: 'match', kind: 'invest', icon: '🤝', title: 'Raise your 401k to ' + p.matchCapPct + '% to get the full match', detail: 'You put in ' + p.k401Pct + '%; your employer matches up to ' + p.matchCapPct + '%. That’s ' + $(lost) + ' a year left on the table.', yearly: lost, action: { view: 'recurring', label: 'Open pay setup' } });
+      var pb = paycheckBreakdown(p), effPct = p.gross > 0 ? (pb.k401 + (p.roth || 0)) / p.gross * 100 : 0;
+      if (effPct + 1e-9 < p.matchCapPct) {
+        var lost = round2(p.gross * (p.matchCapPct - effPct) / 100 * p.matchPct / 100 * periodsPerYear(p.frequency));
+        tips.push({ id: 'match', kind: 'invest', icon: '🤝', title: 'Raise your 401k to ' + p.matchCapPct + '% to get the full match', detail: 'You put in about ' + (Math.round(effPct * 10) / 10) + '%; your employer matches up to ' + p.matchCapPct + '%. That’s ' + $(lost) + ' a year left on the table.', yearly: lost, action: { view: 'recurring', label: 'Open pay setup' } });
       } else {
         tips.push({ id: 'match-ok', kind: 'good', icon: '✅', title: 'You get the full 401k match', detail: 'About ' + $(paycheckBreakdown(p).annual.match) + ' a year of free money.', yearly: null, action: null });
       }
@@ -1625,6 +1659,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     return tips.sort(function (a, b) { return rank(b) - rank(a); });
   }
 
+  var BALANCE_KEYS = ['k401Balance', 'rothBalance', 'stockBalance', 'brokerageBalance', 'hsaBalance', 'savingsBalance', 'otherInvestments'];
   // ---------- adding transactions from a file ----------
   function entryFingerprint(e) { return [e.date, e.type, toCents(e.amount), String(e.note || '').toLowerCase().replace(/\s+/g, ' ').trim()].join('|'); }
   /**
@@ -1668,7 +1703,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     });
     if (u.paycheck && typeof u.paycheck === 'object') { st.paycheck = normalizePaycheck(Object.assign({}, st.paycheck, u.paycheck)); sum.paycheck = true; }
     var b = u.balances || {};
-    ['k401Balance', 'rothBalance', 'savingsBalance', 'otherInvestments'].forEach(function (k) { if (b[k] !== undefined && isFinite(Number(b[k]))) { st[k] = Math.max(0, round2(b[k])); sum.balances.push(k); if (k === 'k401Balance') st.k401UpdatedAt = isValidISO(b.k401UpdatedAt) ? b.k401UpdatedAt : today; } });
+    BALANCE_KEYS.forEach(function (k) { if (b[k] !== undefined && isFinite(Number(b[k]))) { st[k] = Math.max(0, round2(b[k])); sum.balances.push(k); var asOf = b.asOf && typeof b.asOf === 'object' ? (isValidISO(b.asOf[k]) ? b.asOf[k] : today) : (isValidISO(b.asOf) ? b.asOf : today); st.balanceDates = st.balanceDates || {}; st.balanceDates[k] = asOf; if (k === 'k401Balance') st.k401UpdatedAt = isValidISO(b.k401UpdatedAt) ? b.k401UpdatedAt : asOf; } });
     // A file entry is "already here" if its importId is, or if an existing entry has the same date, type,
     // amount and note. Matching is one-for-one, so four identical $14.40 tickets in a file stay four.
     var ids = {}, have = {};
@@ -1850,7 +1885,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
-    retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths, paidMonths: paidMonths,
+    retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, BALANCE_KEYS: BALANCE_KEYS, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths, paidMonths: paidMonths, isEstimate: isEstimate,
     FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
@@ -2105,8 +2140,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var tbox = $('tag-breakdown'); clear(tbox); if (tb.tags.length) tagBars(tbox, tb);
 
     // 401k
-    if (document.activeElement !== $('k401-balance')) $('k401-balance').value = state.k401Balance ? state.k401Balance : '';
-    setText('k401-updated', state.k401UpdatedAt ? 'Updated ' + C.fmtDate(state.k401UpdatedAt, t0) : 'Not set yet');
+    renderAccounts();
 
     // entries
     var list = $('entries'); clear(list);
@@ -2166,6 +2200,43 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (!isFinite(v) || v < 0) { this.value = state.budget; toast('Budget must be a number of 0 or more.'); return; }
     state.budget = C.round2(v); commit();
   });
+  // ---------- Accounts card ----------
+  var ACCT = [['k401Balance', 'k401-balance'], ['rothBalance', 'ab-roth'], ['stockBalance', 'ab-stock'], ['brokerageBalance', 'ab-brokerage'], ['hsaBalance', 'ab-hsa'], ['otherInvestments', 'ab-other'], ['savingsBalance', 'ab-cash']];
+  function acctDate(k) { return k === 'k401Balance' ? (state.k401UpdatedAt || (state.balanceDates || {})[k]) : (state.balanceDates || {})[k]; }
+  function acctValues() { var v = {}; ACCT.forEach(function (a) { var el = $(a[1]), n = Number(el.value); v[a[0]] = el.value === '' ? 0 : (isFinite(n) ? n : NaN); }); return v; }
+  function acctTotals(v) {
+    var inv = 0; ACCT.forEach(function (a) { if (a[0] !== 'savingsBalance') inv += C.toCents(v[a[0]] || 0); });
+    var debt = C.totalDebt(state.debts), cash = C.round2(v.savingsBalance || 0);
+    setText('acct-inv', money(C.fromCents(inv))); setText('acct-cash', money(cash)); setText('acct-debt', debt > 0 ? '−' + money(debt) : money(0));
+    var nw = C.round2(C.fromCents(inv) + cash - debt);
+    $('acct-networth').textContent = money(nw, { whole: true }); $('acct-networth').className = 'hero num' + (nw < 0 ? ' danger-text' : '');
+    setText('acct-nw-sub', money(C.fromCents(inv), { whole: true }) + ' invested + ' + money(cash, { whole: true }) + ' cash − ' + money(debt, { whole: true }) + ' debt');
+  }
+  function renderAccounts() {
+    var t0 = today();
+    setText('acct-k401-name', state.paycheck.k401Type === 'roth' ? 'Roth 401k' : '401k');
+    ACCT.forEach(function (a) {
+      var el = $(a[1]); if (document.activeElement !== el) el.value = state[a[0]] ? state[a[0]] : '';
+      var d = acctDate(a[0]), dateEl = a[0] === 'k401Balance' ? $('k401-updated') : $('d-' + a[1]);
+      dateEl.textContent = state[a[0]] ? (d ? 'as of ' + C.fmtDate(d, t0) : 'no date') : (a[0] === 'hsaBalance' ? 'add your HSA balance' : 'not set');
+    });
+    var box = $('acct-debts'); clear(box);
+    if (!state.debts.length) box.appendChild(h('div', { class: 'xs muted', text: 'No debts.' }));
+    state.debts.forEach(function (d) { box.appendChild(h('div', { class: 'acct-debt' }, [h('span', { class: 'dn', text: d.name }), h('span', { class: 'dv', text: '−' + money(d.balance) })])); });
+    acctTotals(acctValues());
+  }
+  function saveBalances() {
+    var v = acctValues(), changed = [];
+    for (var i = 0; i < ACCT.length; i++) { var k = ACCT[i][0]; if (!isFinite(v[k]) || v[k] < 0) { toast('Enter a balance of 0 or more.'); $(ACCT[i][1]).focus(); return; } if (C.round2(v[k]) !== (state[k] || 0)) changed.push(k); }
+    if (!changed.length) { toast('Balances are already up to date.'); return; }
+    var prev = JSON.parse(JSON.stringify({ a: ACCT.map(function (a) { return state[a[0]]; }), d: state.balanceDates, k: state.k401UpdatedAt }));
+    state.balanceDates = state.balanceDates || {};
+    changed.forEach(function (k) { state[k] = C.round2(v[k]); state.balanceDates[k] = today(); if (k === 'k401Balance') state.k401UpdatedAt = today(); });
+    commit();
+    toast(changed.length === 1 && changed[0] === 'k401Balance' ? '401k balance updated to ' + money(state.k401Balance) : 'Saved ' + changed.length + (changed.length === 1 ? ' balance' : ' balances'), { action: 'Undo', onAction: function () { ACCT.forEach(function (a, i) { state[a[0]] = prev.a[i]; }); state.balanceDates = prev.d || {}; state.k401UpdatedAt = prev.k; commit(); } });
+  }
+  ACCT.forEach(function (a) { $(a[1]).addEventListener('input', function () { acctTotals(acctValues()); }); $(a[1]).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveBalances(); } }); });
+  $('acct-debts-link').addEventListener('click', function () { showView('retirement'); });
   function saveK401Balance(v, silent) {
     var n = Number(v);
     if (!isFinite(n) || n < 0) { toast('Enter a balance of 0 or more.'); return false; }
@@ -2173,8 +2244,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (!silent) toast('401k balance updated to ' + money(state.k401Balance));
     return true;
   }
-  $('k401-save').addEventListener('click', function () { saveK401Balance($('k401-balance').value); });
-  $('k401-balance').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveK401Balance(this.value); } });
+  $('k401-save').addEventListener('click', saveBalances);
   $('btn-csv').addEventListener('click', function () {
     var entries = C.entriesInMonth(state.entries, ui.month);
     var csv = C.toCSV(entries);
@@ -2375,7 +2445,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var same = function (a) { var c = Object.assign({}, a); delete c.updatedAt; delete c.theme; return JSON.stringify(c); };
     if (!m.added && !m.removedEntries && !m.rulesRemoved && same(res.state) === same(C.normalizeState(state, today()))) { toast('Nothing new: everything in that file is already here.'); return; }
     var parts = [];
-    var span = !m.added ? '' : m.from.slice(0, 4) === m.to.slice(0, 4) ? C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) : C.fmtDateShort(m.from) + ', ' + m.from.slice(0, 4) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4);
+    var span = !m.added ? '' : m.from === m.to ? C.fmtDateShort(m.from) + ', ' + m.from.slice(0, 4) : m.from.slice(0, 4) === m.to.slice(0, 4) ? C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) : C.fmtDateShort(m.from) + ', ' + m.from.slice(0, 4) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4);
     if (m.added) parts.push('Adds ' + plural(m.added, 'transaction', 'transactions') + ' (' + span + ')' + (m.skipped ? ', skipping ' + m.skipped + ' already here' : '') + '.');
     if (m.removedSamples) parts.push('Removes the ' + m.removedSamples + ' sample entries.');
     if (m.removedEntries || m.rulesRemoved) parts.push('Removes ' + [m.removedEntries ? plural(m.removedEntries, 'entry', 'entries') : '', m.rulesRemoved ? plural(m.rulesRemoved, 'bill', 'bills') : ''].filter(Boolean).join(' and ') + ' the file replaces.');
@@ -2384,7 +2454,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (m.debtsUpdated + m.debtsAdded) parts.push('Updates ' + plural(m.debtsUpdated + m.debtsAdded, 'debt', 'debts') + '.');
     if (m.paycheck) parts.push('Updates your pay setup.');
     if (m.balances.length) {
-      var bn = m.balances.map(function (k) { return { k401Balance: '401k', rothBalance: 'Roth IRA', savingsBalance: 'cash', otherInvestments: 'other investments' }[k]; });
+      var bn = m.balances.map(function (k) { return { k401Balance: '401k', rothBalance: 'Roth IRA', stockBalance: 'stock', brokerageBalance: 'brokerage', hsaBalance: 'HSA', savingsBalance: 'cash', otherInvestments: 'other investments' }[k]; });
       parts.push('Updates your ' + (bn.length === 1 ? bn[0] + ' balance.' : bn.slice(0, -1).join(', ') + ' and ' + bn[bn.length - 1] + ' balances.'));
     }
     confirmDialog('Add these transactions?', parts.join(' '), 'Add transactions', false).then(function (ok) {
@@ -2765,7 +2835,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     A.setText('rt-rate', rateTot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(rateTot.savingsRate) + (hasPaid && rateTot.count.all !== tot.count.all ? ' in months with pay' : ''));
     var gap = hasPaid ? C.monthsList(C.monthKey(r.from), C.monthKey(r.to)).filter(function (k) { return !paidSet[k] && C.entriesInMonth(filtered, k).some(function (e) { return e.type === 'expense'; }); }).length : 0;
     $('range-note').hidden = !gap;
-    $('range-note').textContent = gap ? gap + (gap === 1 ? ' month' : ' months') + ' in this range ' + (gap === 1 ? 'has' : 'have') + ' spending but no paycheck logged (for example card history without bank history), so income and net look low here.' : '';
+    $('range-note').textContent = gap ? gap + (gap === 1 ? ' month' : ' months') + ' in this range ' + (gap === 1 ? 'doesn’t' : 'don’t') + ' have full bank history (a real paycheck, rent and bills), so ' + (gap === 1 ? 'it’s' : 'they’re') + ' left out of averages and savings rates and the totals here are incomplete.' : '';
     $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = (sel || tsel) ? 'Spending (filtered)' : 'Spending';
 
     var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--chart-accent');
@@ -2864,13 +2934,16 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   function calcInputs(st, annualSpending, contribution) {
     var r = st.retirement;
     return { age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: effectiveReal(st), taxRate: r.taxRate, annualSpending: annualSpending, monthlyContribution: contribution,
-      k401Balance: st.k401Balance, k401Type: st.paycheck.k401Type, rothBalance: st.rothBalance, savingsBalance: st.savingsBalance, otherInvestments: st.otherInvestments, debts: st.debts, today: A.today() };
+      k401Balance: st.k401Balance, k401Type: st.paycheck.k401Type, rothBalance: st.rothBalance, savingsBalance: st.savingsBalance, otherInvestments: st.otherInvestments,
+      stockBalance: st.stockBalance, brokerageBalance: st.brokerageBalance, hsaBalance: st.hsaBalance, debts: st.debts, today: A.today() };
   }
   function derived() {
     var st = A.state, t0 = A.today();
     var avg = C.averages(st.entries, t0);
     var defSpending = C.round2((avg.expense - avg.debtPayments) * 12); // loan and card payments end before retirement
-    var defContrib = C.round2(avg.k401 + avg.net);
+    // HSA money comes out of pay before it reaches the bank, so add it back: it's saved, not spent
+    var hsaMonthly = st.paycheck && st.paycheck.gross > 0 ? C.monthlyize(st.paycheck.hsa, st.paycheck.frequency) : 0;
+    var defContrib = C.round2(avg.k401 + avg.net + hsaMonthly);
     var r = st.retirement;
     var annualSpending = r.spendingOverride === null ? defSpending : r.spendingOverride;
     var contribution = r.contributionOverride === null ? defContrib : r.contributionOverride;
@@ -2878,7 +2951,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var calc = C.retirementCalc(inputs);
     var f = C.FUNDS[st.k401Fund];
     var odds = f ? C.retirementOdds(inputs, { returns: C.fundBasisSeries(st.k401Fund).map(function (p) { return p.r; }), inflation: st.inflation, runs: 400, seed: 11 }) : null;
-    return { avg: avg, defSpending: defSpending, defContrib: defContrib, annualSpending: annualSpending, contribution: contribution, calc: calc, odds: odds, inputs: inputs, realReturn: inputs.returnRate };
+    return { avg: avg, hsaMonthly: hsaMonthly, defSpending: defSpending, defContrib: defContrib, annualSpending: annualSpending, contribution: contribution, calc: calc, odds: odds, inputs: inputs, realReturn: inputs.returnRate };
   }
 
   // ---------- inputs ----------
@@ -2887,7 +2960,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var st = A.state, r = st.retirement;
     setIf('r-age', r.age); setIf('r-target-age', r.targetAge);
     setIf('r-spending', d.annualSpending); setIf('r-contrib', d.contribution);
-    setIf('r-k401', st.k401Balance || ''); setIf('r-roth', st.rothBalance || ''); setIf('r-savings', st.savingsBalance || ''); setIf('r-other', st.otherInvestments || '');
+    setIf('r-k401', st.k401Balance || ''); setIf('r-roth', st.rothBalance || ''); setIf('r-savings', st.savingsBalance || ''); setIf('r-other', st.otherInvestments || ''); setIf('r-stock', st.stockBalance || ''); setIf('r-brokerage', st.brokerageBalance || ''); setIf('r-hsa', st.hsaBalance || '');
     setIf('r-wr', r.withdrawalRate); setIf('r-return', d.realReturn); setIf('r-tax', r.taxRate);
     var f = C.FUNDS[st.k401Fund], roth = st.paycheck.k401Type === 'roth';
     A.setText('r-return-help', r.returnFromFund ? 'From ' + (f ? f.ticker + ' history' : 'your custom rate') + ': ' + fundNominal(st).toFixed(1) + '% a year minus ' + st.inflation + '% inflation.' : 'Your own rate. Fund history would give ' + effectiveReal(Object.assign({}, st, { retirement: Object.assign({}, r, { returnFromFund: true }) })).toFixed(1) + '%.');
@@ -2901,7 +2974,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       : 'Your override. Tracker average would be ' + money(d.defSpending, { whole: true }) + '/yr.');
     $('r-spending-reset').hidden = r.spendingOverride === null;
     A.setText('r-contrib-help', r.contributionOverride === null
-      ? (n ? 'Tracker average: ' + money(d.avg.k401, { whole: true }) + ' 401k + ' + money(d.avg.net, { whole: true }) + ' net savings per month.' : 'No entries yet. Type what you can save each month.')
+      ? (n ? 'Tracker average: ' + money(d.avg.k401, { whole: true }) + ' 401k + ' + money(d.avg.net, { whole: true }) + ' left after spending' + (d.hsaMonthly > 0 ? ' + ' + money(d.hsaMonthly, { whole: true }) + ' HSA' : '') + ' per month.' : 'No entries yet. Type what you can save each month.')
       : 'Your override. Tracker average would be ' + money(d.defContrib, { whole: true }) + '/mo.');
     $('r-contrib-reset').hidden = r.contributionOverride === null;
     A.setText('r-k401-help', (st.paycheck.k401Type === 'roth' ? 'Roth · ' : 'Traditional · ') + (st.k401UpdatedAt ? 'updated ' + C.fmtDate(st.k401UpdatedAt, A.today()) : 'shared with Overview'));
@@ -2916,6 +2989,10 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   bind('r-roth', function (v) { A.state.rothBalance = Math.max(0, C.round2(numOrNull(v) || 0)); });
   bind('r-savings', function (v) { A.state.savingsBalance = Math.max(0, C.round2(numOrNull(v) || 0)); });
   bind('r-other', function (v) { A.state.otherInvestments = Math.max(0, C.round2(numOrNull(v) || 0)); });
+  [['r-stock', 'stockBalance'], ['r-brokerage', 'brokerageBalance'], ['r-hsa', 'hsaBalance'], ['r-roth', 'rothBalance'], ['r-savings', 'savingsBalance'], ['r-other', 'otherInvestments']].forEach(function (x) {
+    if (x[0] === 'r-stock' || x[0] === 'r-brokerage' || x[0] === 'r-hsa') bind(x[0], function (v) { A.state[x[1]] = Math.max(0, C.round2(numOrNull(v) || 0)); });
+    $(x[0]).addEventListener('change', function () { A.state.balanceDates = A.state.balanceDates || {}; A.state.balanceDates[x[1]] = A.today(); A.saveState(); });
+  });
   bind('r-wr', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 100) A.state.retirement.withdrawalRate = n; });
   bind('r-return', function (v) { var n = numOrNull(v); if (n !== null && n > -100 && n <= 100) { A.state.retirement.returnRate = n; A.state.retirement.returnFromFund = false; } });
   $('r-return-reset').addEventListener('click', function () { A.state.retirement.returnFromFund = true; A.commit(); });
@@ -3193,7 +3270,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (b.gross <= 0) { lines.appendChild(h('p', { class: 'small text-2', text: 'Enter your gross pay and deductions below (straight off a pay stub) to see your take-home pay, taxes and 401k per paycheck and per month.' })); }
     else {
       line('Gross pay', money(b.gross));
-      var k401Label = (b.k401Type === 'roth' ? 'Roth 401k (' : '401k (') + p.k401Pct + '%' + (p.k401Fixed ? ' + ' + money(p.k401Fixed) : '') + ')';
+      var k401Label = (b.k401Type === 'roth' ? 'Roth 401k' : '401k') + ' (' + [p.k401Pct ? p.k401Pct + '%' : '', p.k401Fixed ? money(p.k401Fixed) : ''].filter(Boolean).join(' + ') + ')';
       if (b.pretax > 0) { line('Pre-tax deductions', '−' + money(b.pretax)); if (b.k401 > 0 && b.k401Type !== 'roth') line(k401Label, '−' + money(b.k401), 'sub'); if (b.health > 0) line('Health insurance', '−' + money(b.health), 'sub'); if (b.hsa > 0) line('HSA / FSA', '−' + money(b.hsa), 'sub'); if (b.otherPretax > 0) line('Other pre-tax', '−' + money(b.otherPretax), 'sub'); }
       line('Taxes' + (b.taxMode === 'auto' ? ' (estimated)' : ''), '−' + money(b.taxes));
       line('Federal income tax', '−' + money(b.federal), 'sub'); line('Social Security 6.2%', '−' + money(b.socialSecurity), 'sub'); line('Medicare 1.45%', '−' + money(b.medicare), 'sub'); if (b.state > 0) line('State income tax', '−' + money(b.state), 'sub');

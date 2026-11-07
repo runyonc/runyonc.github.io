@@ -22,6 +22,10 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
   overlap, get their own "Spending by tag" totals and chart filter, and can be
   removed everywhere from Settings. Older data is moved into the new categories
   and given starter tags once, on first load.
+- **Accounts** — at the top of Overview: every balance in one place (401k,
+  Roth IRA, company stock, brokerage, HSA, other investments, cash) with its
+  "as of" date, your debts, and net worth. Edit any amount and save; the
+  Retirement tab uses the same numbers.
 - **Tips** — on Overview, suggestions worked out from your own numbers and
   ranked by what they're worth: a payment that doesn't cover a debt's
   interest, an emergency fund, going over budget this month, investing your
@@ -110,6 +114,12 @@ File shape (`kind: "transactions"`):
 (bill ids, with their estimated entries) for things a newer file replaces. A
 bill's real payments in a file replace the app's own estimates from the first
 real payment on.
+
+Paychecks filled in from year-to-date totals are tagged `estimated`: they show
+in history and charts, but never make a month count for averages, so a month
+without bank history (rent, bills) can't make your savings look bigger than
+they are. Pay setup HSA contributions count as monthly savings in the
+retirement projection.
 
 Credit cards whose purchases you import are treated as transfers: purchases and
 interest are spending, payments are not. Mark such a card's debt "payments
