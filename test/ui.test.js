@@ -663,6 +663,30 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#btn-settings'); await page.click('#btn-wipe'); await page.waitForTimeout(50); await page.click('#confirm-ok'); await page.waitForTimeout(80);
     assert.deepStrictEqual(await page.evaluate(() => [App.state.paycheck.gross, App.state.entries.length]), [8000, 0]);
   });
+  await test('paid since: fills in missing past paychecks as estimates, and Undo clears it', O, async (page) => {
+    await page.evaluate(() => { const s = App.state; s.entries = s.entries.filter(e => e.cat !== 'Paycheck' && e.type !== 'k401'); s.paycheck.frequency = 'monthly'; s.paycheck.nextPayDate = '2099-01-01'; App.commit(); });
+    const today = await page.evaluate(() => App.today());
+    const y = +today.slice(0, 4), from = (y - 1) + '-12-15';
+    await tab(page, 'recurring');
+    await page.fill('#p-start', from); await page.waitForTimeout(100);
+    const got = await page.evaluate(() => App.state.entries.filter(e => e.cat === 'Paycheck'));
+    const want = +today.slice(5, 7) + (+today.slice(8) >= 15 ? 1 : 0);
+    assert.strictEqual(got.length, want);
+    assert.ok(got.every(e => e.tags.includes('estimated')));
+    const msg = await text(page, '#toast-msg'); assert.ok(msg.startsWith('Filled in ' + want + ' paychecks since'), msg);
+    await page.click('#toast-action'); await page.waitForTimeout(80);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.entries.filter(e => e.cat === 'Paycheck').length, App.state.paycheck.startDate]), [0, '']);
+    assert.strictEqual(await page.inputValue('#p-start'), '');
+  });
+  await test('a pay stub start date applies once, and stays cleared after you clear it', { browser, init: () => { window.MONEY_PAY_DEFAULTS = { gross: 8000, frequency: 'monthly', payDay: 28, taxMode: 'manual', federalManual: 1000, startDate: '2026-01-28' }; } }, async (page) => {
+    const n = await page.evaluate(() => App.state.entries.filter(e => e.cat === 'Paycheck' && (e.tags || []).includes('estimated') && e.date >= '2026-01-28').length);
+    assert.ok(n >= 1, 'estimated paychecks were filled in');
+    await tab(page, 'recurring');
+    assert.strictEqual(await page.inputValue('#p-start'), '2026-01-28');
+    await page.fill('#p-start', ''); await page.dispatchEvent('#p-start', 'change'); await page.waitForTimeout(80);
+    await page.reload(); await page.waitForTimeout(150);
+    assert.strictEqual(await page.evaluate(() => App.state.paycheck.startDate), '');
+  });
   await test('without pay defaults the restore button stays hidden', O, async (page) => {
     await tab(page, 'recurring');
     assert.ok(await page.isHidden('#pay-reset-row'));

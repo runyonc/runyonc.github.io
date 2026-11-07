@@ -695,6 +695,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
         <div class="field"><label for="p-gross">Gross pay per paycheck</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-gross" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
         <div class="field"><label for="p-freq">Pay frequency</label><select class="input" id="p-freq"><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="semimonthly">Twice a month</option><option value="monthly">Monthly</option></select></div>
         <div class="field"><label for="p-next">Next pay date</label><input class="input" id="p-next" type="date"></div>
+        <div class="field"><label for="p-start">Paid since</label><input class="input" id="p-start" type="date"><span class="help">fills in past paychecks</span></div>
         <div class="field"><label for="p-status">Filing status</label><select class="input" id="p-status"><option value="single">Single</option><option value="married">Married filing jointly</option></select></div>
         <div class="field"><label for="p-k401pct">401k contribution</label><div class="input-wrap"><input class="input has-suffix num" id="p-k401pct" type="number" inputmode="decimal" min="0" max="100" step="0.5"><span class="suffix">%</span></div><span class="help" id="p-k401pct-help">of gross</span></div>
         <div class="field"><label for="p-k401fixed">401k extra per check</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-k401fixed" type="number" inputmode="decimal" min="0" step="1"></div></div>
@@ -1089,7 +1090,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     p = (p && typeof p === 'object') ? p : {};
     var money = function (v) { return Math.max(0, round2(num(v, 0))); };
     return {
-      gross: money(p.gross), frequency: FREQS[p.frequency] ? p.frequency : 'biweekly', k401Type: p.k401Type === 'roth' ? 'roth' : 'traditional', nextPayDate: isValidISO(p.nextPayDate) ? p.nextPayDate : null, autoLog: p.autoLog !== false,
+      gross: money(p.gross), frequency: FREQS[p.frequency] ? p.frequency : 'biweekly', k401Type: p.k401Type === 'roth' ? 'roth' : 'traditional', startDate: isValidISO(p.startDate) ? p.startDate : (p.startDate === '' ? '' : null), nextPayDate: isValidISO(p.nextPayDate) ? p.nextPayDate : null, autoLog: p.autoLog !== false,
       k401Pct: Math.min(100, money(p.k401Pct === undefined ? 6 : p.k401Pct)), k401Fixed: money(p.k401Fixed), matchPct: Math.min(500, money(p.matchPct === undefined ? 50 : p.matchPct)), matchCapPct: Math.min(100, money(p.matchCapPct === undefined ? 6 : p.matchCapPct)),
       health: money(p.health), hsa: money(p.hsa), otherPretax: money(p.otherPretax), roth: money(p.roth), otherPosttax: money(p.otherPosttax),
       filingStatus: p.filingStatus === 'married' ? 'married' : 'single', stateRate: Math.min(20, money(p.stateRate)), extraWithholding: money(p.extraWithholding),
@@ -1773,6 +1774,27 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     return out.map(function (e) { return normalizeEntry(e, date); }).map(function (e, i) { e.recurring = out[i].recurring; return e; });
   }
 
+  /**
+   * Paychecks between the pay setup's start date and the next pay date that have no paycheck logged yet: returns
+   * {add, remove}. Added entries use the current pay setup and are tagged "estimated"; a pay date counts as covered
+   * by any Paycheck income within half a pay period. Estimated paychecks before the start date are removed. Pure.
+   */
+  function paycheckBackfill(state, today) {
+    var pc = state.paycheck, out = { add: [], remove: [] };
+    if (!pc || !pc.startDate || !(pc.gross > 0)) return out;
+    (state.entries || []).forEach(function (e) { if (e.recurring === 'paycheck' && e.tags && e.tags.indexOf('estimated') >= 0 && !e.importId && e.date < pc.startDate) out.remove.push(e.id); });
+    var stop = pc.nextPayDate && pc.nextPayDate <= today ? pc.nextPayDate : addDays(today, 1);
+    var tol = MATCH_DAYS[pc.frequency] || 14, anchor = +pc.startDate.slice(8);
+    var paid = (state.entries || []).filter(function (e) { return e.type === 'income' && e.cat === 'Paycheck' && out.remove.indexOf(e.id) < 0; }).map(function (e) { return e.date; });
+    var d = pc.startDate, guard = 0;
+    while (d < stop && d <= today && guard++ < 600) {
+      var covered = paid.some(function (x) { return Math.abs(daysBetween(x, d)) <= tol; });
+      if (!covered) paycheckEntries(pc, d, 'paycheck').forEach(function (e) { e.tags = (e.tags || []).concat(['estimated']); out.add.push(e); });
+      d = advanceDate(d, pc.frequency, anchor);
+    }
+    return out;
+  }
+
   // ---------- recurring ----------
   function clampDay(y, m, day) { var end = new Date(y, m + 1, 0).getDate(); return new Date(y, m, Math.min(day, end)); }
   function advanceDate(iso, freq, anchorDay) {
@@ -1887,7 +1909,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
     retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, BALANCE_KEYS: BALANCE_KEYS, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths, paidMonths: paidMonths, isEstimate: isEstimate,
-    FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
+    FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, paycheckBackfill: paycheckBackfill, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal, occurrences: occurrences, reconcileRule: reconcileRule, ruleEnded: ruleEnded, CAT_ALIASES: CAT_ALIASES, recategorize: recategorize, SCHEMA: SCHEMA,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
   };
@@ -2542,10 +2564,22 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   });
 
   // ---------- expose for charts/retirement modules & tests ----------
-  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, defaultPaycheck: defaultPaycheck, payMatchesDefaults: payMatchesDefaults, tagPicker: tagPicker, tagBars: tagBars, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
+  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, fillPaychecks: fillPaychecks, defaultPaycheck: defaultPaycheck, payMatchesDefaults: payMatchesDefaults, tagPicker: tagPicker, tagBars: tagBars, today: today, postDueItems: postDueItems, stashBackup: stashBackup, applyTheme: applyTheme, renderStorageStatus: renderStorageStatus, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
 
   // ---------- post due recurring items ----------
+  function fillPaychecks(quiet) {
+    // "" means you cleared it; null means never set, so a private build's pay-stub start date applies
+    if (state.paycheck.startDate === null && PAY_DEFAULTS && C.isValidISO(PAY_DEFAULTS.startDate)) state.paycheck.startDate = PAY_DEFAULTS.startDate;
+    var r = C.paycheckBackfill(state, today()); if (!r.add.length && !r.remove.length) return 0;
+    var prev = state.entries;
+    state.entries = state.entries.filter(function (e) { return r.remove.indexOf(e.id) < 0; }).concat(r.add);
+    saveState();
+    var n = r.add.filter(function (e) { return e.type === 'income'; }).length;
+    if (!quiet && n) toast('Filled in ' + n + (n === 1 ? ' paycheck' : ' paychecks') + ' since ' + C.fmtDate(state.paycheck.startDate, null), { action: 'Undo', duration: 8000, onAction: function () { var keep = state.paycheck.startDate; state.entries = prev; state.paycheck.startDate = ''; commit(); toast('Removed them; cleared “Paid since” (was ' + C.fmtDateShort(keep) + ')'); } });
+    return n;
+  }
   function postDueItems() {
+    fillPaychecks(true);
     var r = C.postDue(state, today()); if (!r.changed) return;
     var prevRules = state.recurring, prevPay = state.paycheck, added = r.entries.map(function (e) { return e.id; });
     state.entries = state.entries.concat(r.entries); state.recurring = r.recurring; state.paycheck = r.paycheck;
@@ -3249,6 +3283,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   $('p-k401type').addEventListener('change', function () { A.state.paycheck.k401Type = this.value === 'roth' ? 'roth' : 'traditional'; A.commit(); });
   $('p-status').addEventListener('change', function () { A.state.paycheck.filingStatus = this.value; A.commit(); });
   $('p-next').addEventListener('change', function () { A.state.paycheck.nextPayDate = C.isValidISO(this.value) ? this.value : null; A.commit(); });
+  $('p-start').addEventListener('change', function () { A.state.paycheck.startDate = C.isValidISO(this.value) ? this.value : ''; A.saveState(); var n = A.fillPaychecks(false); if (!n) A.toast(A.state.paycheck.startDate ? 'Every pay date since then already has a paycheck.' : 'Paid since cleared.'); A.render(); });
   $('pay-autolog').addEventListener('change', function () { A.state.paycheck.autoLog = this.checked; A.commit(); if (this.checked) A.postDueItems(); A.render(); });
   $('p-taxmode').addEventListener('click', function (e) { var b = e.target.closest('button[data-mode]'); if (!b) return; A.state.paycheck.taxMode = b.getAttribute('data-mode'); A.commit(); });
   $('pay-log').addEventListener('click', function () {
@@ -3264,7 +3299,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   $('p-reset').addEventListener('click', function () {
     var d = A.defaultPaycheck(); if (!d) return;
     var prev = JSON.parse(JSON.stringify(A.state.paycheck));
-    d.nextPayDate = prev.nextPayDate || d.nextPayDate; d.autoLog = prev.autoLog; // keep where you are in the pay cycle
+    d.nextPayDate = prev.nextPayDate || d.nextPayDate; d.autoLog = prev.autoLog; if (prev.startDate !== null) d.startDate = prev.startDate; // keep where you are in the pay cycle
     A.state.paycheck = d; A.commit();
     A.toast('Pay setup restored to your pay stub', { action: 'Undo', onAction: function () { A.state.paycheck = prev; A.commit(); } });
   });
@@ -3278,7 +3313,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (document.activeElement !== $('p-status')) $('p-status').value = p.filingStatus;
     if (document.activeElement !== $('p-k401type')) $('p-k401type').value = p.k401Type;
     A.setText('p-k401pct-help', p.k401Type === 'roth' ? 'of gross, after tax (Roth)' : 'of gross, before tax');
-    setIf('p-next', p.nextPayDate || '');
+    setIf('p-next', p.nextPayDate || ''); setIf('p-start', p.startDate || '');
     $('pay-autolog').checked = p.autoLog;
     Array.prototype.forEach.call($('p-taxmode').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === p.taxMode)); });
     var manual = p.taxMode === 'manual';

@@ -806,6 +806,38 @@ test('estimated paychecks show in history but never make a month count for avera
   assert.deepStrictEqual([a.months, a.income, a.expense], [1, 6000, 3000]);
   assert.ok(C.isEstimate(es[0]) && !C.isEstimate(es[2]));
 });
+test('paid-since backfill adds estimated paychecks only for pay dates with none logged', () => {
+  const pc = C.normalizePaycheck({ gross: 5000, frequency: 'monthly', k401Pct: 5, matchPct: 50, matchCapPct: 6, startDate: '2026-06-28', nextPayDate: '2026-11-28' });
+  const st = { paycheck: pc, entries: [E('income', '2026-08-29', 3900, 'Paycheck'), E('income', '2026-10-28', 3900, 'Paycheck', { importId: 'chk-9' })] };
+  const r = C.paycheckBackfill(st, TODAY);
+  const inc = r.add.filter(e => e.type === 'income');
+  assert.deepStrictEqual(inc.map(e => e.date), ['2026-06-28', '2026-07-28', '2026-09-28']);
+  assert.ok(r.add.every(e => e.tags.includes('estimated') && e.recurring === 'paycheck'));
+  assert.ok(r.add.some(e => e.type === 'k401' && e.cat === 'Employer match'));
+  assert.strictEqual(r.remove.length, 0);
+  st.entries = st.entries.concat(r.add);
+  const again = C.paycheckBackfill(st, TODAY);
+  assert.deepStrictEqual([again.add.length, again.remove.length], [0, 0]);
+});
+test('paid-since backfill drops its own estimates before a later start date and needs a start date', () => {
+  const pc = C.normalizePaycheck({ gross: 5000, frequency: 'monthly', startDate: '2026-06-28', nextPayDate: '2026-11-28' });
+  const st = { paycheck: pc, entries: [] };
+  st.entries = C.paycheckBackfill(st, TODAY).add;
+  st.paycheck = Object.assign({}, pc, { startDate: '2026-09-28' });
+  const r = C.paycheckBackfill(st, TODAY);
+  const gone = st.entries.filter(e => r.remove.includes(e.id)).map(e => e.date);
+  assert.deepStrictEqual([...new Set(gone)], ['2026-06-28', '2026-07-28', '2026-08-28']);
+  assert.strictEqual(r.add.length, 0);
+  const imported = { paycheck: st.paycheck, entries: [E('income', '2026-03-28', 3900, 'Paycheck', { recurring: 'paycheck', tags: ['estimated'], importId: 'est-pay-2026-03' })] };
+  assert.strictEqual(C.paycheckBackfill(imported, TODAY).remove.length, 0);
+  assert.deepStrictEqual(C.paycheckBackfill({ paycheck: C.normalizePaycheck({ gross: 5000 }), entries: [] }, TODAY), { add: [], remove: [] });
+  assert.strictEqual(C.normalizePaycheck({ startDate: 'nope' }).startDate, null);
+});
+test('paid-since backfill stops where automatic logging takes over', () => {
+  const pc = C.normalizePaycheck({ gross: 2000, frequency: 'biweekly', startDate: '2026-10-02', nextPayDate: '2026-10-30' });
+  const dates = C.paycheckBackfill({ paycheck: pc, entries: [] }, TODAY).add.filter(e => e.type === 'income').map(e => e.date);
+  assert.deepStrictEqual(dates, ['2026-10-02', '2026-10-16']);
+});
 test('mergeImport never mutates the state it is given', () => {
   const base = mergeBase(); const before = JSON.stringify(base);
   C.mergeImport(base, mergeFile, TODAY);
