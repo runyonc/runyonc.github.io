@@ -2375,7 +2375,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     var same = function (a) { var c = Object.assign({}, a); delete c.updatedAt; delete c.theme; return JSON.stringify(c); };
     if (!m.added && !m.removedEntries && !m.rulesRemoved && same(res.state) === same(C.normalizeState(state, today()))) { toast('Nothing new: everything in that file is already here.'); return; }
     var parts = [];
-    var span = m.from.slice(0, 4) === m.to.slice(0, 4) ? C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) : C.fmtDateShort(m.from) + ', ' + m.from.slice(0, 4) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4);
+    var span = !m.added ? '' : m.from.slice(0, 4) === m.to.slice(0, 4) ? C.fmtDateShort(m.from) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4) : C.fmtDateShort(m.from) + ', ' + m.from.slice(0, 4) + ' – ' + C.fmtDateShort(m.to) + ', ' + m.to.slice(0, 4);
     if (m.added) parts.push('Adds ' + plural(m.added, 'transaction', 'transactions') + ' (' + span + ')' + (m.skipped ? ', skipping ' + m.skipped + ' already here' : '') + '.');
     if (m.removedSamples) parts.push('Removes the ' + m.removedSamples + ' sample entries.');
     if (m.removedEntries || m.rulesRemoved) parts.push('Removes ' + [m.removedEntries ? plural(m.removedEntries, 'entry', 'entries') : '', m.rulesRemoved ? plural(m.rulesRemoved, 'bill', 'bills') : ''].filter(Boolean).join(' and ') + ' the file replaces.');
@@ -2383,13 +2383,16 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (rules) parts.push('Updates ' + plural(rules, 'bill', 'bills') + ' to match your statements' + (m.filledIn ? ' and logs ' + plural(m.filledIn, 'payment', 'payments') + ' due since' : '') + '.');
     if (m.debtsUpdated + m.debtsAdded) parts.push('Updates ' + plural(m.debtsUpdated + m.debtsAdded, 'debt', 'debts') + '.');
     if (m.paycheck) parts.push('Updates your pay setup.');
-    if (m.balances.length) parts.push('Updates your ' + m.balances.map(function (k) { return { k401Balance: '401k', rothBalance: 'Roth IRA', savingsBalance: 'cash', otherInvestments: 'investments' }[k]; }).join(' and ') + ' balance.');
+    if (m.balances.length) {
+      var bn = m.balances.map(function (k) { return { k401Balance: '401k', rothBalance: 'Roth IRA', savingsBalance: 'cash', otherInvestments: 'other investments' }[k]; });
+      parts.push('Updates your ' + (bn.length === 1 ? bn[0] + ' balance.' : bn.slice(0, -1).join(', ') + ' and ' + bn[bn.length - 1] + ' balances.'));
+    }
     confirmDialog('Add these transactions?', parts.join(' '), 'Add transactions', false).then(function (ok) {
       if (!ok) return;
       var prev = state; stashBackup();
       state = res.state; state.theme = prev.theme; commit(); postDueItems(); render();
       var d = $('settings-dialog'); if (d.open && d.close) d.close();
-      toast('Added ' + plural(m.added, 'transaction', 'transactions'), { action: 'Undo', duration: 9000, onAction: function () { state = prev; commit(); } });
+      toast(m.added ? 'Added ' + plural(m.added, 'transaction', 'transactions') : m.balances.length && !rules && !m.paycheck && !(m.debtsUpdated + m.debtsAdded) ? 'Updated your balances' : 'Updated from the file', { action: 'Undo', duration: 9000, onAction: function () { state = prev; commit(); } });
     });
   }
   function readJSONFile(input, then) {

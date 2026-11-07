@@ -798,6 +798,16 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#toast-action'); await page.waitForTimeout(80);
     assert.ok(await page.evaluate(() => App.state.entries.some(e => e.sample)), 'undo brings everything back');
   });
+  await test('a file with only balances previews and applies', O, async (page) => {
+    const f = { kind: 'transactions', entries: [], updates: { balances: { k401Balance: 99000, rothBalance: 4000, otherInvestments: 12000 } } };
+    await page.click('#btn-settings');
+    await page.setInputFiles('#merge-file', { name: 'bal.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(f)) });
+    await page.waitForTimeout(100);
+    assert.strictEqual(await text(page, '#confirm-desc'), 'Updates your 401k, Roth IRA and other investments balances.');
+    await page.click('#confirm-ok'); await page.waitForTimeout(100);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.k401Balance, App.state.rothBalance, App.state.otherInvestments, App.state.k401UpdatedAt === App.today()]), [99000, 4000, 12000, true]);
+    assert.strictEqual(await text(page, '#toast-msg'), 'Updated your balances');
+  });
   await test('Import backup routes a transactions file to the merge instead of replacing everything', O, async (page) => {
     const t0 = await page.evaluate(() => App.today());
     const n = await page.evaluate(() => App.state.entries.filter(e => !e.sample).length);
