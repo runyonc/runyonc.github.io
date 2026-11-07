@@ -838,6 +838,22 @@ test('paid-since backfill stops where automatic logging takes over', () => {
   const dates = C.paycheckBackfill({ paycheck: pc, entries: [] }, TODAY).add.filter(e => e.type === 'income').map(e => e.date);
   assert.deepStrictEqual(dates, ['2026-10-02', '2026-10-16']);
 });
+test('filterEntries: words, amounts, type, category, tag and dates combine', () => {
+  const es = [E('expense', '2026-10-21', 14.4, 'Recreation', { note: 'Tivoli Theatre', tags: ['concert', 'alcohol'] }),
+    E('expense', '2026-10-13', 212.7, 'Groceries', { note: 'DoorDash Costco', tags: ['doordash'] }),
+    E('expense', '2025-03-03', 81.57, 'Recreation', { note: 'Dncss Nash Arena', tags: ['concert', 'alcohol'] }),
+    E('income', '2026-10-28', 4321.09, 'Paycheck', { note: 'Paycheck' })];
+  const ids = f => C.filterEntries(es, f).map(e => e.note);
+  assert.deepStrictEqual(ids({ q: 'tivoli' }), ['Tivoli Theatre']);
+  assert.deepStrictEqual(ids({ q: '#alcohol' }), ['Tivoli Theatre', 'Dncss Nash Arena']);
+  assert.deepStrictEqual(ids({ q: 'doordash costco' }), ['DoorDash Costco']);
+  assert.deepStrictEqual(ids({ q: '$4,321.09' }), ['Paycheck']);
+  assert.deepStrictEqual(ids({ q: '14.40' }), ['Tivoli Theatre']);
+  assert.deepStrictEqual(ids({ type: 'expense', cat: 'Recreation', from: '2026-01-01' }), ['Tivoli Theatre']);
+  assert.deepStrictEqual(ids({ tag: 'concert', to: '2025-12-31' }), ['Dncss Nash Arena']);
+  assert.strictEqual(C.filterEntries(es, {}).length, 4);
+  assert.ok(!C.filterActive({ q: '  ', type: '' }) && C.filterActive({ tag: 'concert' }));
+});
 test('mergeImport never mutates the state it is given', () => {
   const base = mergeBase(); const before = JSON.stringify(base);
   C.mergeImport(base, mergeFile, TODAY);
