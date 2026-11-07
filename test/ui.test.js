@@ -76,7 +76,8 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   console.log('first run & samples');
   await test('seeds flagged sample data with a banner, and Clear samples removes only samples', O, async (page) => {
     assert.ok(await page.isVisible('#sample-banner'));
-    assert.deepStrictEqual(await page.evaluate(() => [App.state.k401Balance, App.state.paycheck.gross, App.state.recurring.map(r => r.name + ' ' + r.amount)]), [125000, 6000, ['TV 90', 'Internet 70', 'Power 150', 'Water 60', 'Car insurance 400', 'Rent 1900']]);
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.k401Balance, App.state.paycheck.gross, App.state.recurring.map(r => r.name + ' ' + r.amount)]), [125000, 6000, ['TV 90', 'Internet 70', 'Power 150', 'Water 60', 'Car insurance 400', 'Rent 1900', 'Car loan payment 430', 'Credit card payment 250']]);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.debts.map(d => [d.name, d.balance, d.rate, d.payment])), [['Car loan', 22000, 6.5, 430], ['Credit card', 7000, 17, 250]]);
     const n = await page.evaluate(() => App.state.entries.filter(e => e.sample).length);
     assert.ok(n > 30, 'has samples');
     assert.strictEqual(await page.evaluate(() => App.state.entries.every(e => e.sample)), true);
@@ -340,7 +341,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await tab(page, 'retirement');
     await page.fill('#r-roth', '50000'); await page.fill('#r-savings', '10000'); await page.waitForTimeout(100);
     const calc = await page.evaluate(() => { const s = App.state, r = s.retirement, a = FinanceCore.averages(s.entries, App.today()); return FinanceCore.retirementCalc({ age: r.age, targetAge: r.targetAge, withdrawalRate: r.withdrawalRate, returnRate: r.returnRate, taxRate: r.taxRate, annualSpending: a.expense * 12, monthlyContribution: a.k401 + a.net, k401Balance: s.k401Balance, rothBalance: s.rothBalance, savingsBalance: s.savingsBalance, otherInvestments: s.otherInvestments, debts: s.debts, today: App.today() }); });
-    assert.strictEqual(await text(page, '#rt-networth'), await page.evaluate(() => FinanceCore.fmtMoney(FinanceCore.round2(App.state.k401Balance * 0.85 + 60000), { compact: true, whole: true })));
+    assert.strictEqual(await text(page, '#rt-networth'), await page.evaluate(() => FinanceCore.fmtMoney(FinanceCore.round2(App.state.k401Balance * 0.85 + 60000 - FinanceCore.totalDebt(App.state.debts)), { compact: true, whole: true })));
     assert.strictEqual(await text(page, '#rt-progress'), (calc.progress < 0.1 ? (calc.progress * 100).toFixed(1) : Math.round(calc.progress * 100)) + '%');
     assert.strictEqual(await text(page, '#rt-age'), 'Age ' + Math.ceil(calc.ageAtTarget));
     const plain = await text(page, '#rt-plain');
@@ -369,6 +370,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.strictEqual(await page.inputValue('#r-contrib'), '0', 'override persisted');
   });
   await test('debts: add, edit, delete with confirm; table sorted by rate with payoff and interest', O, async (page) => {
+    await page.evaluate(() => { App.state.debts = []; App.commit(); });
     await tab(page, 'retirement');
     await page.click('#d-add'); await page.click('#d-save');
     assert.ok(await page.isVisible('#d-error'), 'validation');
@@ -411,17 +413,17 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(await page.isDisabled('#d-rate'));
     assert.ok((await text(page, '#d-compound-help')).includes('No interest'));
     await page.fill('#d-name', 'Promo card'); await page.fill('#d-balance', '1200'); await page.fill('#d-payment', '100'); await page.click('#d-save'); await page.waitForTimeout(80);
-    assert.strictEqual(await page.evaluate(() => App.state.debts[0].compounding), 'none');
+    assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'none');
     assert.ok((await text(page, '#debt-list')).includes('no interest'));
-    const row = await page.$$eval('#debt-table tbody tr', trs => trs.map(tr => tr.textContent.replace(/\s+/g, ' ')));
+    const row = (await page.$$eval('#debt-table tbody tr', trs => trs.map(tr => tr.textContent.replace(/\s+/g, ' ')))).filter(r => r.includes('Promo card'));
     assert.ok(row[0].includes('1 year') && /\$0(\.00)?$/.test(row[0].trim()), row[0]);
     await page.click('.debt-row:has-text("Promo card") button:has-text("Edit")');
     assert.strictEqual(await page.inputValue('#d-compound'), 'none');
     await page.selectOption('#d-compound', 'daily'); await page.fill('#d-rate', '24'); await page.click('#d-save'); await page.waitForTimeout(80);
-    assert.strictEqual(await page.evaluate(() => App.state.debts[0].compounding), 'daily');
+    assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'daily');
     assert.ok((await text(page, '#debt-list')).includes('daily compounding'));
     await page.reload(); await page.waitForTimeout(100);
-    assert.strictEqual(await page.evaluate(() => App.state.debts[0].compounding), 'daily');
+    assert.strictEqual(await page.evaluate(() => App.state.debts.find(d => d.name === 'Promo card').compounding), 'daily');
   });
   await test('401k fund selector shows FXAIX/LFIKX history, forecast band, and feeds the projection', O, async (page) => {
     await page.fill('#k401-balance', '20000'); await page.click('#k401-save'); await page.waitForTimeout(50);
