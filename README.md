@@ -13,6 +13,19 @@ Pages. Everything you enter stays in that browser's `localStorage`; use
   delete, "Copy month as CSV".
 - **Add** — one form for spending, income and 401k contributions. Tap any entry
   on Overview to edit it in the same form.
+- **Recurring** — a paycheck model and a list of bills & subscriptions.
+  - **Paycheck**: enter gross pay, pay frequency, next pay date, 401k %,
+    employer match, health/HSA and other deductions straight off a pay stub.
+    Federal withholding is estimated from the 2026 IRS brackets and standard
+    deduction, with Social Security (6.2% to the wage base), Medicare (1.45%
+    plus the 0.9% surtax) and a flat state rate, or switch to "Type from pay
+    stub" and enter the exact tax lines. Shows take-home per check and per
+    month, and logs a paycheck as net income plus the employee and employer
+    401k entries, automatically on each pay day if you like.
+  - **Bills & subscriptions**: recurring expenses or income (Netflix, rent,
+    side income) with a frequency and next due date. Due items are logged
+    automatically when the app opens, with an undo, and the next 30 days are
+    listed. The Add form's "Repeat" option creates one in a single step.
 - **Charts** — date range presets or a custom range, applied to every chart and
   the totals beside them: income vs. spending (weekly or monthly bars with a
   net line), spending by category, savings rate by month, cumulative 401k
@@ -54,12 +67,15 @@ State is stored under the `money-tracker-v2` key and exported as JSON:
   "rothBalance": 0, "savingsBalance": 0, "otherInvestments": 0,
   "debts": [{ "id": "…", "name": "Car loan", "balance": 9000, "rate": 6.5, "payment": 320, "compounding": "monthly" }],
   "k401Fund": "FXAIX", "k401ReturnOverride": null, "inflation": 3,
+  "paycheck": { "gross": 3000, "frequency": "biweekly", "nextPayDate": "2026-11-13", "autoLog": true, "k401Pct": 6, "matchPct": 50, "matchCapPct": 6, "health": 100, "filingStatus": "single", "stateRate": 5, "taxMode": "auto" },
+  "recurring": [{ "id": "…", "name": "Netflix", "type": "expense", "cat": "Fun", "amount": 15.99, "frequency": "monthly", "nextDate": "2026-12-07", "anchorDay": 7, "active": true }],
   "retirement": { "age": 30, "targetAge": 65, "spendingOverride": null, "withdrawalRate": 4, "returnRate": 6, "taxRate": 15, "contributionOverride": null },
   "entries": [{ "id": "…", "type": "expense", "date": "2026-11-07", "amount": 12.5, "cat": "Dining", "note": "Tacos" }]
 }
 ```
 
-Entry `type` is `expense`, `income` or `k401`; entries with no `type` are
+Entries logged from a paycheck or a recurring item carry a `recurring` field
+with the rule id. Entry `type` is `expense`, `income` or `k401`; entries with no `type` are
 treated as `expense` on load. Imports are normalized and repaired, so a
 hand-edited or older file still loads.
 
@@ -77,6 +93,15 @@ and is DOM-free so it can be unit-tested. Amounts are summed in integer cents.
   debt's interest option (monthly APR ÷ 12, daily compounding converted to a
   monthly rate, simple interest on the original balance, or none); a payment
   that doesn't cover the interest is reported as "never".
+- Paycheck: 401k = gross × % + fixed; match = min(401k, gross × cap) × match
+  rate; taxable wages = gross − pre-tax deductions; federal = 2026 brackets on
+  annualized taxable wages minus the standard deduction, divided by pay periods;
+  FICA on wages after health/HSA; net = gross − pre-tax − taxes − after-tax.
+  This mirrors the IRS percentage method with no W-4 adjustments, so it is an
+  estimate; type the stub's exact lines for precision.
+- Recurring: monthly rules keep their original day of month (a 31st falls on
+  the 28th/30th in short months and returns to the 31st); every missed
+  occurrence up to today is logged once, then the rule's next date advances.
 - 401k forecast: the fund's long-run basis is its own calendar-year returns
   where recorded and, for earlier years, S&P 500 total return × beta −
   expense ratio (FXAIX: beta 1, 0.015%; LFIKX: beta 0.85, 0.40%). The

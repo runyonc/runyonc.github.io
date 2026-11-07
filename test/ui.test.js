@@ -50,12 +50,13 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
   console.log('layout');
   for (const scheme of ['light', 'dark']) {
     await test(`no horizontal overflow on any tab at 360px (${scheme})`, { browser, context: { colorScheme: scheme } }, async (page) => {
-      for (const v of ['overview', 'add', 'charts', 'retirement']) { await tab(page, v); await noOverflow(page, v); }
+      for (const v of ['overview', 'add', 'charts', 'recurring', 'retirement']) { await tab(page, v); await noOverflow(page, v); }
       await page.click('#btn-settings'); await page.waitForTimeout(50); await noOverflow(page, 'settings');
       assert.ok(await page.isVisible('#settings-dialog'));
       await page.click('#settings-close');
       await tab(page, 'charts'); await page.click('.table-toggle[data-table="ch1"]'); await noOverflow(page, 'chart table');
       await tab(page, 'retirement'); await page.click('#d-add'); await noOverflow(page, 'debt form');
+      await tab(page, 'recurring'); await page.click('#u-add'); await noOverflow(page, 'rule form'); await page.evaluate(() => { App.state.paycheck.gross = 3000; App.state.paycheck.nextPayDate = App.today(); App.commit(); }); await noOverflow(page, 'paycheck');
     });
   }
   await test('dark is the default theme, the toggle switches to light and persists', { browser, context: { colorScheme: 'light' } }, async (page) => {
@@ -69,7 +70,7 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.strictEqual(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light', 'theme persists');
   });
   await test('reduced motion and 320px wide still render without errors', { browser, context: { reducedMotion: 'reduce', viewport: { width: 320, height: 600 } } }, async (page) => {
-    for (const v of ['overview', 'add', 'charts', 'retirement']) { await tab(page, v); await noOverflow(page, v + '@320'); }
+    for (const v of ['overview', 'add', 'charts', 'recurring', 'retirement']) { await tab(page, v); await noOverflow(page, v + '@320'); }
   });
 
   console.log('first run & samples');
@@ -461,6 +462,96 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok((await text(page, '#chart-fund-hist')).includes('No historical data'));
     await page.reload(); await page.waitForTimeout(100); await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#k-fund'), 'custom', 'fund choice persisted');
+  });
+
+
+  console.log('recurring & paycheck');
+  await test('Repeat on the Add form creates a rule and logs the entry; the rule shows on Recurring and Overview', O, async (page) => {
+    await tab(page, 'add');
+    await page.fill('#f-amount', '15.99'); await page.click('#cat-chips button:has-text("Fun")'); await page.fill('#f-note', 'Netflix');
+    await page.selectOption('#f-repeat', 'monthly'); await page.click('#f-submit'); await page.waitForTimeout(100);
+    assert.ok((await text(page, '#toast-msg')).includes('repeats monthly'));
+    const rule = await page.evaluate(() => App.state.recurring[0]);
+    assert.strictEqual(rule.name, 'Netflix'); assert.strictEqual(rule.amount, 15.99); assert.strictEqual(rule.frequency, 'monthly');
+    assert.strictEqual(rule.nextDate, await page.evaluate(() => FinanceCore.advanceDate(App.today(), 'monthly', +App.today().slice(8))));
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.recurring).length), 1);
+    assert.strictEqual(await page.inputValue('#f-repeat'), '', 'repeat resets after adding');
+    await tab(page, 'overview');
+    assert.ok(await page.isVisible('#recurring-card'));
+    assert.strictEqual(await text(page, '#ov-bills'), '$15.99');
+    await page.click('#recur-open'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.ui.view), 'recurring');
+    assert.ok((await text(page, '#rule-list')).includes('Netflix'));
+    assert.ok((await text(page, '#rec-total')).includes('$16/mo'));
+  });
+  await test('overdue rules are logged once on load, with undo; paused rules are skipped', { browser, init: () => {
+      const t = new Date(); const iso = d => d.toISOString().slice(0, 10);
+      const past = new Date(t.getFullYear(), t.getMonth() - 2, Math.min(t.getDate(), 28));
+      localStorage.setItem('money-tracker-v2', JSON.stringify({ entries: [], recurring: [
+        { id: 'rent', name: 'Rent', type: 'expense', cat: 'Housing', amount: 1450, frequency: 'monthly', nextDate: iso(past), anchorDay: past.getDate() },
+        { id: 'gym', name: 'Gym', type: 'expense', cat: 'Health', amount: 40, frequency: 'monthly', nextDate: iso(past), active: false }] }));
+    } }, async (page) => {
+    const logged = await page.evaluate(() => App.state.entries.map(e => [e.note, e.amount, e.recurring]));
+    assert.strictEqual(logged.length, 3, 'three monthly rent occurrences caught up: ' + JSON.stringify(logged));
+    assert.ok(logged.every(l => l[0] === 'Rent' && l[1] === 1450 && l[2] === 'rent'));
+    assert.ok((await text(page, '#toast-msg')).includes('Logged 3 recurring'));
+    const next = await page.evaluate(() => App.state.recurring[0].nextDate);
+    assert.ok(next > await page.evaluate(() => App.today()));
+    await page.reload(); await page.waitForTimeout(150);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), 3, 'not logged twice');
+    assert.ok((await text(page, '#entries')).includes('auto'), 'auto tag shown');
+    await page.evaluate(() => { localStorage.clear(); });
+  });
+  await test('paycheck setup estimates taxes, logs a paycheck with 401k entries, and auto-logs on pay day', O, async (page) => {
+    await tab(page, 'recurring');
+    assert.ok(await page.isDisabled('#pay-log'));
+    await page.fill('#p-gross', '3000'); await page.selectOption('#p-freq', 'biweekly'); await page.fill('#p-k401pct', '6'); await page.fill('#p-health', '100'); await page.fill('#p-staterate', '5');
+    await page.press('#p-staterate', 'Tab'); await page.waitForTimeout(120);
+    const b = await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck));
+    assert.strictEqual(b.gross, 3000); assert.strictEqual(b.k401, 180); assert.strictEqual(b.match, 90);
+    assert.strictEqual(await text(page, '#pay-net-month'), FinanceCore_fmt(b.monthly.net));
+    const lines = await text(page, '#pay-lines');
+    assert.ok(lines.includes('Federal income tax') && lines.includes('Social Security') && lines.includes('Medicare') && lines.includes('State income tax'), lines);
+    assert.ok(lines.includes(FinanceCore_fmt(b.net)));
+    const n0 = await page.evaluate(() => App.state.entries.length);
+    await page.click('#pay-log'); await page.waitForTimeout(100);
+    const added = await page.evaluate(() => App.state.entries.slice(-3).map(e => [e.type, e.cat, e.amount]));
+    assert.deepStrictEqual(added, [['income', 'Paycheck', b.net], ['k401', 'My contribution', 180], ['k401', 'Employer match', 90]]);
+    await page.click('#toast-action'); await page.waitForTimeout(50);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.length), n0, 'undo removes all three');
+    // manual tax mode
+    await page.click('#p-taxmode button[data-mode="manual"]'); await page.waitForTimeout(80);
+    assert.ok(await page.isVisible('#p-federal')); assert.ok(await page.isHidden('#p-staterate'));
+    await page.fill('#p-federal', '300'); await page.fill('#p-ss', '186'); await page.fill('#p-medicare', '43.5'); await page.fill('#p-state', '120'); await page.press('#p-state', 'Tab'); await page.waitForTimeout(120);
+    assert.strictEqual(await page.evaluate(() => FinanceCore.paycheckBreakdown(App.state.paycheck).taxes), 649.5);
+    // auto-log: set next pay date in the past, reload
+    await page.evaluate(() => { App.state.paycheck.nextPayDate = FinanceCore.addDays(App.today(), -3); App.state.paycheck.autoLog = true; App.saveState(); });
+    await page.reload(); await page.waitForTimeout(150);
+    const auto = await page.evaluate(() => App.state.entries.filter(e => e.recurring === 'paycheck').map(e => e.type));
+    assert.deepStrictEqual(auto, ['income', 'k401', 'k401']);
+    assert.ok(await page.evaluate(() => App.state.paycheck.nextPayDate > App.today()));
+    await tab(page, 'overview');
+    assert.ok((await text(page, '#ov-pay-sub')).includes('every 2 weeks'));
+  });
+  await test('bills form: add, edit, pause and delete with confirm; upcoming lists them', O, async (page) => {
+    await tab(page, 'recurring');
+    await page.click('#u-add'); await page.click('#u-save');
+    assert.ok(await page.isVisible('#u-error'));
+    await page.fill('#u-name', 'Spotify'); await page.fill('#u-amount', '10.99'); await page.selectOption('#u-freq', 'monthly');
+    const due = await page.evaluate(() => FinanceCore.addDays(App.today(), 5)); await page.fill('#u-next', due); await page.selectOption('#u-cat', 'Fun'); await page.click('#u-save'); await page.waitForTimeout(100);
+    assert.deepStrictEqual(await page.evaluate(() => App.state.recurring.map(r => [r.name, r.amount, r.cat, r.nextDate])), [['Spotify', 10.99, 'Fun', due]]);
+    assert.strictEqual(await page.evaluate(() => App.state.entries.filter(e => e.recurring).length), 0, 'future due date logs nothing yet');
+    assert.ok((await text(page, '#upcoming')).includes('Spotify'));
+    await page.click('.rule-row:has-text("Spotify") button:has-text("Edit")'); await page.fill('#u-amount', '11.99'); await page.click('#u-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring[0].amount), 11.99);
+    await page.click('.rule-row:has-text("Spotify") button:has-text("Pause")'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring[0].active), false);
+    assert.ok(!(await text(page, '#upcoming')).includes('Spotify'), 'paused items leave upcoming');
+    const del = page.locator('.rule-row:has-text("Spotify") .del-btn');
+    await del.click(); assert.strictEqual(await del.textContent(), 'Delete'); await del.click(); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring.length), 0);
+    await page.click('#toast-action'); await page.waitForTimeout(50);
+    assert.strictEqual(await page.evaluate(() => App.state.recurring.length), 1, 'undo restores the rule');
   });
 
   console.log('accessibility');

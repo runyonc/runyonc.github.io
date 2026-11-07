@@ -414,7 +414,7 @@ input[type="date"].input { min-width: 0; }
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.tabbar .inner { max-width: var(--max-w); margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--tabbar-h); }
+.tabbar .inner { max-width: var(--max-w); margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--tabbar-h); }
 .tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 600; transition: color var(--dur); -webkit-tap-highlight-color: transparent; }
 .tab svg { width: 24px; height: 24px; }
 .tab[aria-selected="true"] { color: var(--accent); }
@@ -592,7 +592,7 @@ h1 { font-size: 17px; text-transform: uppercase; letter-spacing: 0.16em; font-we
 
 .tabbar { background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); }
 .tabbar::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); }
-.tab { position: relative; font-size: 10px; }
+.tab { position: relative; font-size: 9px; letter-spacing: 0.03em; gap: 2px; }
 .tab[aria-selected="true"]::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 36px; height: 2px; background: var(--accent); box-shadow: var(--glow); border-radius: 0 0 2px 2px; }
 .tab[aria-selected="true"] svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
 
@@ -624,6 +624,24 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
 .chart .band { opacity: 0.14; }
 .chart .band-edge { fill: none; stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.8; }
 @media (forced-colors: active) { .card::before, .card::after { display: none; } }
+.pay-lines { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+.pay-line { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 4px 0; border-bottom: 1px solid var(--border); }
+.pay-line.sub { color: var(--text-2); padding-left: var(--sp-3); font-size: var(--fs-xs); border-bottom: 0; padding-top: 0; padding-bottom: 2px; }
+.pay-line.total { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--border-strong); padding-top: 8px; font-size: var(--fs-base); }
+.segbar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; gap: 2px; background: var(--surface-3); }
+.segbar span { display: block; height: 100%; }
+.rule-row { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--border); align-items: center; }
+.rule-row:first-child { border-top: 0; }
+.rule-row .name { font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.rule-row .meta { font-size: var(--fs-xs); color: var(--text-2); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.rule-row .acts { display: flex; gap: 4px; }
+.rule-row.paused { opacity: 0.6; }
+.upc { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+.upc:first-child { border-top: 0; }
+.upc .d { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-xs); width: 52px; flex: none; }
+.upc .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--muted); font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -680,6 +698,15 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
         <span class="text-2" id="budget-spent">$0 of $3,000</span>
         <strong id="budget-left">$3,000 left</strong>
       </div>
+    </section>
+
+    <section class="card" id="recurring-card" aria-labelledby="recur-h" hidden>
+      <div class="card-head"><h2 id="recur-h">Recurring</h2><button class="link-btn xs" id="recur-open">Manage</button></div>
+      <div class="tiles">
+        <div class="tile"><div class="label"><span class="dot income"></span>Take-home / mo</div><div class="value num" id="ov-pay">$0</div><div class="sub" id="ov-pay-sub"></div></div>
+        <div class="tile"><div class="label"><span class="dot expense"></span>Bills / mo</div><div class="value num" id="ov-bills">$0</div><div class="sub" id="ov-bills-sub"></div></div>
+      </div>
+      <div id="ov-upcoming" style="margin-top: var(--sp-3)"></div>
     </section>
 
     <section class="card" aria-labelledby="breakdown-h">
@@ -739,6 +766,11 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
         <div class="field">
           <span class="label">Quick date</span>
           <div class="row" style="gap:6px"><button type="button" class="btn sm" data-quick="0">Today</button><button type="button" class="btn sm" data-quick="-1">Yesterday</button></div>
+        </div>
+        <div class="field span2" id="repeat-fieldwrap">
+          <label for="f-repeat">Repeat</label>
+          <select class="input" id="f-repeat"><option value="">Doesn’t repeat</option><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+          <span class="help" id="repeat-help">Creates a recurring item that is logged automatically on each due date.</span>
         </div>
       </div>
 
@@ -803,6 +835,77 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     <section class="card chart-card" aria-labelledby="ch4-h">
       <div class="card-head"><h2 id="ch4-h">401k contributions</h2><button class="table-toggle" data-table="ch4" aria-expanded="false">Table</button></div>
       <div class="chart" id="chart-k401"></div>
+    </section>
+  </section>
+
+  <!-- ================= RECURRING (paycheck + bills) ================= -->
+  <section class="view" id="view-recurring" role="tabpanel" aria-labelledby="tab-recurring">
+    <section class="card" aria-labelledby="pay-h">
+      <div class="card-head"><h2 id="pay-h">Paycheck</h2><span class="hint" id="pay-next"></span></div>
+      <div class="tiles" style="margin-bottom: var(--sp-3)">
+        <div class="tile"><div class="label"><span class="dot income"></span>Take-home / month</div><div class="value num" id="pay-net-month">$0</div><div class="sub" id="pay-net-period"></div></div>
+        <div class="tile"><div class="label">Taxes / month</div><div class="value num" id="pay-tax-month">$0</div><div class="sub" id="pay-tax-rate"></div></div>
+      </div>
+      <div class="segbar" id="pay-segbar" role="img" aria-label="Paycheck split"></div>
+      <div class="legend" id="pay-legend"></div>
+      <div class="pay-lines" id="pay-lines" style="margin-top: var(--sp-3)"></div>
+      <div class="row wrap" style="margin-top: var(--sp-3)">
+        <button type="button" class="btn primary grow" id="pay-log">Log a paycheck now</button>
+        <label class="check" for="pay-autolog"><input type="checkbox" id="pay-autolog"> Auto-log on pay days</label>
+      </div>
+    </section>
+
+    <details class="card" open id="pay-setup">
+      <summary>Pay setup <span class="pill" style="margin-left:auto;margin-right:8px">from your pay stub</span></summary>
+      <div class="form-grid">
+        <div class="field"><label for="p-gross">Gross pay per paycheck</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-gross" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="p-freq">Pay frequency</label><select class="input" id="p-freq"><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="semimonthly">Twice a month</option><option value="monthly">Monthly</option></select></div>
+        <div class="field"><label for="p-next">Next pay date</label><input class="input" id="p-next" type="date"></div>
+        <div class="field"><label for="p-status">Filing status</label><select class="input" id="p-status"><option value="single">Single</option><option value="married">Married filing jointly</option></select></div>
+        <div class="field"><label for="p-k401pct">401k contribution</label><div class="input-wrap"><input class="input has-suffix num" id="p-k401pct" type="number" inputmode="decimal" min="0" max="100" step="0.5"><span class="suffix">%</span></div><span class="help">of gross, pre-tax</span></div>
+        <div class="field"><label for="p-k401fixed">401k extra per check</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-k401fixed" type="number" inputmode="decimal" min="0" step="1"></div></div>
+        <div class="field"><label for="p-matchpct">Employer match</label><div class="input-wrap"><input class="input has-suffix num" id="p-matchpct" type="number" inputmode="decimal" min="0" max="500" step="5"><span class="suffix">%</span></div><span class="help">of what you put in</span></div>
+        <div class="field"><label for="p-matchcap">Match up to</label><div class="input-wrap"><input class="input has-suffix num" id="p-matchcap" type="number" inputmode="decimal" min="0" max="100" step="0.5"><span class="suffix">%</span></div><span class="help">of gross</span></div>
+        <div class="field"><label for="p-health">Health insurance</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-health" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help">pre-tax, per check</span></div>
+        <div class="field"><label for="p-hsa">HSA / FSA</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-hsa" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help">pre-tax, per check</span></div>
+        <div class="field"><label for="p-otherpre">Other pre-tax</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-otherpre" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="p-roth">Roth 401k (after-tax)</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-roth" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field"><label for="p-otherpost">Other after-tax</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-otherpost" type="number" inputmode="decimal" min="0" step="0.01"></div><span class="help">life insurance, garnishments…</span></div>
+        <div class="field span2"><span class="label">Taxes</span>
+          <div class="seg" id="p-taxmode" role="group" aria-label="Tax mode"><button type="button" data-mode="auto" aria-pressed="true">Estimate (2026 tables)</button><button type="button" data-mode="manual" aria-pressed="false">Type from pay stub</button></div>
+        </div>
+        <div class="field" id="p-auto-state"><label for="p-staterate">State income tax</label><div class="input-wrap"><input class="input has-suffix num" id="p-staterate" type="number" inputmode="decimal" min="0" max="20" step="0.1"><span class="suffix">%</span></div><span class="help">flat estimate; 0 for no-tax states</span></div>
+        <div class="field" id="p-auto-extra"><label for="p-extra">Extra federal withholding</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-extra" type="number" inputmode="decimal" min="0" step="1"></div><span class="help">W-4 line 4(c), per check</span></div>
+        <div class="field" id="p-man-fed" hidden><label for="p-federal">Federal withholding</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-federal" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field" id="p-man-state" hidden><label for="p-state">State withholding</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-state" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field" id="p-man-ss" hidden><label for="p-ss">Social Security</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-ss" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+        <div class="field" id="p-man-med" hidden><label for="p-medicare">Medicare</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="p-medicare" type="number" inputmode="decimal" min="0" step="0.01"></div></div>
+      </div>
+      <p class="xs muted" style="margin-top: var(--sp-3)" id="pay-note">Federal withholding is estimated from the 2026 IRS brackets and standard deduction with no other W-4 adjustments; Social Security 6.2% up to the wage base and Medicare 1.45% are applied to wages after health/HSA. Your real stub can differ, so switch to “Type from pay stub” to enter the exact lines.</p>
+    </details>
+
+    <section class="card" aria-labelledby="rec-h">
+      <div class="card-head"><h2 id="rec-h">Bills &amp; subscriptions</h2><span class="hint" id="rec-total"></span></div>
+      <div id="rule-list"></div>
+      <form id="rule-form" class="stack-sm" novalidate hidden style="margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border);">
+        <input type="hidden" id="u-id">
+        <div class="seg" role="group" aria-label="Recurring type" id="u-type"><button type="button" data-type="expense" aria-pressed="true"><span class="dot expense"></span>Bill</button><button type="button" data-type="income" aria-pressed="false"><span class="dot income"></span>Income</button></div>
+        <div class="form-grid">
+          <div class="field span2"><label for="u-name">Name</label><input class="input" id="u-name" type="text" maxlength="40" placeholder="e.g. Netflix" required></div>
+          <div class="field"><label for="u-amount">Amount</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="u-amount" type="number" inputmode="decimal" min="0" step="0.01" required></div></div>
+          <div class="field"><label for="u-freq">Repeats</label><select class="input" id="u-freq"><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div>
+          <div class="field"><label for="u-next">Next due</label><input class="input" id="u-next" type="date" required></div>
+          <div class="field"><label for="u-cat">Category</label><select class="input" id="u-cat"></select></div>
+          <div class="field span2"><div class="error" id="u-error" role="alert"></div></div>
+        </div>
+        <div class="row"><button type="button" class="btn ghost" id="u-cancel">Cancel</button><button type="submit" class="btn primary grow" id="u-save">Save</button></div>
+      </form>
+      <button type="button" class="btn block" id="u-add" style="margin-top: var(--sp-3)">+ Add a bill or subscription</button>
+    </section>
+
+    <section class="card" aria-labelledby="upc-h">
+      <div class="card-head"><h2 id="upc-h">Next 30 days</h2><span class="hint" id="upc-total"></span></div>
+      <div id="upcoming"></div>
     </section>
   </section>
 
@@ -932,6 +1035,9 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     <button class="tab" role="tab" id="tab-charts" data-view="charts" aria-selected="false" aria-controls="view-charts">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>Charts
     </button>
+    <button class="tab" role="tab" id="tab-recurring" data-view="recurring" aria-selected="false" aria-controls="view-recurring">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring
+    </button>
     <button class="tab" role="tab" id="tab-retirement" data-view="retirement" aria-selected="false" aria-controls="view-retirement">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/></svg>Retirement
     </button>
@@ -1001,6 +1107,14 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   };
   var MAX_MONTHS = 1200; // 100 years
   var COMPOUNDING = ['monthly', 'daily', 'simple', 'none'];
+  var FREQS = { weekly: 52, biweekly: 26, semimonthly: 24, monthly: 12, yearly: 1 };
+  var FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Every 2 weeks', semimonthly: 'Twice a month', monthly: 'Monthly', yearly: 'Yearly' };
+  // 2026 federal income tax (Rev. Proc. 2025-32): standard deduction and bracket tops. Used only to ESTIMATE withholding.
+  var TAX_2026 = {
+    single: { standardDeduction: 16100, brackets: [[12400, 0.10], [50400, 0.12], [105700, 0.22], [201775, 0.24], [256225, 0.32], [640600, 0.35], [Infinity, 0.37]] },
+    married: { standardDeduction: 32200, brackets: [[24800, 0.10], [100800, 0.12], [211400, 0.22], [403550, 0.24], [512450, 0.32], [768700, 0.35], [Infinity, 0.37]] },
+    socialSecurityRate: 0.062, socialSecurityWageBase: 184500, medicareRate: 0.0145, additionalMedicareRate: 0.009, additionalMedicareThreshold: 200000
+  };
 
   // ---------- historical return data (percent, calendar years) ----------
   // S&P 500 total return incl. dividends, 1928-2025. Source: Aswath Damodaran, NYU Stern, histretSP (updated Jan 2026).
@@ -1058,12 +1172,31 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var date = isValidISO(e.date) ? e.date : today;
     var out = { id: typeof e.id === 'string' && e.id ? e.id : uid(), type: type, date: date, amount: amount, cat: cat, note: typeof e.note === 'string' ? e.note.slice(0, 120) : '' };
     if (e.sample) out.sample = true;
+    if (typeof e.recurring === 'string' && e.recurring) out.recurring = e.recurring;
     return out;
   }
   function num(v, fallback) { var n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? fallback : n; }
   function normalizeDebt(d) {
     d = d || {};
     return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))), compounding: COMPOUNDING.indexOf(d.compounding) >= 0 ? d.compounding : 'monthly' };
+  }
+  function normalizePaycheck(p) {
+    p = (p && typeof p === 'object') ? p : {};
+    var money = function (v) { return Math.max(0, round2(num(v, 0))); };
+    return {
+      gross: money(p.gross), frequency: FREQS[p.frequency] ? p.frequency : 'biweekly', nextPayDate: isValidISO(p.nextPayDate) ? p.nextPayDate : null, autoLog: p.autoLog !== false,
+      k401Pct: Math.min(100, money(p.k401Pct === undefined ? 6 : p.k401Pct)), k401Fixed: money(p.k401Fixed), matchPct: Math.min(500, money(p.matchPct === undefined ? 50 : p.matchPct)), matchCapPct: Math.min(100, money(p.matchCapPct === undefined ? 6 : p.matchCapPct)),
+      health: money(p.health), hsa: money(p.hsa), otherPretax: money(p.otherPretax), roth: money(p.roth), otherPosttax: money(p.otherPosttax),
+      filingStatus: p.filingStatus === 'married' ? 'married' : 'single', stateRate: Math.min(20, money(p.stateRate)), extraWithholding: money(p.extraWithholding),
+      taxMode: p.taxMode === 'manual' ? 'manual' : 'auto', federalManual: money(p.federalManual), stateManual: money(p.stateManual), ssManual: money(p.ssManual), medicareManual: money(p.medicareManual)
+    };
+  }
+  function normalizeRule(r, today) {
+    r = (r && typeof r === 'object') ? r : {};
+    var type = TYPES.indexOf(r.type) >= 0 ? r.type : 'expense'; var cats = CATS[type];
+    var next = isValidISO(r.nextDate) ? r.nextDate : today;
+    return { id: typeof r.id === 'string' && r.id ? r.id : uid(), name: typeof r.name === 'string' && r.name ? r.name.slice(0, 40) : 'Recurring', type: type, cat: cats.indexOf(r.cat) >= 0 ? r.cat : cats[cats.length - 1],
+      amount: Math.max(0, round2(num(r.amount, 0))), frequency: FREQS[r.frequency] ? r.frequency : 'monthly', nextDate: next, anchorDay: Math.min(31, Math.max(1, Math.round(num(r.anchorDay, +next.slice(8))))), active: r.active !== false, note: typeof r.note === 'string' ? r.note.slice(0, 120) : '' };
   }
   /** Effective interest charged per month, as a fraction of the balance (or of the original balance for simple interest). */
   function monthlyDebtRate(debt) {
@@ -1088,6 +1221,8 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       savingsBalance: Math.max(0, round2(num(raw.savingsBalance, 0))),
       otherInvestments: Math.max(0, round2(num(raw.otherInvestments, 0))),
       debts: Array.isArray(raw.debts) ? raw.debts.map(normalizeDebt) : [],
+      paycheck: normalizePaycheck(raw.paycheck),
+      recurring: Array.isArray(raw.recurring) ? raw.recurring.map(function (x) { return normalizeRule(x, today); }) : [],
       k401Fund: FUNDS[raw.k401Fund] || raw.k401Fund === 'custom' ? raw.k401Fund : 'FXAIX',
       k401ReturnOverride: raw.k401ReturnOverride === null || raw.k401ReturnOverride === undefined || raw.k401ReturnOverride === '' ? null : num(raw.k401ReturnOverride, 0),
       inflation: Math.min(30, Math.max(0, num(raw.inflation, 3))),
@@ -1338,6 +1473,95 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     return out;
   }
 
+  // ---------- paycheck ----------
+  function periodsPerYear(freq) { return FREQS[freq] || 12; }
+  function monthlyize(amount, freq) { return round2(num(amount, 0) * periodsPerYear(freq) / 12); }
+  function federalTax(annualTaxableIncome, status) {
+    var t = TAX_2026[status] || TAX_2026.single; var inc = Math.max(0, annualTaxableIncome - t.standardDeduction);
+    var tax = 0, lower = 0;
+    for (var i = 0; i < t.brackets.length && inc > lower; i++) { var top = t.brackets[i][0], rate = t.brackets[i][1]; tax += (Math.min(inc, top) - lower) * rate; lower = top; }
+    return tax;
+  }
+  function paycheckBreakdown(p) {
+    p = normalizePaycheck(p); var ppy = periodsPerYear(p.frequency); var gross = p.gross;
+    var k401 = round2(gross * p.k401Pct / 100 + p.k401Fixed);
+    var match = round2(Math.min(k401, gross * p.matchCapPct / 100) * p.matchPct / 100);
+    var section125 = round2(p.health + p.hsa + p.otherPretax);
+    var pretax = round2(section125 + k401);
+    var taxable = Math.max(0, round2(gross - pretax));
+    var ficaWages = Math.max(0, round2(gross - section125));
+    var federal, state, ss, medicare;
+    if (p.taxMode === 'manual') { federal = p.federalManual; state = p.stateManual; ss = p.ssManual; medicare = p.medicareManual; }
+    else {
+      federal = round2(federalTax(taxable * ppy, p.filingStatus) / ppy + p.extraWithholding);
+      state = round2(taxable * p.stateRate / 100);
+      var annualFica = ficaWages * ppy;
+      ss = round2(Math.min(ficaWages, TAX_2026.socialSecurityWageBase / ppy) * TAX_2026.socialSecurityRate);
+      medicare = round2(ficaWages * TAX_2026.medicareRate + (annualFica > TAX_2026.additionalMedicareThreshold ? Math.max(0, (annualFica - TAX_2026.additionalMedicareThreshold) / ppy) * TAX_2026.additionalMedicareRate : 0));
+    }
+    var posttax = round2(p.roth + p.otherPosttax);
+    var taxes = round2(federal + state + ss + medicare);
+    var net = round2(gross - pretax - taxes - posttax);
+    var f = ppy / 12;
+    return { gross: gross, k401: k401, match: match, health: p.health, hsa: p.hsa, otherPretax: p.otherPretax, pretax: pretax, taxableWages: taxable, federal: federal, state: state, socialSecurity: ss, medicare: medicare, taxes: taxes, posttax: posttax, roth: p.roth, net: net, periodsPerYear: ppy, frequency: p.frequency, taxMode: p.taxMode,
+      effectiveTaxRate: gross > 0 ? taxes / gross : 0,
+      monthly: { gross: round2(gross * f), net: round2(net * f), k401: round2(k401 * f), match: round2(match * f), taxes: round2(taxes * f), pretax: round2(pretax * f) },
+      annual: { gross: round2(gross * ppy), net: round2(net * ppy), k401: round2(k401 * ppy), match: round2(match * ppy), taxes: round2(taxes * ppy) } };
+  }
+  /** Entries to log for one paycheck on `date`. */
+  function paycheckEntries(p, date, ruleId) {
+    var b = paycheckBreakdown(p); var out = [];
+    if (b.net > 0) out.push({ type: 'income', cat: 'Paycheck', amount: b.net, date: date, note: 'Paycheck · gross ' + fmtMoney(b.gross) + ' · taxes ' + fmtMoney(b.taxes), recurring: ruleId || 'paycheck' });
+    var mine = round2(b.k401 + b.roth);
+    if (mine > 0) out.push({ type: 'k401', cat: 'My contribution', amount: mine, date: date, note: 'From paycheck', recurring: ruleId || 'paycheck' });
+    if (b.match > 0) out.push({ type: 'k401', cat: 'Employer match', amount: b.match, date: date, note: 'From paycheck', recurring: ruleId || 'paycheck' });
+    return out.map(function (e) { return normalizeEntry(e, date); }).map(function (e, i) { e.recurring = out[i].recurring; return e; });
+  }
+
+  // ---------- recurring ----------
+  function clampDay(y, m, day) { var end = new Date(y, m + 1, 0).getDate(); return new Date(y, m, Math.min(day, end)); }
+  function advanceDate(iso, freq, anchorDay) {
+    var d = parseISO(iso); if (!d) return iso;
+    switch (freq) {
+      case 'weekly': return addDays(iso, 7);
+      case 'biweekly': return addDays(iso, 14);
+      case 'semimonthly': { var day = d.getDate(); if (day <= 15) return isoDate(clampDay(d.getFullYear(), d.getMonth(), day + 15)); return isoDate(clampDay(d.getFullYear(), d.getMonth() + 1, day - 15)); }
+      case 'yearly': return isoDate(clampDay(d.getFullYear() + 1, d.getMonth(), anchorDay || d.getDate()));
+      default: return isoDate(clampDay(d.getFullYear(), d.getMonth() + 1, anchorDay || d.getDate()));
+    }
+  }
+  /** Occurrences of a rule that are due on or before `today`; returns dates and the new nextDate. */
+  function dueDates(rule, today, cap) {
+    var dates = []; var next = rule.nextDate; var guard = 0;
+    while (next <= today && guard++ < (cap || 120)) { dates.push(next); next = advanceDate(next, rule.frequency, rule.anchorDay); }
+    return { dates: dates, nextDate: next };
+  }
+  /** Pure: given state and today, compute entries to add and updated rules/paycheck. Does not mutate. */
+  function postDue(state, today) {
+    var entries = []; var rules = []; var changed = false;
+    (state.recurring || []).forEach(function (r) {
+      if (!r.active || r.amount <= 0) { rules.push(r); return; }
+      var d = dueDates(r, today);
+      d.dates.forEach(function (date) { var e = normalizeEntry({ type: r.type, cat: r.cat, amount: r.amount, date: date, note: r.note || r.name }, date); e.recurring = r.id; entries.push(e); });
+      if (d.dates.length) { changed = true; rules.push(Object.assign({}, r, { nextDate: d.nextDate })); } else rules.push(r);
+    });
+    var pc = state.paycheck; var paycheck = pc;
+    if (pc && pc.autoLog && pc.gross > 0 && pc.nextPayDate) {
+      var pd = dueDates({ nextDate: pc.nextPayDate, frequency: pc.frequency, anchorDay: +pc.nextPayDate.slice(8) }, today);
+      pd.dates.forEach(function (date) { entries = entries.concat(paycheckEntries(pc, date, 'paycheck')); });
+      if (pd.dates.length) { changed = true; paycheck = Object.assign({}, pc, { nextPayDate: pd.nextDate }); }
+    }
+    return { entries: entries, recurring: rules, paycheck: paycheck, changed: changed };
+  }
+  function upcoming(state, today, days) {
+    var to = addDays(today, days || 30); var out = [];
+    (state.recurring || []).forEach(function (r) { if (!r.active) return; var next = r.nextDate; var guard = 0; while (next <= to && guard++ < 40) { if (next >= today) out.push({ date: next, name: r.name, amount: r.amount, type: r.type, cat: r.cat, id: r.id }); next = advanceDate(next, r.frequency, r.anchorDay); } });
+    var pc = state.paycheck;
+    if (pc && pc.gross > 0 && pc.nextPayDate) { var b = paycheckBreakdown(pc); var n = pc.nextPayDate, g = 0; while (n <= to && g++ < 10) { if (n >= today) out.push({ date: n, name: 'Paycheck', amount: b.net, type: 'income', cat: 'Paycheck', id: 'paycheck' }); n = advanceDate(n, pc.frequency); } }
+    return out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  }
+  function recurringMonthlyTotal(rules, type) { var c = 0; (rules || []).forEach(function (r) { if (r.active && (!type || r.type === type)) c += toCents(monthlyize(r.amount, r.frequency)); }); return fromCents(c); }
+
   // ---------- formatting (pure) ----------
   function fmtMoney(x, opts) {
     opts = opts || {};
@@ -1381,6 +1605,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
+    FREQS: FREQS, FREQ_LABEL: FREQ_LABEL, TAX_2026: TAX_2026, normalizePaycheck: normalizePaycheck, normalizeRule: normalizeRule, periodsPerYear: periodsPerYear, monthlyize: monthlyize, federalTax: federalTax, paycheckBreakdown: paycheckBreakdown, paycheckEntries: paycheckEntries, advanceDate: advanceDate, dueDates: dueDates, postDue: postDue, upcoming: upcoming, recurringMonthlyTotal: recurringMonthlyTotal,
     SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
   };
@@ -1517,7 +1742,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   }
 
   // ---------- navigation ----------
-  var TITLES = { overview: 'Overview', add: 'Add', charts: 'Charts', retirement: 'Retirement' };
+  var TITLES = { overview: 'Overview', add: 'Add', charts: 'Charts', recurring: 'Recurring', retirement: 'Retirement' };
   function showView(name) {
     ui.view = name;
     Array.prototype.forEach.call(document.querySelectorAll('.view'), function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
@@ -1572,6 +1797,18 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var left = $('budget-left'); left.textContent = b.isOver ? money(b.over) + ' over budget' : money(b.left) + ' left';
     left.className = b.isOver ? 'danger-text' : b.level === 'warn' ? '' : '';
 
+    // recurring summary
+    var hasRec = state.recurring.length > 0 || state.paycheck.gross > 0;
+    $('recurring-card').hidden = !hasRec;
+    if (hasRec) {
+      var pb = C.paycheckBreakdown(state.paycheck);
+      setText('ov-pay', state.paycheck.gross > 0 ? tileMoney(pb.monthly.net) : '—');
+      setText('ov-pay-sub', state.paycheck.gross > 0 ? money(pb.net) + ' ' + C.FREQ_LABEL[state.paycheck.frequency].toLowerCase() + (state.paycheck.nextPayDate ? ' · next ' + C.fmtDateShort(state.paycheck.nextPayDate) : '') : 'set up on Recurring');
+      var bills = C.recurringMonthlyTotal(state.recurring, 'expense'); var nb = state.recurring.filter(function (r) { return r.active && r.type === 'expense'; }).length;
+      setText('ov-bills', tileMoney(bills)); setText('ov-bills-sub', nb + (nb === 1 ? ' active bill' : ' active bills') + (state.budget > 0 ? ' · ' + Math.round(bills / state.budget * 100) + '% of budget' : ''));
+      var up = C.upcoming(state, t0, 14).slice(0, 4); var ub = $('ov-upcoming'); clear(ub);
+      if (up.length) { ub.appendChild(h('div', { class: 'hud-label', style: 'margin-bottom:4px', text: 'Due in the next 14 days' })); up.forEach(function (u) { ub.appendChild(h('div', { class: 'upc' }, [h('span', { class: 'd', text: C.fmtDateShort(u.date) }), h('span', { class: 'n', text: u.name }), h('span', { class: 'num ' + (u.type === 'income' ? 'income-text' : ''), text: (u.type === 'income' ? '+' : '−') + money(u.amount) })])); }); }
+    }
     // breakdown
     var bd = C.categoryBreakdown(entries, 'expense'); var box = $('breakdown'); clear(box);
     if (!bd.length) box.appendChild(emptyState('🧺', 'No spending yet', 'Spending by category will show up here.'));
@@ -1616,7 +1853,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       h('div', { class: 'cat-icon ' + e.type, 'aria-hidden': 'true', text: ICONS[e.cat] || '•' }),
       h('button', { class: 'body', type: 'button', style: 'text-align:left;display:block', 'aria-label': 'Edit ' + TYPE_LABEL[e.type] + ' ' + money(e.amount) + ' ' + e.cat + (e.note ? ', ' + e.note : ''), onclick: function () { startEdit(e.id); } }, [
         h('div', { class: 'cat', text: e.cat }),
-        (e.note || e.sample) ? h('div', { class: 'note' }, [e.sample ? h('span', { class: 'sample-tag', text: 'sample' }) : null, e.note ? h('span', { text: e.note }) : null]) : null
+        (e.note || e.sample || e.recurring) ? h('div', { class: 'note' }, [e.sample ? h('span', { class: 'sample-tag', text: 'sample' }) : null, e.recurring ? h('span', { class: 'sample-tag', text: 'auto' }) : null, e.note ? h('span', { text: e.note }) : null]) : null
       ]),
       amt,
       h('div', { class: 'entry-actions' }, [del])
@@ -1639,6 +1876,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     toast('Deleted ' + money(removed.amount) + ' ' + removed.cat, { action: 'Undo', onAction: function () { state.entries.push(removed); commit(); } });
   }
 
+  $('recur-open').addEventListener('click', function () { showView('recurring'); });
   $('month-prev').addEventListener('click', function () { ui.month = C.addMonths(ui.month, -1); ui.deleteArmed = null; render(); });
   $('month-next').addEventListener('click', function () { ui.month = C.addMonths(ui.month, 1); ui.deleteArmed = null; render(); });
   $('month-today').addEventListener('click', function () { ui.month = C.monthKey(today()); render(); });
@@ -1688,6 +1926,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     ui.type = type;
     Array.prototype.forEach.call($('type-seg').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-type') === type)); });
     $('f-submit').textContent = 'Add ' + TYPE_LABEL[type];
+    $('repeat-fieldwrap').hidden = !!ui.editingId || type === 'k401';
     renderChips();
   }
   $('type-seg').addEventListener('click', function (e) { var b = e.target.closest('button[data-type]'); if (b) setType(b.getAttribute('data-type')); });
@@ -1697,6 +1936,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     setType(ui.type);
     if (!$('f-date').value) $('f-date').value = today();
     $('edit-actions').hidden = !ui.editingId; $('form-actions').hidden = !!ui.editingId;
+    $('repeat-fieldwrap').hidden = !!ui.editingId || ui.type === 'k401';
   };
   function resetForm() {
     ui.editingId = null; $('f-id').value = ''; $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today();
@@ -1733,11 +1973,16 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
       return;
     }
     var entry = C.normalizeEntry({ type: ui.type, cat: ui.cat[ui.type], amount: v.amount, date: v.date, note: note }, today());
+    var repeat = $('f-repeat').value; var rule = null;
+    if (repeat && ui.type !== 'k401') {
+      rule = C.normalizeRule({ name: note || ui.cat[ui.type], type: ui.type, cat: ui.cat[ui.type], amount: v.amount, frequency: repeat, nextDate: C.advanceDate(v.date, repeat, +v.date.slice(8)), anchorDay: +v.date.slice(8), note: note }, today());
+      state.recurring.push(rule); entry.recurring = rule.id; $('f-repeat').value = '';
+    }
     state.entries.push(entry);
     $('f-amount').value = ''; $('f-note').value = ''; $('f-date').value = today();
     ui.month = C.monthKey(entry.date);
     commit();
-    toast('Added ' + (entry.type === 'income' ? '+' : '') + money(entry.amount) + ' · ' + entry.cat, { action: 'Undo', onAction: function () { state.entries = state.entries.filter(function (x) { return x.id !== entry.id; }); commit(); } });
+    toast('Added ' + (entry.type === 'income' ? '+' : '') + money(entry.amount) + ' · ' + entry.cat + (rule ? ' · repeats ' + C.FREQ_LABEL[rule.frequency].toLowerCase() : ''), { action: 'Undo', onAction: function () { state.entries = state.entries.filter(function (x) { return x.id !== entry.id; }); if (rule) state.recurring = state.recurring.filter(function (x) { return x.id !== rule.id; }); commit(); } });
     $('f-amount').focus();
   });
   $('f-amount').addEventListener('input', function () { $('amount-fieldwrap').classList.remove('invalid'); });
@@ -1811,10 +2056,19 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   });
 
   // ---------- expose for charts/retirement modules & tests ----------
-  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
+  window.App = { get state() { return state; }, set state(s) { state = s; }, ui: ui, $: $, h: h, clear: clear, money: money, tileMoney: tileMoney, toast: toast, confirmDialog: confirmDialog, commit: commit, saveState: saveState, saveUI: saveUI, render: render, renderers: renderers, showView: showView, today: today, postDueItems: postDueItems, emptyState: emptyState, ICONS: ICONS, setText: setText, saveK401Balance: saveK401Balance };
 
+  // ---------- post due recurring items ----------
+  function postDueItems() {
+    var r = C.postDue(state, today()); if (!r.changed) return;
+    var prevRules = state.recurring, prevPay = state.paycheck, added = r.entries.map(function (e) { return e.id; });
+    state.entries = state.entries.concat(r.entries); state.recurring = r.recurring; state.paycheck = r.paycheck;
+    saveState();
+    if (r.entries.length) toast('Logged ' + r.entries.length + ' recurring ' + (r.entries.length === 1 ? 'item' : 'items'), { action: 'Undo', duration: 8000, onAction: function () { state.entries = state.entries.filter(function (e) { return added.indexOf(e.id) < 0; }); state.recurring = prevRules; state.paycheck = prevPay; commit(); } });
+  }
   // ---------- boot ----------
   loadState();
+  postDueItems();
   applyTheme();
   renderStorageStatus();
   $('f-date').value = today();
@@ -2440,6 +2694,143 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     renderInputs(d); renderDebtList();
     if (ui.debtEditing === null) closeDebtForm();
     renderOutputs(d); renderFund(d);
+  };
+})();
+</script>
+<script>
+/* ============================================================
+   Recurring tab — paycheck setup, bills & subscriptions, upcoming
+   ============================================================ */
+(function () {
+  'use strict';
+  var C = window.FinanceCore, A = window.App, $ = A.$, h = A.h, money = A.money, ui = A.ui;
+  ui.ruleEditing = null; ui.ruleArmed = null; ui.ruleType = 'expense';
+  var saveTimer = null;
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(A.saveState, 300); }
+  function numOrNull(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
+  function setIf(id, v) { var el = $(id); if (document.activeElement !== el) el.value = (v === null || v === undefined) ? '' : v; }
+
+  // ---------- paycheck ----------
+  var PAY_FIELDS = { 'p-gross': 'gross', 'p-k401pct': 'k401Pct', 'p-k401fixed': 'k401Fixed', 'p-matchpct': 'matchPct', 'p-matchcap': 'matchCapPct', 'p-health': 'health', 'p-hsa': 'hsa', 'p-otherpre': 'otherPretax', 'p-roth': 'roth', 'p-otherpost': 'otherPosttax', 'p-staterate': 'stateRate', 'p-extra': 'extraWithholding', 'p-federal': 'federalManual', 'p-state': 'stateManual', 'p-ss': 'ssManual', 'p-medicare': 'medicareManual' };
+  Object.keys(PAY_FIELDS).forEach(function (id) {
+    var key = PAY_FIELDS[id];
+    $(id).addEventListener('input', function () { var n = numOrNull(this.value); A.state.paycheck[key] = n === null ? 0 : Math.max(0, n); saveSoon(); renderPayOutputs(); });
+    $(id).addEventListener('change', function () { A.state.paycheck = C.normalizePaycheck(A.state.paycheck); A.saveState(); A.render(); });
+  });
+  $('p-freq').addEventListener('change', function () { A.state.paycheck.frequency = this.value; A.commit(); });
+  $('p-status').addEventListener('change', function () { A.state.paycheck.filingStatus = this.value; A.commit(); });
+  $('p-next').addEventListener('change', function () { A.state.paycheck.nextPayDate = C.isValidISO(this.value) ? this.value : null; A.commit(); });
+  $('pay-autolog').addEventListener('change', function () { A.state.paycheck.autoLog = this.checked; A.commit(); if (this.checked) A.postDueItems(); A.render(); });
+  $('p-taxmode').addEventListener('click', function (e) { var b = e.target.closest('button[data-mode]'); if (!b) return; A.state.paycheck.taxMode = b.getAttribute('data-mode'); A.commit(); });
+  $('pay-log').addEventListener('click', function () {
+    var pc = A.state.paycheck; if (pc.gross <= 0) { A.toast('Enter your gross pay first.'); $('p-gross').focus(); return; }
+    var date = pc.nextPayDate && pc.nextPayDate <= A.today() ? pc.nextPayDate : A.today();
+    var es = C.paycheckEntries(pc, date, 'paycheck'); var ids = es.map(function (e) { return e.id; });
+    A.state.entries = A.state.entries.concat(es);
+    if (pc.nextPayDate && pc.nextPayDate <= date) pc.nextPayDate = C.advanceDate(pc.nextPayDate, pc.frequency);
+    A.commit();
+    A.toast('Logged paycheck: +' + money(es[0].amount) + (es.length > 1 ? ' and 401k' : ''), { action: 'Undo', onAction: function () { A.state.entries = A.state.entries.filter(function (e) { return ids.indexOf(e.id) < 0; }); A.commit(); } });
+  });
+
+  function renderPayInputs() {
+    var p = A.state.paycheck;
+    Object.keys(PAY_FIELDS).forEach(function (id) { var v = p[PAY_FIELDS[id]]; setIf(id, v === 0 && id !== 'p-k401pct' && id !== 'p-matchpct' && id !== 'p-matchcap' ? '' : v); });
+    if (document.activeElement !== $('p-freq')) $('p-freq').value = p.frequency;
+    if (document.activeElement !== $('p-status')) $('p-status').value = p.filingStatus;
+    setIf('p-next', p.nextPayDate || '');
+    $('pay-autolog').checked = p.autoLog;
+    Array.prototype.forEach.call($('p-taxmode').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === p.taxMode)); });
+    var manual = p.taxMode === 'manual';
+    ['p-man-fed', 'p-man-state', 'p-man-ss', 'p-man-med'].forEach(function (id) { $(id).hidden = !manual; });
+    ['p-auto-state', 'p-auto-extra'].forEach(function (id) { $(id).hidden = manual; });
+  }
+  function renderPayOutputs() {
+    var p = A.state.paycheck, b = C.paycheckBreakdown(p), t0 = A.today();
+    A.setText('pay-next', p.gross > 0 ? (p.nextPayDate ? 'next pay ' + C.fmtDate(p.nextPayDate, t0) : 'set your next pay date') : 'not set up');
+    A.setText('pay-net-month', A.tileMoney(b.monthly.net));
+    A.setText('pay-net-period', p.gross > 0 ? money(b.net) + ' ' + C.FREQ_LABEL[p.frequency].toLowerCase() : 'enter gross pay below');
+    A.setText('pay-tax-month', A.tileMoney(b.monthly.taxes));
+    A.setText('pay-tax-rate', p.gross > 0 ? C.fmtPct(b.effectiveTaxRate, 1) + ' of gross' : '');
+    var bar = $('pay-segbar'), lg = $('pay-legend'); A.clear(bar); A.clear(lg);
+    var cInc = Charts.cssVar('--income'), cK = Charts.cssVar('--k401'), cTax = Charts.cssVar('--spend'), cOther = Charts.cssVar('--muted');
+    var parts = [['Take-home', b.net, cInc], ['401k', C.round2(b.k401 + b.roth), cK], ['Taxes', b.taxes, cTax], ['Benefits & other', C.round2(b.health + b.hsa + b.otherPretax + b.otherPosttax), cOther]];
+    if (b.gross > 0) { parts.forEach(function (pt) { if (pt[1] <= 0) return; bar.appendChild(h('span', { style: 'width:' + (pt[1] / b.gross * 100) + '%;background:' + pt[2], title: pt[0] + ' ' + money(pt[1]) })); lg.appendChild(h('span', {}, [h('i', { style: 'background:' + pt[2] }), pt[0] + ' ' + C.fmtPct(pt[1] / b.gross)])); }); }
+    bar.setAttribute('aria-label', 'Paycheck split: ' + parts.map(function (pt) { return pt[0] + ' ' + money(pt[1]); }).join(', '));
+    var lines = $('pay-lines'); A.clear(lines);
+    function line(k, v, cls) { lines.appendChild(h('div', { class: 'pay-line ' + (cls || '') }, [h('span', { text: k }), h('span', { class: 'num', text: v })])); }
+    if (b.gross <= 0) { lines.appendChild(h('p', { class: 'small text-2', text: 'Enter your gross pay and deductions below (straight off a pay stub) to see your take-home pay, taxes and 401k per paycheck and per month.' })); }
+    else {
+      line('Gross pay', money(b.gross));
+      if (b.pretax > 0) { line('Pre-tax deductions', '−' + money(b.pretax)); if (b.k401 > 0) line('401k (' + p.k401Pct + '%' + (p.k401Fixed ? ' + ' + money(p.k401Fixed) : '') + ')', '−' + money(b.k401), 'sub'); if (b.health > 0) line('Health insurance', '−' + money(b.health), 'sub'); if (b.hsa > 0) line('HSA / FSA', '−' + money(b.hsa), 'sub'); if (b.otherPretax > 0) line('Other pre-tax', '−' + money(b.otherPretax), 'sub'); }
+      line('Taxes' + (b.taxMode === 'auto' ? ' (estimated)' : ''), '−' + money(b.taxes));
+      line('Federal income tax', '−' + money(b.federal), 'sub'); line('Social Security 6.2%', '−' + money(b.socialSecurity), 'sub'); line('Medicare 1.45%', '−' + money(b.medicare), 'sub'); if (b.state > 0) line('State income tax', '−' + money(b.state), 'sub');
+      if (b.posttax > 0) { line('After-tax deductions', '−' + money(b.posttax)); if (b.roth > 0) line('Roth 401k', '−' + money(b.roth), 'sub'); if (p.otherPosttax > 0) line('Other', '−' + money(p.otherPosttax), 'sub'); }
+      line('Take-home pay', money(b.net), 'total');
+      if (b.match > 0) line('Employer 401k match (not in your pay)', '+' + money(b.match), 'sub');
+      line('Per month: ' + money(b.monthly.net) + ' take-home · ' + money(C.round2(b.monthly.k401 + b.monthly.match)) + ' into 401k · ' + money(b.annual.net) + '/yr', '', 'sub');
+    }
+    $('pay-log').disabled = b.gross <= 0;
+  }
+
+  // ---------- rules ----------
+  function ruleCats() { var sel = $('u-cat'); A.clear(sel); C.CATS[ui.ruleType].forEach(function (c) { sel.appendChild(h('option', { value: c, text: (A.ICONS[c] || '') + ' ' + c })); }); }
+  $('u-type').addEventListener('click', function (e) { var b = e.target.closest('button[data-type]'); if (!b) return; ui.ruleType = b.getAttribute('data-type'); Array.prototype.forEach.call($('u-type').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x === b)); }); var prev = $('u-cat').value; ruleCats(); if (C.CATS[ui.ruleType].indexOf(prev) >= 0) $('u-cat').value = prev; });
+  function openRuleForm(r) {
+    ui.ruleEditing = r ? r.id : 'new'; ui.ruleType = r ? r.type : 'expense';
+    Array.prototype.forEach.call($('u-type').querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-type') === ui.ruleType)); });
+    ruleCats();
+    $('u-id').value = r ? r.id : ''; $('u-name').value = r ? r.name : ''; $('u-amount').value = r ? r.amount : ''; $('u-freq').value = r ? r.frequency : 'monthly'; $('u-next').value = r ? r.nextDate : A.today(); $('u-cat').value = r ? r.cat : (ui.ruleType === 'expense' ? 'Bills' : 'Paycheck');
+    $('u-error').style.display = 'none'; $('rule-form').hidden = false; $('u-add').hidden = true; A.setText('u-save', r ? 'Save changes' : 'Add');
+    $('u-name').focus();
+  }
+  function closeRuleForm() { ui.ruleEditing = null; $('rule-form').hidden = true; $('u-add').hidden = false; }
+  $('u-add').addEventListener('click', function () { openRuleForm(null); });
+  $('u-cancel').addEventListener('click', closeRuleForm);
+  $('rule-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var name = $('u-name').value.trim(), amount = Number($('u-amount').value), next = $('u-next').value;
+    var err = !name ? 'Give it a name.' : !($('u-amount').value !== '' && isFinite(amount) && amount > 0) ? 'Amount must be greater than 0.' : !C.isValidISO(next) ? 'Pick the next due date.' : '';
+    if (err) { var e = $('u-error'); e.textContent = err; e.style.display = 'block'; return; }
+    var id = $('u-id').value; var existing = A.state.recurring.find(function (x) { return x.id === id; });
+    var rule = C.normalizeRule({ id: id || undefined, name: name, type: ui.ruleType, cat: $('u-cat').value, amount: amount, frequency: $('u-freq').value, nextDate: next, anchorDay: existing && existing.nextDate === next ? existing.anchorDay : +next.slice(8), active: existing ? existing.active : true, note: name }, A.today());
+    var i = A.state.recurring.findIndex(function (x) { return x.id === id; });
+    if (i >= 0) A.state.recurring[i] = rule; else A.state.recurring.push(rule);
+    closeRuleForm(); A.saveState(); A.postDueItems(); A.render();
+    A.toast(name + ' saved · ' + money(C.monthlyize(rule.amount, rule.frequency)) + '/mo');
+  });
+  function renderRules() {
+    var st = A.state, box = $('rule-list'), t0 = A.today(); A.clear(box);
+    var bills = C.recurringMonthlyTotal(st.recurring, 'expense'), inc = C.recurringMonthlyTotal(st.recurring, 'income');
+    A.setText('rec-total', st.recurring.length ? money(bills, { whole: true }) + '/mo' + (inc > 0 ? ' · +' + money(inc, { whole: true }) + ' income' : '') : '');
+    if (!st.recurring.length) { box.appendChild(A.emptyState('🔁', 'No recurring items yet', 'Add subscriptions, rent, utilities or side income here, or pick “Repeat” when adding an entry. They are logged automatically on their due dates.')); return; }
+    st.recurring.slice().sort(function (a, b) { return a.nextDate < b.nextDate ? -1 : a.nextDate > b.nextDate ? 1 : 0; }).forEach(function (r) {
+      var del = h('button', { type: 'button', class: 'btn icon sm del-btn', 'aria-label': 'Delete ' + r.name, text: '✕' });
+      if (ui.ruleArmed === r.id) { del.textContent = 'Delete'; del.className = 'btn sm del-btn confirm'; del.style.width = 'auto'; }
+      del.addEventListener('click', function () {
+        if (ui.ruleArmed === r.id) { ui.ruleArmed = null; var removed = r; st.recurring = st.recurring.filter(function (x) { return x.id !== r.id; }); A.commit(); A.toast('Deleted ' + removed.name + ' (logged entries are kept)', { action: 'Undo', onAction: function () { A.state.recurring.push(removed); A.commit(); } }); return; }
+        ui.ruleArmed = r.id; A.render(); var again = $('rule-list').querySelector('.del-btn.confirm'); if (again) again.focus();
+        setTimeout(function () { if (ui.ruleArmed === r.id) { ui.ruleArmed = null; A.render(); } }, 3500);
+      });
+      box.appendChild(h('div', { class: 'rule-row' + (r.active ? '' : ' paused') }, [
+        h('div', {}, [h('div', { class: 'name' }, [h('span', { 'aria-hidden': 'true', text: A.ICONS[r.cat] || '' }), r.name, r.active ? null : h('span', { class: 'pill', text: 'paused' })]),
+          h('div', { class: 'meta num' }, [h('span', { class: r.type === 'income' ? 'income-text' : '', text: (r.type === 'income' ? '+' : '') + money(r.amount) + ' ' + C.FREQ_LABEL[r.frequency].toLowerCase() }), h('span', { text: money(C.monthlyize(r.amount, r.frequency)) + '/mo' }), h('span', { text: 'next ' + C.fmtDate(r.nextDate, t0) })])]),
+        h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', 'aria-label': (r.active ? 'Pause ' : 'Resume ') + r.name, text: r.active ? 'Pause' : 'Resume', onclick: function () { r.active = !r.active; if (r.active && r.nextDate < t0) r.nextDate = t0; A.commit(); } }), h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openRuleForm(r); } }), del])
+      ]));
+    });
+  }
+  function renderUpcoming() {
+    var st = A.state, t0 = A.today(), box = $('upcoming'); A.clear(box);
+    var up = C.upcoming(st, t0, 30); var out = 0, inc = 0;
+    up.forEach(function (u) { if (u.type === 'income') inc += C.toCents(u.amount); else if (u.type === 'expense') out += C.toCents(u.amount); });
+    A.setText('upc-total', up.length ? '−' + money(C.fromCents(out), { whole: true }) + (inc ? ' · +' + money(C.fromCents(inc), { whole: true }) : '') : '');
+    if (!up.length) { box.appendChild(h('p', { class: 'small text-2', text: 'Nothing due in the next 30 days.' })); return; }
+    up.forEach(function (u) { box.appendChild(h('div', { class: 'upc' }, [h('span', { class: 'd', text: C.fmtDateShort(u.date) }), h('span', { class: 'n' }, [h('span', { 'aria-hidden': 'true', text: (A.ICONS[u.cat] || '') + ' ' }), u.name]), h('span', { class: 'num ' + (u.type === 'income' ? 'income-text' : ''), text: (u.type === 'income' ? '+' : '−') + money(u.amount) })])); });
+  }
+
+  A.renderers.recurring = function () {
+    renderPayInputs(); renderPayOutputs(); renderRules();
+    if (ui.ruleEditing === null) closeRuleForm();
+    renderUpcoming();
   };
 })();
 </script>

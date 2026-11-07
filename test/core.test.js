@@ -325,6 +325,93 @@ test('normalizeState carries fund choices', () => {
   assert.strictEqual(C.normalizeState({ k401Fund: 'custom' }, TODAY).k401Fund, 'custom');
 });
 
+
+console.log('paycheck');
+test('2026 federal tax brackets with the standard deduction', () => {
+  // single: $66,100 wages - $16,100 deduction = $50,000 taxable -> 10% of 12,400 + 12% of 37,600 = 1,240 + 4,512
+  close(C.federalTax(66100, 'single'), 5752);
+  assert.strictEqual(C.federalTax(10000, 'single'), 0);
+  // married: $132,200 - 32,200 = 100,000 taxable -> 2,480 + 12% of 75,200 = 2,480 + 9,024
+  close(C.federalTax(132200, 'married'), 11504);
+  // crosses into the 22% bracket: single taxable 60,000 -> 1,240 + 4,560 + 22% of 9,600 = 7,912
+  close(C.federalTax(76100, 'single'), 7912);
+});
+test('paycheck breakdown: 401k, match, FICA, federal, state and net', () => {
+  // $3,000 biweekly gross = $78,000/yr. 6% 401k = $180; 50% match up to 6% = $90; health $100 pre-tax.
+  const b = C.paycheckBreakdown({ gross: 3000, frequency: 'biweekly', k401Pct: 6, matchPct: 50, matchCapPct: 6, health: 100, stateRate: 5, filingStatus: 'single' });
+  assert.strictEqual(b.k401, 180); assert.strictEqual(b.match, 90); assert.strictEqual(b.pretax, 280); assert.strictEqual(b.taxableWages, 2720);
+  close(b.socialSecurity, C.round2(2900 * 0.062), 0.01); close(b.medicare, C.round2(2900 * 0.0145), 0.01);
+  close(b.federal, C.round2(C.federalTax(2720 * 26, 'single') / 26), 0.01);
+  close(b.state, 136, 0.01);
+  close(b.net, C.round2(3000 - 280 - b.federal - b.state - b.socialSecurity - b.medicare), 0.005);
+  close(b.monthly.net, C.round2(b.net * 26 / 12), 0.01); assert.strictEqual(b.annual.gross, 78000); assert.strictEqual(b.periodsPerYear, 26);
+  assert.ok(b.effectiveTaxRate > 0.15 && b.effectiveTaxRate < 0.25, 'plausible total tax rate ' + b.effectiveTaxRate);
+});
+test('match is capped at the employer cap and manual taxes override the estimate', () => {
+  const b = C.paycheckBreakdown({ gross: 1000, frequency: 'monthly', k401Pct: 10, matchPct: 100, matchCapPct: 4 });
+  assert.strictEqual(b.k401, 100); assert.strictEqual(b.match, 40);
+  const m = C.paycheckBreakdown({ gross: 1000, frequency: 'monthly', k401Pct: 0, taxMode: 'manual', federalManual: 80, stateManual: 20, ssManual: 62, medicareManual: 14.5 });
+  assert.strictEqual(m.taxes, 176.5); assert.strictEqual(m.net, 823.5);
+  const z = C.paycheckBreakdown({}); assert.strictEqual(z.net, 0); assert.strictEqual(z.gross, 0);
+});
+test('social security stops at the wage base', () => {
+  const b = C.paycheckBreakdown({ gross: 20000, frequency: 'monthly', k401Pct: 0 }); // $240k/yr
+  close(b.socialSecurity, C.round2(184500 / 12 * 0.062), 0.01);
+  assert.ok(b.medicare > 20000 * 0.0145, 'additional medicare applies above $200k');
+});
+test('paycheck entries: net income, employee 401k (+roth) and employer match', () => {
+  const es = C.paycheckEntries({ gross: 3000, frequency: 'biweekly', k401Pct: 6, matchPct: 50, matchCapPct: 6, roth: 50 }, '2026-11-13');
+  assert.deepStrictEqual(es.map(e => [e.type, e.cat, e.amount]), [['income', 'Paycheck', C.paycheckBreakdown({ gross: 3000, frequency: 'biweekly', k401Pct: 6, matchPct: 50, matchCapPct: 6, roth: 50 }).net], ['k401', 'My contribution', 230], ['k401', 'Employer match', 90]]);
+  assert.ok(es.every(e => e.date === '2026-11-13' && e.recurring === 'paycheck'));
+});
+test('monthlyize converts pay frequencies', () => {
+  assert.strictEqual(C.monthlyize(1000, 'biweekly'), 2166.67); assert.strictEqual(C.monthlyize(100, 'weekly'), 433.33); assert.strictEqual(C.monthlyize(120, 'yearly'), 10); assert.strictEqual(C.monthlyize(15.99, 'monthly'), 15.99);
+});
+
+console.log('recurring');
+test('advanceDate keeps the anchor day across short months', () => {
+  assert.strictEqual(C.advanceDate('2026-01-31', 'monthly', 31), '2026-02-28');
+  assert.strictEqual(C.advanceDate('2026-02-28', 'monthly', 31), '2026-03-31');
+  assert.strictEqual(C.advanceDate('2026-11-07', 'weekly'), '2026-11-14');
+  assert.strictEqual(C.advanceDate('2026-11-07', 'biweekly'), '2026-11-21');
+  assert.strictEqual(C.advanceDate('2026-11-01', 'semimonthly'), '2026-11-16');
+  assert.strictEqual(C.advanceDate('2026-11-16', 'semimonthly'), '2026-12-01');
+  assert.strictEqual(C.advanceDate('2024-02-29', 'yearly', 29), '2025-02-28');
+});
+test('postDue logs every missed occurrence once and advances the rule', () => {
+  const st = C.normalizeState({ recurring: [{ id: 'nf', name: 'Netflix', amount: 15.99, cat: 'Fun', frequency: 'monthly', nextDate: '2026-09-07' }, { id: 'off', name: 'Paused', amount: 50, cat: 'Fun', frequency: 'monthly', nextDate: '2026-01-01', active: false }, { id: 'fut', name: 'Future', amount: 5, cat: 'Fun', frequency: 'monthly', nextDate: '2026-12-01' }] }, TODAY);
+  const r = C.postDue(st, TODAY);
+  assert.ok(r.changed);
+  assert.deepStrictEqual(r.entries.map(e => [e.date, e.amount, e.recurring, e.note]), [['2026-09-07', 15.99, 'nf', 'Netflix'], ['2026-10-07', 15.99, 'nf', 'Netflix'], ['2026-11-07', 15.99, 'nf', 'Netflix']]);
+  assert.strictEqual(r.recurring.find(x => x.id === 'nf').nextDate, '2026-12-07');
+  assert.strictEqual(r.recurring.find(x => x.id === 'off').nextDate, '2026-01-01', 'paused rule untouched');
+  const again = C.postDue(Object.assign({}, st, { recurring: r.recurring }), TODAY);
+  assert.strictEqual(again.entries.length, 0, 'nothing double-posted');
+  assert.ok(!again.changed);
+});
+test('postDue logs due paychecks with their 401k entries and advances the pay date', () => {
+  const st = C.normalizeState({ paycheck: { gross: 2000, frequency: 'biweekly', nextPayDate: '2026-10-30', k401Pct: 5, matchPct: 100, matchCapPct: 3 } }, TODAY);
+  const r = C.postDue(st, TODAY);
+  assert.strictEqual(r.entries.filter(e => e.type === 'income').length, 1);
+  assert.strictEqual(r.entries.filter(e => e.type === 'k401').length, 2);
+  assert.strictEqual(r.paycheck.nextPayDate, '2026-11-13');
+  const off = C.postDue(C.normalizeState({ paycheck: { gross: 2000, nextPayDate: '2026-10-30', autoLog: false } }, TODAY), TODAY);
+  assert.strictEqual(off.entries.length, 0);
+});
+test('upcoming lists the next 30 days in date order, including paychecks', () => {
+  const st = C.normalizeState({ recurring: [{ id: 'a', name: 'Rent', amount: 1450, cat: 'Housing', frequency: 'monthly', nextDate: '2026-12-01' }, { id: 'b', name: 'Gym', amount: 40, cat: 'Health', frequency: 'weekly', nextDate: '2026-11-10' }], paycheck: { gross: 1000, frequency: 'biweekly', nextPayDate: '2026-11-20' } }, TODAY);
+  const u = C.upcoming(st, TODAY, 30);
+  assert.deepStrictEqual(u.map(x => x.date + ' ' + x.name), ['2026-11-10 Gym', '2026-11-17 Gym', '2026-11-20 Paycheck', '2026-11-24 Gym', '2026-12-01 Rent', '2026-12-01 Gym', '2026-12-04 Paycheck']);
+  assert.strictEqual(C.recurringMonthlyTotal(st.recurring, 'expense'), C.round2(1450 + 40 * 52 / 12));
+});
+test('normalizeRule and normalizePaycheck repair bad input', () => {
+  const r = C.normalizeRule({ name: '', amount: -3, frequency: 'daily', nextDate: 'bad', type: 'nope' }, TODAY);
+  assert.strictEqual(r.name, 'Recurring'); assert.strictEqual(r.amount, 0); assert.strictEqual(r.frequency, 'monthly'); assert.strictEqual(r.nextDate, TODAY); assert.strictEqual(r.type, 'expense'); assert.strictEqual(r.anchorDay, 7); assert.ok(r.active);
+  const p = C.normalizePaycheck({ gross: '2500', frequency: 'nope', filingStatus: 'x', k401Pct: 500 });
+  assert.strictEqual(p.gross, 2500); assert.strictEqual(p.frequency, 'biweekly'); assert.strictEqual(p.filingStatus, 'single'); assert.strictEqual(p.k401Pct, 100); assert.strictEqual(p.taxMode, 'auto');
+  const st = C.normalizeState({}, TODAY); assert.deepStrictEqual(st.recurring, []); assert.strictEqual(st.paycheck.matchPct, 50);
+});
+
 console.log('formatting');
 test('money formats', () => {
   assert.strictEqual(C.fmtMoney(1234.5), '$1,234.50');
