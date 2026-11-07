@@ -211,19 +211,19 @@ a { color: var(--accent); }
    Layout
    ============================================================ */
 .app-header {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
 .app-header .inner {
   max-width: var(--max-w); margin: 0 auto;
-  padding: calc(var(--sp-3) + env(safe-area-inset-top, 0px)) var(--sp-4) var(--sp-3);
+  padding-block: var(--sp-3); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
 }
 .app-title { display: flex; align-items: baseline; gap: var(--sp-2); }
 .app-title .sub { color: var(--muted); font-size: var(--fs-sm); }
-main { max-width: var(--max-w); margin: 0 auto; padding: var(--sp-4); }
+main { max-width: var(--max-w); margin: 0 auto; padding-block: var(--sp-4); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .view { display: none; }
 .view.active { display: flex; flex-direction: column; gap: var(--sp-4); animation: fade var(--dur) var(--ease); }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -1078,6 +1078,15 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   </div>
 </dialog>
 
+<dialog id="export-dialog" aria-labelledby="export-h">
+  <div class="sheet">
+    <h2 id="export-h">Backup JSON</h2>
+    <p class="desc">Copy this text and keep it somewhere safe (a note, an email to yourself). Paste it into a file named <span class="num">money-backup.json</span> to import it later.</p>
+    <textarea class="input num" id="export-text" rows="8" readonly aria-label="Backup JSON" style="font-size:11px;font-family:var(--font-mono)"></textarea>
+    <div class="actions"><button class="btn" id="export-close">Close</button><button class="btn primary" id="export-copy">Copy to clipboard</button></div>
+  </div>
+</dialog>
+
 <dialog id="confirm-dialog" aria-labelledby="confirm-h">
   <form method="dialog" class="sheet">
     <h2 id="confirm-h">Are you sure?</h2>
@@ -1640,7 +1649,7 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     if (raw) { try { parsed = JSON.parse(raw); } catch (e) { parsed = null; try { localStorage.setItem(BACKUP_KEY + '-corrupt', raw); } catch (e2) {} } }
     var fresh = !parsed;
     state = C.normalizeState(parsed || {}, today());
-    if (fresh) { state.entries = makeSamples(); saveState(); }
+    if (fresh) { var sd = makeSeed(); state.entries = sd.entries; state.recurring = sd.recurring; state.paycheck = sd.paycheck; state.k401Balance = sd.k401Balance; state.k401UpdatedAt = sd.k401UpdatedAt; state.budget = sd.budget; saveState(); }
     try { var u = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); if (u && typeof u === 'object') { if (u.preset) ui.preset = u.preset; if (u.from) ui.from = u.from; if (u.to) ui.to = u.to; if (u.cat) ui.cat = Object.assign(ui.cat, u.cat); } } catch (e) {}
     try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); } catch (e) { storageOK = false; }
   }
@@ -1654,31 +1663,34 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
   function commit() { saveState(); render(); }
   function renderStorageStatus() { $('page-sub').textContent = storageOK ? '' : 'Not saving — storage blocked'; }
 
-  // ---------- samples ----------
-  function makeSamples() {
-    var seed = 42; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  // ---------- first-run sample data ----------
+  // A realistic starting point: $125k in a 401k, $6,000/month gross pay run through the paycheck model,
+  // six monthly bills as recurring items, and six months of history. Entries are flagged sample:true.
+  function makeSeed() {
+    var t = today(), mk = C.monthKey(t); var nextFirst = C.monthStart(C.addMonths(mk, 1));
+    var bills = [['TV', 90, 'Bills'], ['Internet', 70, 'Bills'], ['Power', 150, 'Bills'], ['Water', 60, 'Bills'], ['Car insurance', 400, 'Transport'], ['Rent', 1900, 'Housing']];
+    var rules = bills.map(function (b, i) { return C.normalizeRule({ id: 'rule-' + (i + 1), name: b[0], type: 'expense', cat: b[2], amount: b[1], frequency: 'monthly', nextDate: nextFirst, anchorDay: 1, note: b[0] }, t); });
+    var paycheck = C.normalizePaycheck({ gross: 6000, frequency: 'monthly', nextPayDate: nextFirst, autoLog: true, k401Pct: 6, matchPct: 50, matchCapPct: 6 });
+    var seed = 11; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
     function pick(a) { return a[Math.floor(rnd() * a.length)]; }
     function amt(lo, hi) { return C.round2(lo + rnd() * (hi - lo)); }
-    var t = today(); var mk = C.monthKey(t); var out = []; var n = 0;
-    function push(type, date, amount, cat, note) { if (date > t) return; out.push({ id: 'sample-' + (++n), type: type, date: date, amount: C.round2(amount), cat: cat, note: note || '', sample: true }); }
+    var entries = []; var n = 0;
+    function push(type, date, amount, cat, note, recurring) { if (date > t) return; var e = C.normalizeEntry({ id: 'sample-' + (++n), type: type, date: date, amount: amount, cat: cat, note: note || '' }, t); e.sample = true; if (recurring) e.recurring = recurring; entries.push(e); }
     for (var i = 5; i >= 0; i--) {
-      var key = C.addMonths(mk, -i); var end = +C.monthEnd(key).slice(8);
+      var key = C.addMonths(mk, -i); var first = key + '-01'; var end = +C.monthEnd(key).slice(8);
       function d(day) { return key + '-' + (day < 10 ? '0' : '') + Math.min(day, end); }
-      push('income', d(1), 2450, 'Paycheck', 'Salary'); push('income', d(15), 2450, 'Paycheck', 'Salary');
-      if (rnd() < 0.5) push('income', d(Math.floor(5 + rnd() * 20)), amt(120, 400), 'Side work', pick(['Freelance design', 'Weekend gig', 'Tutoring']));
-      if (i % 3 === 0) push('income', d(28), amt(8, 20), 'Interest', 'Savings interest');
-      push('k401', d(1), 180, 'My contribution'); push('k401', d(1), 90, 'Employer match'); push('k401', d(15), 180, 'My contribution'); push('k401', d(15), 90, 'Employer match');
-      push('expense', d(1), 1450, 'Housing', 'Rent');
-      push('expense', d(Math.floor(3 + rnd() * 10)), amt(70, 120), 'Bills', 'Electric'); push('expense', d(20), 60, 'Bills', 'Internet'); push('expense', d(12), 45, 'Bills', 'Phone');
-      var g = 4 + Math.floor(rnd() * 2); for (var j = 0; j < g; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(32, 110), 'Groceries', pick(['Trader Joe\'s', 'Costco', 'Farmers market', 'Safeway', '']));
-      var dn = 3 + Math.floor(rnd() * 3); for (j = 0; j < dn; j++) push('expense', d(Math.floor(1 + rnd() * 28)), amt(12, 58), 'Dining', pick(['Lunch', 'Tacos', 'Coffee', 'Dinner with friends', 'Ramen', '']));
-      var tr = 2 + Math.floor(rnd() * 2); for (j = 0; j < tr; j++) push('expense', d(Math.floor(1 + rnd() * 28)), amt(25, 60), 'Transport', pick(['Gas', 'Transit pass', 'Parking', 'Rideshare']));
-      if (rnd() < 0.8) push('expense', d(Math.floor(1 + rnd() * 28)), amt(30, 140), 'Shopping', pick(['Shoes', 'Headphones', 'Amazon', 'Jacket']));
-      if (rnd() < 0.9) push('expense', d(Math.floor(1 + rnd() * 28)), amt(15, 90), 'Fun', pick(['Movies', 'Concert', 'Board games', 'Climbing gym']));
-      if (rnd() < 0.5) push('expense', d(Math.floor(1 + rnd() * 28)), amt(15, 75), 'Health', pick(['Pharmacy', 'Copay', 'Gym']));
-      if (rnd() < 0.4) push('expense', d(Math.floor(1 + rnd() * 28)), amt(10, 50), 'Other', pick(['Gift', 'Haircut', 'Donation']));
+      if (first <= t) {
+        C.paycheckEntries(paycheck, first, 'paycheck').forEach(function (e) { push(e.type, first, e.amount, e.cat, e.note, 'paycheck'); });
+        rules.forEach(function (r) { push('expense', first, r.amount, r.cat, r.name, r.id); });
+      }
+      for (var j = 0; j < 4; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(60, 140), 'Groceries', pick(['Costco', 'Kroger', 'Trader Joe’s', 'Aldi', '']));
+      for (j = 0; j < 3; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(14, 55), 'Dining', pick(['Lunch', 'Tacos', 'Coffee', 'Dinner out', '']));
+      for (j = 0; j < 2; j++) push('expense', d(Math.floor(2 + rnd() * 27)), amt(40, 65), 'Transport', 'Gas');
+      if (rnd() < 0.8) push('expense', d(Math.floor(2 + rnd() * 27)), amt(20, 80), 'Fun', pick(['Movies', 'Concert', 'Golf', 'Games']));
+      if (rnd() < 0.6) push('expense', d(Math.floor(2 + rnd() * 27)), amt(30, 120), 'Shopping', pick(['Amazon', 'Clothes', 'Home Depot']));
+      if (rnd() < 0.4) push('expense', d(Math.floor(2 + rnd() * 27)), amt(15, 60), 'Health', pick(['Pharmacy', 'Copay']));
     }
-    return out;
+    return { entries: entries, recurring: rules, paycheck: paycheck, k401Balance: 125000, k401UpdatedAt: t, budget: 4000 };
   }
   function hasSamples() { return state.entries.some(function (e) { return e.sample; }); }
 
@@ -2007,6 +2019,12 @@ details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font
     var payload = Object.assign({ app: 'money-tracker', version: 2, exportedAt: new Date().toISOString() }, state);
     var text = JSON.stringify(payload, null, 2);
     var name = 'money-backup-' + today() + '.json';
+    if (window.__ARTIFACT__) { // hosted preview: downloads are blocked, so show the JSON to copy
+      $('export-text').value = text; var d = $('export-dialog'); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+      $('export-copy').onclick = function () { copyText(text).then(function (ok) { toast(ok ? 'Backup copied to clipboard' : 'Select the text and copy it manually'); if (!ok) { $('export-text').focus(); $('export-text').select(); } }); };
+      $('export-close').onclick = function () { if (d.close) d.close(); else d.removeAttribute('open'); };
+      return;
+    }
     try {
       var blob = new Blob([text], { type: 'application/json' });
       var url = URL.createObjectURL(blob);
