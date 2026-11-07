@@ -204,6 +204,27 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     const rows = await page.$$eval('#breakdown .bar-row', els => els.map(e => e.querySelector('.val').textContent));
     assert.ok(rows.length >= 2, 'breakdown present');
   });
+  await test('entries can be searched and filtered, and a category bar drills down', O, async (page) => {
+    await page.fill('#ef-q', 'rent'); await page.waitForTimeout(200);
+    const notes = await page.$$eval('#entries .entry .cat', els => els.map(e => e.textContent));
+    assert.ok(notes.length >= 1 && notes.every(n => /rent/i.test(n)), notes.join(','));
+    assert.ok((await text(page, '#ef-sum-text')).includes('spent'));
+    await page.click('#ef-clear'); await page.waitForTimeout(100);
+    assert.strictEqual(await page.inputValue('#ef-q'), '');
+    await page.selectOption('#ef-type', 'income'); await page.waitForTimeout(100);
+    assert.ok(await page.$$eval('#entries .entry .amt', els => els.length && els.every(e => e.classList.contains('income'))));
+    await page.selectOption('#ef-type', ''); await page.waitForTimeout(100);
+    const first = await page.$eval('#breakdown .bar-row', b => b.querySelector('.name').textContent.replace(/^\S+\s/, ''));
+    await page.click('#breakdown .bar-row'); await page.waitForTimeout(150);
+    assert.strictEqual(await page.inputValue('#ef-cat'), first);
+    assert.ok(await page.$$eval('#entries .entry .meta-cat, #entries .entry .cat', els => els.length > 0));
+    await page.selectOption('#ef-scope', 'all'); await page.waitForTimeout(100);
+    assert.ok((await text(page, '#ef-sum-text')).includes('since'));
+    await page.fill('#ef-q', 'zzzz-nothing'); await page.waitForTimeout(200);
+    assert.ok((await text(page, '#entries')).includes('No entries match'));
+    await page.click('#entries button:has-text("Clear filters")'); await page.waitForTimeout(100);
+    assert.strictEqual(await page.inputValue('#ef-q'), '');
+  });
   await test('copy month as CSV puts a header and signed amounts on the clipboard', { browser, init: () => { window.__copied = null; Object.defineProperty(navigator, 'clipboard', { value: { writeText: (t) => { window.__copied = t; return Promise.resolve(); } } }); } }, async (page) => {
     await page.click('#btn-csv'); await page.waitForTimeout(80);
     const csv = await page.evaluate(() => window.__copied);
@@ -212,10 +233,12 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.ok(/Copied \d+ rows as CSV/.test(await text(page, '#toast-msg')));
   });
   await test('401k balance saves with today as the update date and feeds Retirement', O, async (page) => {
+    await page.click('#btn-profile'); await page.waitForTimeout(50);
     await page.fill('#k401-balance', '31250.5'); await page.click('#k401-save'); await page.waitForTimeout(50);
     const s = await page.evaluate(() => ({ b: App.state.k401Balance, d: App.state.k401UpdatedAt, t: App.today() }));
     assert.strictEqual(s.b, 31250.5); assert.strictEqual(s.d, s.t);
     assert.ok((await text(page, '#k401-updated')).includes('Today'));
+    await page.click('#profile-close'); await page.waitForTimeout(30);
     await tab(page, 'retirement');
     assert.strictEqual(await page.inputValue('#r-k401'), '31250.5');
   });
@@ -620,7 +643,9 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await debtTip.click(); await page.waitForTimeout(80);
     assert.strictEqual(await page.evaluate(() => App.ui.view), 'retirement');
   });
-  await test('Accounts card: every balance in one place, editable, with net worth', O, async (page) => {
+  await test('Profile dialog: every balance in one place, editable, with net worth', O, async (page) => {
+    await page.click('#btn-profile'); await page.waitForTimeout(50);
+    assert.ok(await page.evaluate(() => document.getElementById('profile-dialog').open));
     await page.fill('#ab-roth', '5000'); await page.fill('#ab-stock', '30000'); await page.fill('#ab-cash', '2000');
     assert.strictEqual(await text(page, '#acct-inv'), await page.evaluate(() => FinanceCore.fmtMoney(App.state.k401Balance + 35000)), 'investment total updates as you type');
     await page.click('#k401-save'); await page.waitForTimeout(80);
@@ -631,6 +656,17 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.strictEqual(await text(page, '#acct-networth'), FinanceCore_fmt(nw).replace(/\.\d\d$/, ''));
     assert.ok((await text(page, '#d-ab-stock')).includes('as of Today'));
     assert.ok((await text(page, '#acct-debts')).includes('Car loan'));
+    await page.click('#profile-close'); await page.waitForTimeout(50);
+    assert.ok(!(await page.evaluate(() => document.getElementById('profile-dialog').open)));
+    assert.strictEqual(await text(page, '#nw-hero'), FinanceCore_fmt(nw).replace(/\.\d\d$/, ''), 'snapshot shows the same net worth');
+    const rows = await page.$$eval('#nw-rows .nw-row:not(.head)', els => els.map(e => e.textContent));
+    assert.ok(rows.some(r => r.includes('Roth IRA') && r.includes('$5,000.00')) && rows.some(r => r.includes('Company stock')) && rows.some(r => r.includes('Checking & savings')), rows.join(' | '));
+    assert.ok(rows.some(r => r.includes('Car loan') && r.includes('APR')), 'debts listed with APR');
+    assert.strictEqual(await page.$$eval('#nw-bar .seg', els => els.length), 5, '4 assets + a debt segment');
+    assert.ok((await text(page, '#nw-foot')).startsWith('Invested '));
+    await page.click('#nw-edit'); await page.waitForTimeout(50);
+    assert.ok(await page.evaluate(() => document.getElementById('profile-dialog').open), 'Update balances opens the profile dialog');
+    await page.click('#profile-close'); await page.waitForTimeout(30);
     await page.click('#toast-action'); await page.waitForTimeout(50);
     assert.strictEqual(await page.evaluate(() => App.state.stockBalance), 0, 'undo');
     await tab(page, 'retirement');

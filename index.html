@@ -260,6 +260,14 @@ input[type="date"].input { min-width: 0; }
 .month-nav h2 { font-size: var(--fs-md); text-align: center; }
 .banner { background: var(--accent-soft); border-radius: var(--radius-sm); padding: var(--sp-3) var(--sp-4); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--fs-sm); }
 
+.entry-filters { padding: var(--sp-3) var(--sp-4) var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-2); }
+.ef-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.ef-row select.input { min-width: 0; }
+.ef-sum { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--text-2); }
+.ef-more { display: block; margin: var(--sp-3) auto var(--sp-4); }
+button.bar-row { width: 100%; text-align: left; color: inherit; border-radius: 8px; padding: 2px 0; }
+button.bar-row:hover .name { color: var(--accent); text-decoration: underline; }
+button.bar-row .track { display: block; }
 .day-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4) var(--sp-1); font-size: var(--fs-xs); color: var(--muted); font-weight: 600; }
 .day-head > span:first-child { white-space: nowrap; }
 .day-head .tot { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
@@ -411,6 +419,19 @@ details.card[open] > summary::after { transform: rotate(-135deg); }
 details.card[open] > summary { margin-bottom: var(--sp-3); }
 details:not(.card) > summary { list-style: none; }
 details:not(.card) > summary::-webkit-details-marker { display: none; }
+.nw-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-2); margin: var(--sp-3) 0 var(--sp-2); gap: 2px; }
+.nw-bar .seg { height: 100%; min-width: 2px; }
+.nw-bar .seg.debt { background: repeating-linear-gradient(135deg, var(--danger) 0 4px, transparent 4px 7px); }
+.nw-rows { display: flex; flex-direction: column; }
+.nw-row { display: grid; grid-template-columns: 12px 1fr auto auto; align-items: center; gap: var(--sp-2); padding: 5px 0; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.nw-row .dot { width: 10px; height: 10px; border-radius: 3px; }
+.nw-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nw-row .nm .ad { color: var(--muted); font-size: var(--fs-xs); margin-left: 6px; }
+.nw-row .pc { color: var(--muted); font-size: var(--fs-xs); min-width: 34px; text-align: right; }
+.nw-row.debt .v { color: var(--danger-text); }
+.nw-row.head { font-size: var(--fs-xs); font-weight: 600; color: var(--muted); padding-top: var(--sp-3); border-top: 1px solid var(--border); margin-top: var(--sp-1); }
+.nw-foot { display: flex; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; font-size: var(--fs-xs); color: var(--text-2); margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--border); }
+@media (forced-colors: active) { .nw-bar .seg, .nw-row .dot { background: Highlight !important; } }
 .acct-nw { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border); }
 .acct-nw .hero { font-size: var(--fs-2xl); }
 .acct-group { padding-top: var(--sp-3); }
@@ -445,6 +466,9 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   <div class="inner">
     <div class="app-title"><h1 id="page-title">Overview</h1><span class="sub" id="page-sub"></span></div>
     <div class="row" style="gap: var(--sp-2)"><span class="sync-chip" id="sync-chip" role="status" aria-live="polite" hidden></span>
+    <button class="btn icon ghost" id="btn-profile" aria-label="Profile and balances" title="Profile &amp; balances">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </button>
     <button class="btn icon ghost" id="btn-settings" aria-label="Settings" title="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button></div>
@@ -459,22 +483,13 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       <button class="btn sm" id="btn-clear-samples">Clear samples</button>
     </div>
 
-    <section class="card" id="accounts-card" aria-labelledby="acct-h">
-      <div class="card-head"><h2 id="acct-h">Accounts</h2><button type="button" class="link-btn" id="acct-debts-link">Edit debts</button></div>
-      <div class="acct-nw"><div><div class="small text-2" style="font-weight:600">Net worth</div><div class="xs muted" id="acct-nw-sub"></div></div><div class="hero num" id="acct-networth">$0</div></div>
-      <div class="acct-group"><div class="acct-gh"><span>Investments</span><span class="num" id="acct-inv">$0</span></div>
-      <div class="acct-row" data-key="k401Balance"><label for="k401-balance"><span class="an" id="acct-k401-name">Roth 401k</span><span class="ad" id="k401-updated"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="k401-balance" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      <div class="acct-row" data-key="rothBalance"><label for="ab-roth"><span class="an">Roth IRA</span><span class="ad" id="d-ab-roth"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-roth" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      <div class="acct-row" data-key="stockBalance"><label for="ab-stock"><span class="an">Company stock</span><span class="ad" id="d-ab-stock"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-stock" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      <div class="acct-row" data-key="brokerageBalance"><label for="ab-brokerage"><span class="an">Brokerage</span><span class="ad" id="d-ab-brokerage"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-brokerage" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      <div class="acct-row" data-key="hsaBalance"><label for="ab-hsa"><span class="an">HSA</span><span class="ad" id="d-ab-hsa"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-hsa" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      <div class="acct-row" data-key="otherInvestments"><label for="ab-other"><span class="an">Other investments</span><span class="ad" id="d-ab-other"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      </div>
-      <div class="acct-group"><div class="acct-gh"><span>Cash</span><span class="num" id="acct-cash">$0</span></div>
-      <div class="acct-row" data-key="savingsBalance"><label for="ab-cash"><span class="an">Checking & savings</span><span class="ad" id="d-ab-cash"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-cash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
-      </div>
-      <div class="acct-group"><div class="acct-gh"><span>Debts</span><span class="num" id="acct-debt">$0</span></div><div id="acct-debts"></div></div>
-      <div class="row between" style="margin-top: var(--sp-3)"><span class="xs muted">Change any amount, then save.</span><button type="button" class="btn primary sm" id="k401-save">Save balances</button></div>
+    <section class="card" id="networth-card" aria-labelledby="nw-h">
+      <div class="card-head"><h2 id="nw-h">Net worth</h2><button type="button" class="link-btn" id="nw-edit">Update balances</button></div>
+      <div class="hero num" id="nw-hero">$0</div>
+      <div class="xs muted" id="nw-sub"></div>
+      <div class="nw-bar" id="nw-bar" role="img" aria-label="What your net worth is made of"></div>
+      <div class="nw-rows" id="nw-rows"></div>
+      <div class="nw-foot" id="nw-foot"></div>
     </section>
 
     <div class="month-nav card" style="padding: var(--sp-2) var(--sp-2);">
@@ -544,7 +559,17 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     <section class="card flush" aria-labelledby="entries-h">
       <div class="card-head" style="padding: var(--sp-4) var(--sp-4) 0;">
         <h2 id="entries-h">Entries</h2>
-        <button class="btn xs ghost" id="btn-csv">Copy month as CSV</button>
+        <button class="btn xs ghost" id="btn-csv">Copy as CSV</button>
+      </div>
+      <div class="entry-filters" role="search" aria-label="Filter entries">
+        <input class="input" id="ef-q" type="search" placeholder="Search notes, categories, #tags, amounts" aria-label="Search entries" autocomplete="off">
+        <div class="ef-row">
+          <select class="input" id="ef-scope" aria-label="Which months"><option value="month">This month</option><option value="all">All time</option></select>
+          <select class="input" id="ef-type" aria-label="Entry type"><option value="">All types</option><option value="expense">Spending</option><option value="income">Income</option><option value="k401">401k</option></select>
+          <select class="input" id="ef-cat" aria-label="Category"></select>
+          <select class="input" id="ef-tag" aria-label="Tag"></select>
+        </div>
+        <div class="ef-sum" id="ef-sum" hidden><span id="ef-sum-text" aria-live="polite"></span><button type="button" class="link-btn xs" id="ef-clear">Clear filters</button></div>
       </div>
       <div id="entries"></div>
     </section>
@@ -887,6 +912,28 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-action" hidden></button></div>
+
+<dialog id="profile-dialog" aria-labelledby="acct-h">
+  <div class="sheet" id="accounts-card">
+    <div class="card-head"><h2 id="acct-h">Your accounts</h2><button type="button" class="link-btn" id="acct-debts-link">Edit debts</button></div>
+    <p class="desc">Balances you keep up to date by hand. Debts are edited on the Retirement tab.</p>
+      <div class="acct-nw"><div><div class="small text-2" style="font-weight:600">Net worth</div><div class="xs muted" id="acct-nw-sub"></div></div><div class="hero num" id="acct-networth">$0</div></div>
+      <div class="acct-group"><div class="acct-gh"><span>Investments</span><span class="num" id="acct-inv">$0</span></div>
+      <div class="acct-row" data-key="k401Balance"><label for="k401-balance"><span class="an" id="acct-k401-name">Roth 401k</span><span class="ad" id="k401-updated"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="k401-balance" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="rothBalance"><label for="ab-roth"><span class="an">Roth IRA</span><span class="ad" id="d-ab-roth"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-roth" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="stockBalance"><label for="ab-stock"><span class="an">Company stock</span><span class="ad" id="d-ab-stock"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-stock" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="brokerageBalance"><label for="ab-brokerage"><span class="an">Brokerage</span><span class="ad" id="d-ab-brokerage"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-brokerage" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="hsaBalance"><label for="ab-hsa"><span class="an">HSA</span><span class="ad" id="d-ab-hsa"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-hsa" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="acct-row" data-key="otherInvestments"><label for="ab-other"><span class="an">Other investments</span><span class="ad" id="d-ab-other"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      </div>
+      <div class="acct-group"><div class="acct-gh"><span>Cash</span><span class="num" id="acct-cash">$0</span></div>
+      <div class="acct-row" data-key="savingsBalance"><label for="ab-cash"><span class="an">Checking & savings</span><span class="ad" id="d-ab-cash"></span></label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="ab-cash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div></div>
+      </div>
+      <div class="acct-group"><div class="acct-gh"><span>Debts</span><span class="num" id="acct-debt">$0</span></div><div id="acct-debts"></div></div>
+      <div class="row between" style="margin-top: var(--sp-3)"><span class="xs muted">Change any amount, then save.</span><button type="button" class="btn primary sm" id="k401-save">Save balances</button></div>
+      <div class="actions"><button type="button" class="btn" id="profile-close">Done</button></div>
+  </div>
+</dialog>
 
 <dialog id="settings-dialog" aria-labelledby="settings-h">
   <div class="sheet">
@@ -1271,6 +1318,25 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     return used.map(function (t) { return { tag: t, count: n[t] }; }).concat(DEFAULT_TAGS.filter(function (t) { return !n[t]; }).map(function (t) { return { tag: t, count: 0 }; }));
   }
   function hasAnyTag(e, tags) { return !!e.tags && e.tags.some(function (t) { return tags.indexOf(t) >= 0; }); }
+  /**
+   * Entries matching a filter {q, type, cat, tag, from, to}; empty fields match everything. q is split into words
+   * and every word must appear in the note, category, a #tag or the amount (so "doordash 14.40" or "$50" work). Pure.
+   */
+  function filterEntries(entries, f) {
+    f = f || {};
+    var words = String(f.q || '').toLowerCase().replace(/[$,]/g, '').split(/\s+/).filter(Boolean);
+    return (entries || []).filter(function (e) {
+      if (f.type && e.type !== f.type) return false;
+      if (f.cat && e.cat !== f.cat) return false;
+      if (f.tag && (!e.tags || e.tags.indexOf(f.tag) < 0)) return false;
+      if (f.from && e.date < f.from) return false;
+      if (f.to && e.date > f.to) return false;
+      if (!words.length) return true;
+      var hay = [e.note || '', e.cat, (e.tags || []).map(function (t) { return '#' + t; }).join(' '), (+e.amount).toFixed(2)].join(' ').toLowerCase();
+      return words.every(function (w) { return hay.indexOf(w) >= 0; });
+    });
+  }
+  function filterActive(f) { return !!f && !!(String(f.q || '').trim() || f.type || f.cat || f.tag || f.from || f.to); }
   function groupByDay(entries) {
     var sorted = sortNewest(entries); var groups = []; var cur = null;
     sorted.forEach(function (e) {
@@ -1905,7 +1971,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     isoDate: isoDate, parseISO: parseISO, isValidISO: isValidISO, monthKey: monthKey, monthStart: monthStart, monthEnd: monthEnd, addMonths: addMonths, addDays: addDays, daysBetween: daysBetween, monthsBetween: monthsBetween, weekStart: weekStart, monthsList: monthsList,
     uid: uid, normalizeEntry: normalizeEntry, normalizeDebt: normalizeDebt, normalizeState: normalizeState,
     entriesInMonth: entriesInMonth, entriesInRange: entriesInRange, byType: byType, sortNewest: sortNewest,
-    savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
+    savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, filterEntries: filterEntries, filterActive: filterActive, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
     debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
     retirementOdds: retirementOdds, quantile: quantile, mergeImport: mergeImport, entryFingerprint: entryFingerprint, BALANCE_KEYS: BALANCE_KEYS, insights: insights, projectionReturn: projectionReturn, fundNominalReturn: fundNominalReturn, IRA_LIMIT_2026: IRA_LIMIT_2026, seedStreamingRules: seedStreamingRules, addRuleWithHistory: addRuleWithHistory, DEFAULT_TAGS: DEFAULT_TAGS, normTag: normTag, normalizeTags: normalizeTags, suggestTags: suggestTags, tagBreakdown: tagBreakdown, knownTags: knownTags, hasAnyTag: hasAnyTag, trackedMonths: trackedMonths, paidMonths: paidMonths, isEstimate: isEstimate,
@@ -1935,7 +2001,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   // ---------- state ----------
   var state = null;
   var storageOK = true;
-  var ui = { view: 'overview', month: C.monthKey(today()), editingId: null, type: 'expense', cat: { expense: 'Groceries', income: 'Paycheck', k401: 'My contribution' }, preset: 'last6', from: '', to: '', catFilter: null, tables: {}, deleteArmed: null, debtEditing: null, debtArmed: null };
+  var ui = { view: 'overview', month: C.monthKey(today()), editingId: null, type: 'expense', cat: { expense: 'Groceries', income: 'Paycheck', k401: 'My contribution' }, preset: 'last6', from: '', to: '', catFilter: null, tables: {}, deleteArmed: null, debtEditing: null, debtArmed: null, ef: { q: '', type: '', cat: '', tag: '', scope: 'month' }, efLimit: 150 };
 
   function loadState() {
     var raw = null;
@@ -2154,9 +2220,9 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     else {
       var max = bd[0].total; var bars = h('div', { class: 'bars' });
       bd.forEach(function (row) {
-        bars.appendChild(h('div', { class: 'bar-row' }, [
+        bars.appendChild(h('button', { type: 'button', class: 'bar-row', 'aria-label': 'Show ' + row.cat + ' entries: ' + money(row.total) + ', ' + C.fmtPct(row.share), onclick: function () { drillDown({ type: 'expense', cat: row.cat }); } }, [
           h('span', { class: 'name', text: (ICONS[row.cat] ? ICONS[row.cat] + ' ' : '') + row.cat }),
-          h('div', { class: 'track', role: 'img', 'aria-label': row.cat + ' ' + money(row.total) + ', ' + C.fmtPct(row.share) }, [h('div', { class: 'fill', style: 'width:' + (max > 0 ? row.total / max * 100 : 0) + '%' })]),
+          h('span', { class: 'track' }, [h('span', { class: 'fill', style: 'display:block;width:' + (max > 0 ? row.total / max * 100 : 0) + '%' })]),
           h('span', { class: 'val num' }, [money(row.total), h('span', { class: 'pct', text: C.fmtPct(row.share) })])
         ]));
       });
@@ -2181,19 +2247,27 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
 
     // tags
     var tb = C.tagBreakdown(entries); $('tag-card').hidden = !tb.tags.length;
-    var tbox = $('tag-breakdown'); clear(tbox); if (tb.tags.length) tagBars(tbox, tb);
+    var tbox = $('tag-breakdown'); clear(tbox); if (tb.tags.length) tagBars(tbox, tb, null, function (tag) { drillDown({ type: 'expense', tag: tag }); });
 
     // 401k
     renderAccounts();
 
     // entries
     var list = $('entries'); clear(list);
-    $('btn-csv').disabled = entries.length === 0;
+    var shownList = renderEntryFilters(entries);
+    $('btn-csv').disabled = shownList.length === 0;
+    if (C.filterActive(ui.ef) || ui.ef.scope === 'all') {
+      if (!shownList.length) { list.appendChild(emptyState('🔎', 'No entries match', ui.ef.scope === 'all' ? 'Nothing in your history matches these filters.' : 'Nothing in ' + C.fmtMonthKey(ui.month, true) + ' matches. Try All time.', h('button', { class: 'btn sm', type: 'button', text: 'Clear filters', onclick: clearEntryFilters }))); return; }
+      entries = shownList;
+    }
     if (!entries.length) {
       list.appendChild(emptyState('🗒️', 'Nothing logged in ' + C.fmtMonthKey(ui.month, true), 'Add spending, income or a 401k contribution and it will show up here.', h('button', { class: 'btn primary sm', type: 'button', text: 'Add an entry', onclick: function () { showView('add'); } })));
       return;
     }
+    var budgetRows = ui.efLimit, more = 0;
     C.groupByDay(entries).forEach(function (g) {
+      if (budgetRows <= 0) { more += g.entries.length; return; }
+      budgetRows -= g.entries.length;
       var tot = [];
       if (g.expense > 0) tot.push('−' + money(g.expense));
       if (g.income > 0) tot.push('+' + money(g.income));
@@ -2201,7 +2275,57 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
       list.appendChild(h('div', { class: 'day-head' }, [h('span', { text: C.fmtDate(g.date, t0) }), h('span', { class: 'tot num', text: tot.join(' · ') })]));
       g.entries.forEach(function (e) { list.appendChild(entryRow(e)); });
     });
+    if (more > 0) list.appendChild(h('button', { type: 'button', class: 'btn sm ef-more', id: 'ef-more', text: 'Show more (' + more + ' older)', onclick: function () { ui.efLimit += 300; render(); } }));
   };
+
+  // ---------- entry filters ----------
+  function renderEntryFilters(monthEntries) {
+    var f = ui.ef, base = f.scope === 'all' ? state.entries : monthEntries;
+    $('ef-scope').options[0].textContent = C.fmtMonthKey(ui.month, true);
+    $('ef-scope').value = f.scope; $('ef-type').value = f.type;
+    if (document.activeElement !== $('ef-q')) $('ef-q').value = f.q;
+    var cats = {}, tags = {};
+    state.entries.forEach(function (e) { if (!f.type || e.type === f.type) cats[e.cat] = (cats[e.cat] || 0) + 1; (e.tags || []).forEach(function (t) { tags[t] = (tags[t] || 0) + 1; }); });
+    if (f.cat) cats[f.cat] = cats[f.cat] || 0; if (f.tag) tags[f.tag] = tags[f.tag] || 0;
+    fillSelect($('ef-cat'), 'All categories', Object.keys(cats).sort(), f.cat, function (c) { return (ICONS[c] ? ICONS[c] + ' ' : '') + c; });
+    fillSelect($('ef-tag'), 'All tags', Object.keys(tags).sort(function (a, b) { return tags[b] - tags[a] || (a < b ? -1 : 1); }), f.tag, function (t) { return '#' + t; });
+    var out = C.filterEntries(base, f), active = C.filterActive(f);
+    $('ef-sum').hidden = !active && f.scope !== 'all';
+    $('ef-clear').hidden = !active;
+    if (active || f.scope === 'all') {
+      var t = C.totals(out), parts = [out.length + (out.length === 1 ? ' entry' : ' entries')];
+      if (t.expense > 0) parts.push('−' + money(t.expense) + ' spent');
+      if (t.income > 0) parts.push('+' + money(t.income) + ' income');
+      if (t.k401 > 0) parts.push(money(t.k401) + ' 401k');
+      if (out.length && f.scope === 'all') { var first = out.reduce(function (a, e) { return e.date < a ? e.date : a; }, out[0].date); parts.push('since ' + C.fmtDateShort(first) + (first.slice(0, 4) !== today().slice(0, 4) ? ' ' + first.slice(0, 4) : '')); }
+      setText('ef-sum-text', parts.join(' · '));
+    }
+    return out;
+  }
+  function fillSelect(sel, allLabel, values, current, label) {
+    var key = allLabel + '|' + values.join('|');
+    if (sel.getAttribute('data-k') !== key) {
+      clear(sel); sel.appendChild(h('option', { value: '', text: allLabel }));
+      values.forEach(function (v) { sel.appendChild(h('option', { value: v, text: label(v) })); });
+      sel.setAttribute('data-k', key);
+    }
+    sel.value = current || '';
+  }
+  function setEntryFilter(patch) { Object.keys(patch).forEach(function (k) { ui.ef[k] = patch[k]; }); ui.efLimit = 150; ui.deleteArmed = null; render(); }
+  function clearEntryFilters() { setEntryFilter({ q: '', type: '', cat: '', tag: '' }); }
+  function drillDown(patch) {
+    setEntryFilter(Object.assign({ q: '', type: '', cat: '', tag: '' }, patch));
+    var card = $('entries-h'); if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (ui.ef.scope !== 'all') toast('Showing ' + (patch.cat || '#' + patch.tag) + ' for ' + C.fmtMonthKey(ui.month, true), { action: 'All time', onAction: function () { setEntryFilter({ scope: 'all' }); } });
+  }
+  var efTimer = null;
+  $('ef-q').addEventListener('input', function () { var v = this.value; clearTimeout(efTimer); efTimer = setTimeout(function () { setEntryFilter({ q: v }); }, 120); });
+  $('ef-q').addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && this.value) { ev.preventDefault(); this.value = ''; setEntryFilter({ q: '' }); } });
+  $('ef-scope').addEventListener('change', function () { setEntryFilter({ scope: this.value === 'all' ? 'all' : 'month' }); });
+  $('ef-type').addEventListener('change', function () { setEntryFilter({ type: this.value, cat: '' }); });
+  $('ef-cat').addEventListener('change', function () { setEntryFilter({ cat: this.value }); });
+  $('ef-tag').addEventListener('change', function () { setEntryFilter({ tag: this.value }); });
+  $('ef-clear').addEventListener('click', function () { clearEntryFilters(); $('ef-q').focus(); });
 
   function entryRow(e) {
     var sign = e.type === 'income' ? '+' : e.type === 'expense' ? '−' : '';
@@ -2268,7 +2392,45 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     if (!state.debts.length) box.appendChild(h('div', { class: 'xs muted', text: 'No debts.' }));
     state.debts.forEach(function (d) { box.appendChild(h('div', { class: 'acct-debt' }, [h('span', { class: 'dn', text: d.name }), h('span', { class: 'dv', text: '−' + money(d.balance) })])); });
     acctTotals(acctValues());
+    renderNetWorth();
   }
+  var NW_COLORS = { k401Balance: '#0b7fd1', rothBalance: '#6a5ae0', stockBalance: '#0f9d6e', brokerageBalance: '#1b9bd3', hsaBalance: '#d98a00', otherInvestments: '#8a94a6', savingsBalance: '#19b5a6' };
+  var NW_NAMES = { k401Balance: '401k', rothBalance: 'Roth IRA', stockBalance: 'Company stock', brokerageBalance: 'Brokerage', hsaBalance: 'HSA', otherInvestments: 'Other investments', savingsBalance: 'Checking & savings' };
+  function netWorthParts() {
+    var assets = ACCT.map(function (a) { return { key: a[0], name: a[0] === 'k401Balance' ? (state.paycheck.k401Type === 'roth' ? 'Roth 401k' : '401k') : NW_NAMES[a[0]], value: C.round2(state[a[0]] || 0), date: acctDate(a[0]), cash: a[0] === 'savingsBalance' }; }).filter(function (x) { return x.value > 0; });
+    var total = assets.reduce(function (n, x) { return n + C.toCents(x.value); }, 0);
+    var debts = state.debts.filter(function (d) { return d.balance > 0; }).map(function (d) { return { name: d.name, value: C.round2(d.balance), rate: d.rate }; });
+    var debt = C.totalDebt(state.debts);
+    return { assets: assets, total: C.fromCents(total), debts: debts, debt: debt, net: C.round2(C.fromCents(total) - debt) };
+  }
+  function renderNetWorth() {
+    var p = netWorthParts(), t0 = today();
+    var hero = $('nw-hero'); hero.textContent = money(p.net, { whole: true }); hero.className = 'hero num' + (p.net < 0 ? ' danger-text' : '');
+    var dates = p.assets.map(function (a) { return a.date; }).filter(Boolean).sort(); var newest = dates[dates.length - 1], oldest = dates[0];
+    setText('nw-sub', !p.assets.length ? 'Add your balances to see what you own.' : money(p.total, { whole: true }) + ' in assets − ' + money(p.debt, { whole: true }) + ' in debt' + (newest ? ' · balances as of ' + C.fmtDateShort(newest) + (oldest !== newest ? ' (oldest ' + C.fmtDateShort(oldest) + ')' : '') : ''));
+    var bar = $('nw-bar'); clear(bar); var rows = $('nw-rows'); clear(rows);
+    var scale = Math.max(p.total, 1);
+    p.assets.forEach(function (a) { bar.appendChild(h('span', { class: 'seg', style: 'flex:' + (a.value / scale) + ' 1 0;background:' + NW_COLORS[a.key], title: a.name + ' ' + money(a.value) })); });
+    if (p.debt > 0 && p.total > 0) bar.appendChild(h('span', { class: 'seg debt', style: 'flex:' + Math.min(1, p.debt / scale) + ' 1 0', title: 'Debt ' + money(p.debt) }));
+    bar.hidden = !p.assets.length;
+    bar.setAttribute('aria-label', p.assets.map(function (a) { return a.name + ' ' + C.fmtPct(a.value / scale); }).join(', ') + (p.debt > 0 ? '; debt equal to ' + C.fmtPct(p.debt / scale) + ' of assets' : ''));
+    p.assets.forEach(function (a) {
+      rows.appendChild(h('div', { class: 'nw-row' }, [h('span', { class: 'dot', style: 'background:' + NW_COLORS[a.key], 'aria-hidden': 'true' }), h('span', { class: 'nm' }, [a.name, a.date ? h('span', { class: 'ad', text: C.fmtDate(a.date, t0) }) : null]), h('span', { class: 'v num', text: money(a.value) }), h('span', { class: 'pc num', text: C.fmtPct(a.value / scale) })]));
+    });
+    if (p.debts.length) {
+      rows.appendChild(h('div', { class: 'nw-row head' }, [h('span'), h('span', { text: 'Debts' }), h('span', { class: 'num', text: '−' + money(p.debt) }), h('span')]));
+      p.debts.forEach(function (d) { rows.appendChild(h('div', { class: 'nw-row debt' }, [h('span', { class: 'dot', style: 'background:var(--danger)', 'aria-hidden': 'true' }), h('span', { class: 'nm' }, [d.name, d.rate > 0 ? h('span', { class: 'ad', text: C.fmtPct(d.rate / 100) + ' APR' }) : null]), h('span', { class: 'v num', text: '−' + money(d.value) }), h('span', { class: 'pc num', text: p.total > 0 ? C.fmtPct(d.value / scale) : '' })])); });
+    }
+    var cashPart = p.assets.filter(function (a) { return a.cash; })[0], cash = cashPart ? cashPart.value : 0, inv = C.round2(p.total - cash);
+    var foot = $('nw-foot'); clear(foot);
+    foot.appendChild(h('span', { text: 'Invested ' + money(inv, { whole: true }) + ' · Cash ' + money(cash, { whole: true }) + (p.debt > 0 ? ' · Debt ' + money(p.debt, { whole: true }) : '') }));
+    foot.appendChild(h('button', { type: 'button', class: 'link-btn xs', text: p.debts.length ? 'Edit debts' : 'Add a debt', onclick: function () { showView('retirement'); } }));
+  }
+  function openProfile() { renderAccounts(); var d = $('profile-dialog'); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); $(ACCT[0][1]).focus(); }
+  function closeProfile() { var d = $('profile-dialog'); if (d.close) d.close(); else d.removeAttribute('open'); }
+  $('btn-profile').addEventListener('click', openProfile);
+  $('nw-edit').addEventListener('click', openProfile);
+  $('profile-close').addEventListener('click', closeProfile);
   function saveBalances() {
     var v = acctValues(), changed = [];
     for (var i = 0; i < ACCT.length; i++) { var k = ACCT[i][0]; if (!isFinite(v[k]) || v[k] < 0) { toast('Enter a balance of 0 or more.'); $(ACCT[i][1]).focus(); return; } if (C.round2(v[k]) !== (state[k] || 0)) changed.push(k); }
@@ -2280,7 +2442,7 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     toast(changed.length === 1 && changed[0] === 'k401Balance' ? '401k balance updated to ' + money(state.k401Balance) : 'Saved ' + changed.length + (changed.length === 1 ? ' balance' : ' balances'), { action: 'Undo', onAction: function () { ACCT.forEach(function (a, i) { state[a[0]] = prev.a[i]; }); state.balanceDates = prev.d || {}; state.k401UpdatedAt = prev.k; commit(); } });
   }
   ACCT.forEach(function (a) { $(a[1]).addEventListener('input', function () { acctTotals(acctValues()); }); $(a[1]).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveBalances(); } }); });
-  $('acct-debts-link').addEventListener('click', function () { showView('retirement'); });
+  $('acct-debts-link').addEventListener('click', function () { closeProfile(); showView('retirement'); });
   function saveK401Balance(v, silent) {
     var n = Number(v);
     if (!isFinite(n) || n < 0) { toast('Enter a balance of 0 or more.'); return false; }
@@ -2290,7 +2452,8 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
   }
   $('k401-save').addEventListener('click', saveBalances);
   $('btn-csv').addEventListener('click', function () {
-    var entries = C.entriesInMonth(state.entries, ui.month);
+    var monthE = C.entriesInMonth(state.entries, ui.month);
+    var entries = C.filterActive(ui.ef) || ui.ef.scope === 'all' ? C.filterEntries(ui.ef.scope === 'all' ? state.entries : monthE, ui.ef) : monthE;
     var csv = C.toCSV(entries);
     copyText(csv).then(function (ok) { toast(ok ? 'Copied ' + entries.length + ' rows as CSV' : 'Could not copy. Your browser blocked clipboard access.'); });
   });
@@ -2325,12 +2488,19 @@ details:not(.card) > summary::-webkit-details-marker { display: none; }
     $(o.input).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addNew(); } });
     return { render: render };
   }
-  function tagBars(box, tb, color) {
+  function tagBars(box, tb, color, onPick) {
     var max = tb.tags.length ? tb.tags[0].total : 0, bars = h('div', { class: 'bars' });
     tb.tags.forEach(function (row) {
-      bars.appendChild(h('div', { class: 'bar-row', title: '#' + row.tag + ': ' + money(row.total) }, [
+      var w = 'width:' + (max > 0 ? row.total / max * 100 : 0) + '%' + (color ? ';background:' + color : '');
+      bars.appendChild(onPick
+        ? h('button', { type: 'button', class: 'bar-row', 'aria-label': 'Show entries tagged ' + row.tag + ': ' + money(row.total) + ', ' + C.fmtPct(row.share) + ' of spending', onclick: function () { onPick(row.tag); } }, [
+          h('span', { class: 'name num', text: '#' + row.tag }),
+          h('span', { class: 'track' }, [h('span', { class: 'fill', style: 'display:block;' + w })]),
+          h('span', { class: 'val num' }, [money(row.total), h('span', { class: 'pct', text: C.fmtPct(row.share) })])
+        ])
+        : h('div', { class: 'bar-row', title: '#' + row.tag + ': ' + money(row.total) }, [
         h('span', { class: 'name num', text: '#' + row.tag }),
-        h('div', { class: 'track', role: 'img', 'aria-label': row.tag + ' ' + money(row.total) + ', ' + C.fmtPct(row.share) + ' of spending' }, [h('div', { class: 'fill', style: 'width:' + (max > 0 ? row.total / max * 100 : 0) + '%' + (color ? ';background:' + color : '') })]),
+        h('div', { class: 'track', role: 'img', 'aria-label': row.tag + ' ' + money(row.total) + ', ' + C.fmtPct(row.share) + ' of spending' }, [h('div', { class: 'fill', style: w })]),
         h('span', { class: 'val num' }, [money(row.total), h('span', { class: 'pct', text: C.fmtPct(row.share) })])
       ]));
     });
