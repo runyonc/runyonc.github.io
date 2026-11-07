@@ -245,6 +245,86 @@ test('negative contributions and zero withdrawal rate do not crash', () => {
   assert.strictEqual(r.target, Infinity); assert.strictEqual(r.monthsToTarget, null);
 });
 
+
+console.log('debt interest options');
+test('compounding options change the monthly rate', () => {
+  close(C.monthlyDebtRate({ rate: 12, compounding: 'monthly' }), 0.01);
+  assert.ok(C.monthlyDebtRate({ rate: 12, compounding: 'daily' }) > 0.01 && C.monthlyDebtRate({ rate: 12, compounding: 'daily' }) < 0.0101);
+  assert.strictEqual(C.monthlyDebtRate({ rate: 12, compounding: 'none' }), 0);
+  assert.strictEqual(C.normalizeDebt({ compounding: 'weird' }).compounding, 'monthly');
+  assert.strictEqual(C.normalizeDebt({ compounding: 'daily' }).compounding, 'daily');
+});
+test('no-interest debt pays off with zero interest regardless of APR', () => {
+  const p = C.debtPayoff({ balance: 1200, rate: 29.99, payment: 100, compounding: 'none' });
+  assert.strictEqual(p.months, 12); assert.strictEqual(p.interest, 0);
+});
+test('simple interest charges on the original balance only', () => {
+  // $1200 at 12% simple: $12/month flat. Payment 112 -> principal 100/mo -> 12 months, interest 144.
+  const p = C.debtPayoff({ balance: 1200, rate: 12, payment: 112, compounding: 'simple' });
+  assert.strictEqual(p.months, 12); assert.strictEqual(p.interest, 144);
+  const c = C.debtPayoff({ balance: 1200, rate: 12, payment: 112, compounding: 'monthly' });
+  assert.ok(c.interest < p.interest, 'compound on a shrinking balance costs less than flat simple interest');
+});
+test('daily compounding costs a little more than monthly', () => {
+  const m = C.debtPayoff({ balance: 5000, rate: 24, payment: 250, compounding: 'monthly' });
+  const d = C.debtPayoff({ balance: 5000, rate: 24, payment: 250, compounding: 'daily' });
+  assert.ok(d.interest > m.interest && d.interest < m.interest * 1.03, `${d.interest} vs ${m.interest}`);
+});
+test('projection honours per-debt compounding', () => {
+  const noInt = C.retirementCalc(Object.assign({}, base, { returnRate: 0, annualSpending: 480, monthlyContribution: 500, debts: [{ name: 'Promo', balance: 1000, rate: 99, payment: 500, compounding: 'none' }] }));
+  assert.strictEqual(noInt.monthsToTarget, 13, 'same as the zero-rate case');
+  assert.strictEqual(noInt.debts[0].compounding, 'none');
+});
+
+console.log('funds & forecast');
+test('embedded S&P 500 history is complete and has the expected long-run CAGR', () => {
+  const s = C.sp500Series();
+  assert.strictEqual(s.length, 98); assert.strictEqual(s[0].year, 1928); assert.strictEqual(s[97].year, 2025);
+  const st = C.seriesStats(s);
+  assert.ok(st.cagr > 9.5 && st.cagr < 10.5, 'cagr ' + st.cagr);
+  assert.strictEqual(st.best.year, 1954); assert.strictEqual(st.worst.year, 1931);
+  assert.ok(st.positiveShare > 0.7 && st.positiveShare < 0.76);
+});
+test('seriesStats on a tiny hand-computed series', () => {
+  const st = C.seriesStats([{ year: 1, r: 10 }, { year: 2, r: -10 }]);
+  close(st.cagr, (Math.sqrt(1.1 * 0.9) - 1) * 100); close(st.mean, 0); close(st.stdev, Math.sqrt(200)); assert.strictEqual(st.growth10k, 9900);
+  assert.strictEqual(C.seriesStats([]).years, 0);
+});
+test('fund series and long-run basis splice actual years over the S&P proxy', () => {
+  const fx = C.fundSeries('FXAIX'); assert.strictEqual(fx[0].year, 2012); assert.strictEqual(fx[fx.length - 1].year, 2025); assert.strictEqual(fx[0].r, 15.99);
+  const lf = C.fundSeries('LFIKX'); assert.strictEqual(lf[0].year, 2016); assert.strictEqual(lf.length, 10); assert.strictEqual(lf[6].r, -15.44);
+  const bfx = C.fundBasisSeries('FXAIX'); assert.strictEqual(bfx.length, 98);
+  const y2011 = bfx.find(p => p.year === 2011); assert.strictEqual(y2011.actual, false); close(y2011.r, 2.10 - 0.015, 0.01);
+  const y2012 = bfx.find(p => p.year === 2012); assert.strictEqual(y2012.actual, true); assert.strictEqual(y2012.r, 15.99);
+  const blf = C.fundBasisSeries('LFIKX'); const y2015 = blf.find(p => p.year === 2015); close(y2015.r, 1.38 * 0.85 - 0.40, 0.01);
+  assert.ok(C.seriesStats(blf).cagr < C.seriesStats(bfx).cagr, 'lower beta and higher fee give a lower long-run CAGR');
+  assert.deepStrictEqual(C.fundSeries('custom'), []); assert.deepStrictEqual(C.fundBasisSeries('nope'), []);
+});
+test('realRate uses the Fisher relation', () => { close(C.realRate(10, 3), (1.1 / 1.03 - 1) * 100); close(C.realRate(3, 3), 0); });
+test('deterministic forecast: 0% return is balance plus contributions', () => {
+  const f = C.forecastBalance({ balance: 1000, monthlyContribution: 100, years: 3, annualReturnPct: 0 });
+  assert.deepStrictEqual(f.map(p => p.balance), [1000, 2200, 3400, 4600]);
+  const g = C.forecastBalance({ balance: 1000, monthlyContribution: 0, years: 1, annualReturnPct: 6 });
+  close(g[1].balance, 1060, 0.01);
+});
+test('bootstrap forecast is deterministic, ordered, and collapses to the exact path for a constant series', () => {
+  const a = C.bootstrapForecast({ balance: 10000, monthlyContribution: 500, years: 10, returns: C.SP500.returns, runs: 300, seed: 7 });
+  const b = C.bootstrapForecast({ balance: 10000, monthlyContribution: 500, years: 10, returns: C.SP500.returns, runs: 300, seed: 7 });
+  assert.deepStrictEqual(a, b);
+  assert.strictEqual(a.length, 11); assert.strictEqual(a[0].p50, 10000);
+  a.forEach(p => assert.ok(p.p10 <= p.p50 && p.p50 <= p.p90));
+  assert.ok(a[10].p90 > a[10].p10);
+  const c = C.bootstrapForecast({ balance: 1000, monthlyContribution: 0, years: 2, returns: [10], runs: 5, seed: 1 });
+  close(c[2].p50, 1210, 0.01); close(c[2].p10, 1210, 0.01);
+  assert.deepStrictEqual(C.bootstrapForecast({ balance: 1, years: 2, returns: [] }), []);
+});
+test('normalizeState carries fund choices', () => {
+  const s = C.normalizeState({ k401Fund: 'LFIKX', k401ReturnOverride: '8.5', inflation: 2 }, TODAY);
+  assert.strictEqual(s.k401Fund, 'LFIKX'); assert.strictEqual(s.k401ReturnOverride, 8.5); assert.strictEqual(s.inflation, 2);
+  const d = C.normalizeState({ k401Fund: 'XXXX' }, TODAY); assert.strictEqual(d.k401Fund, 'FXAIX'); assert.strictEqual(d.k401ReturnOverride, null); assert.strictEqual(d.inflation, 3);
+  assert.strictEqual(C.normalizeState({ k401Fund: 'custom' }, TODAY).k401Fund, 'custom');
+});
+
 console.log('formatting');
 test('money formats', () => {
   assert.strictEqual(C.fmtMoney(1234.5), '$1,234.50');

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eef2f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#070a12" media="(prefers-color-scheme: dark)">
 <title>Money</title>
 <meta name="description" content="A personal finance tracker: spending, income, 401k, charts and a retirement target. Everything stays on your device.">
 <style>
@@ -14,38 +14,45 @@
    ============================================================ */
 :root {
   color-scheme: light;
-  --bg: #f4f4f1;
-  --surface: #fcfcfb;
-  --surface-2: #efeeea;
-  --surface-3: #e4e3dd;
-  --border: rgba(11, 11, 11, 0.10);
-  --border-strong: rgba(11, 11, 11, 0.22);
-  --text: #0b0b0b;
-  --text-2: #52514e;
-  --muted: #898781;
-  --accent: #2a78d6;
+  --bg: #eef2f8;
+  --bg-glow-1: rgba(11, 127, 209, 0.10);
+  --bg-glow-2: rgba(106, 90, 224, 0.10);
+  --bg-grid: rgba(20, 60, 120, 0.06);
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-solid: #ffffff;
+  --surface-2: #e9eff8;
+  --surface-3: #d9e3f1;
+  --border: rgba(20, 60, 120, 0.13);
+  --border-strong: rgba(20, 60, 120, 0.30);
+  --text: #0b1526;
+  --text-2: #45546f;
+  --muted: #6f7e9c;
+  --accent: #0b7fd1;
+  --accent-2: #6a5ae0;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(42, 120, 214, 0.12);
-  --income: #1baf7a;
-  --income-text: #0e7a55;
-  --spend: #eb6834;
-  --spend-text: #0b0b0b;
-  --k401: #6250d6;
-  --k401-text: #4f3fc4;
-  --k401-match: #eda100;
-  --good: #0ca30c;
-  --warn: #f0932b;
-  --danger: #d03b3b;
-  --danger-text: #b92f2f;
-  --danger-soft: rgba(208, 59, 59, 0.12);
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 4px 16px rgba(11, 11, 11, 0.05);
-  --shadow-lg: 0 12px 40px rgba(11, 11, 11, 0.18);
+  --accent-soft: rgba(11, 127, 209, 0.12);
+  --chart-accent: #0b7fd1;
+  --glow: 0 0 18px rgba(11, 127, 209, 0.28);
+  --income: #0f9d6e;
+  --income-text: #0a7a55;
+  --spend: #e8561f;
+  --spend-text: #0b1526;
+  --k401: #6a5ae0;
+  --k401-text: #5443c9;
+  --k401-match: #c98500;
+  --good: #0f9d6e;
+  --warn: #e8930c;
+  --danger: #d93652;
+  --danger-text: #b8233d;
+  --danger-soft: rgba(217, 54, 82, 0.12);
+  --grid: #dfe6f0;
+  --axis: #c3cddc;
+  --shadow: 0 1px 2px rgba(11, 21, 38, 0.05), 0 8px 24px rgba(11, 21, 38, 0.06);
+  --shadow-lg: 0 16px 48px rgba(11, 21, 38, 0.18);
 
-  --radius: 14px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-xs: 5px;
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -65,7 +72,8 @@
   --fs-hero: 40px;
 
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --tabbar-h: 60px;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, "DejaVu Sans Mono", ui-monospace, monospace;
+  --tabbar-h: 62px;
   --max-w: 600px;
   --dur: 160ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
@@ -73,66 +81,80 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-2: #242422;
-    --surface-3: #2f2f2c;
-    --border: rgba(255, 255, 255, 0.10);
-    --border-strong: rgba(255, 255, 255, 0.24);
-    --text: #f0efec;
-    --text-2: #c3c2b7;
-    --muted: #8f8d86;
-    --accent: #3987e5;
-    --accent-ink: #ffffff;
-    --accent-soft: rgba(57, 135, 229, 0.18);
-    --income: #199e70;
-    --income-text: #4ad39f;
-    --spend: #d95926;
-    --spend-text: #f0efec;
-    --k401: #9085e9;
-    --k401-text: #aba3f0;
-    --k401-match: #c98500;
-    --good: #0ca30c;
-    --warn: #f0932b;
-    --danger: #e35050;
-    --danger-text: #f07070;
-    --danger-soft: rgba(227, 80, 80, 0.16);
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+    --bg: #070a12;
+    --bg-glow-1: rgba(56, 217, 255, 0.13);
+    --bg-glow-2: rgba(139, 124, 232, 0.14);
+    --bg-grid: rgba(90, 150, 255, 0.055);
+    --surface: rgba(15, 22, 38, 0.80);
+    --surface-solid: #0f1626;
+    --surface-2: rgba(70, 100, 160, 0.20);
+    --surface-3: rgba(90, 125, 190, 0.30);
+    --border: rgba(120, 170, 255, 0.16);
+    --border-strong: rgba(120, 170, 255, 0.36);
+    --text: #e9f0ff;
+    --text-2: #aab8d6;
+    --muted: #7a8aad;
+    --accent: #38d9ff;
+    --accent-2: #8b7ce8;
+    --accent-ink: #041019;
+    --accent-soft: rgba(56, 217, 255, 0.14);
+    --chart-accent: #1b9bd3;
+    --glow: 0 0 22px rgba(56, 217, 255, 0.30);
+    --income: #1aa872;
+    --income-text: #49e3a6;
+    --spend: #ec6230;
+    --spend-text: #e9f0ff;
+    --k401: #8b7ce8;
+    --k401-text: #b3a8ff;
+    --k401-match: #c28700;
+    --good: #49e3a6;
+    --warn: #f5b23a;
+    --danger: #ff4d6d;
+    --danger-text: #ff8099;
+    --danger-soft: rgba(255, 77, 109, 0.16);
+    --grid: #1b2640;
+    --axis: #2c3a5c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(120, 170, 255, 0.12);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-2: #242422;
-  --surface-3: #2f2f2c;
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.24);
-  --text: #f0efec;
-  --text-2: #c3c2b7;
-  --muted: #8f8d86;
-  --accent: #3987e5;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(57, 135, 229, 0.18);
-  --income: #199e70;
-  --income-text: #4ad39f;
-  --spend: #d95926;
-  --spend-text: #f0efec;
-  --k401: #9085e9;
-  --k401-text: #aba3f0;
-  --k401-match: #c98500;
-  --good: #0ca30c;
-  --warn: #f0932b;
-  --danger: #e35050;
-  --danger-text: #f07070;
-  --danger-soft: rgba(227, 80, 80, 0.16);
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --bg: #070a12;
+  --bg-glow-1: rgba(56, 217, 255, 0.13);
+  --bg-glow-2: rgba(139, 124, 232, 0.14);
+  --bg-grid: rgba(90, 150, 255, 0.055);
+  --surface: rgba(15, 22, 38, 0.80);
+  --surface-solid: #0f1626;
+  --surface-2: rgba(70, 100, 160, 0.20);
+  --surface-3: rgba(90, 125, 190, 0.30);
+  --border: rgba(120, 170, 255, 0.16);
+  --border-strong: rgba(120, 170, 255, 0.36);
+  --text: #e9f0ff;
+  --text-2: #aab8d6;
+  --muted: #7a8aad;
+  --accent: #38d9ff;
+  --accent-2: #8b7ce8;
+  --accent-ink: #041019;
+  --accent-soft: rgba(56, 217, 255, 0.14);
+  --chart-accent: #1b9bd3;
+  --glow: 0 0 22px rgba(56, 217, 255, 0.30);
+  --income: #1aa872;
+  --income-text: #49e3a6;
+  --spend: #ec6230;
+  --spend-text: #e9f0ff;
+  --k401: #8b7ce8;
+  --k401-text: #b3a8ff;
+  --k401-match: #c28700;
+  --good: #49e3a6;
+  --warn: #f5b23a;
+  --danger: #ff4d6d;
+  --danger-text: #ff8099;
+  --danger-soft: rgba(255, 77, 109, 0.16);
+  --grid: #1b2640;
+  --axis: #2c3a5c;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(120, 170, 255, 0.12);
 }
 
 /* ============================================================
@@ -467,8 +489,11 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .data-table th:first-child, .data-table td:first-child { text-align: left; }
 .data-table th { color: var(--muted); font-weight: 600; }
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-#debt-table th, #debt-table td { white-space: normal; padding: 6px 4px; }
-#debt-table th:first-child, #debt-table td:first-child { overflow-wrap: anywhere; }
+#debt-table { font-size: 11px; width: 100%; }
+#debt-table th, #debt-table td { white-space: nowrap; padding: 6px 3px; }
+#debt-table th:first-child, #debt-table td:first-child { padding-left: 0; }
+#debt-table th:last-child, #debt-table td:last-child { padding-right: 0; }
+#debt-table tbody th:first-child { white-space: normal; overflow-wrap: normal; min-width: 52px; max-width: 96px; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .table-toggle { font-size: var(--fs-xs); color: var(--accent); font-weight: 600; min-height: 32px; padding: 0 6px; border-radius: 6px; }
 .table-toggle:hover { background: var(--accent-soft); }
 
@@ -495,6 +520,110 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 .override-row .field { flex: 1; }
 .check { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--text-2); min-height: 32px; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ============================================================
+   Futuristic skin
+   ============================================================ */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 520px at 8% -8%, var(--bg-glow-1), transparent 60%),
+    radial-gradient(760px 460px at 100% 18%, var(--bg-glow-2), transparent 60%),
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: auto, auto, 32px 32px, 32px 32px;
+  background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+}
+.num, .tile .value, .hero, .amount-input, .entry .amt, .bar-row .val, .data-table td, .chart .axis-text, .day-head .tot, .tooltip .v, .debt-row .meta { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.tile .value { font-weight: 600; }
+.hero { font-weight: 600; }
+h1 { font-size: 17px; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; }
+.app-title::before { content: "//"; color: var(--accent); font-family: var(--font-mono); font-weight: 700; letter-spacing: 0; margin-right: 2px; }
+.app-title { align-items: center; gap: var(--sp-2); }
+.app-header { background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); border-bottom: 1px solid var(--border); }
+.app-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.6; }
+.app-header { position: sticky; }
+
+.card, .sheet { position: relative; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); }
+.card::before, .card::after { content: ""; position: absolute; width: 14px; height: 14px; border: 0 solid var(--accent); opacity: 0.7; pointer-events: none; }
+.card::before { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: var(--radius); }
+.card::after { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: var(--radius); }
+.card.flush { overflow: visible; }
+.card.flush > #entries { overflow: hidden; border-radius: 0 0 var(--radius) var(--radius); }
+
+.tile .label, .field > label, .field > .label, .day-head, .section-title h2, .settings-row .lbl, .legend, .amount-field .label, .seg button, .tab { text-transform: uppercase; letter-spacing: 0.08em; }
+.data-table th { letter-spacing: 0.02em; }
+.tile .label, .field > label, .field > .label, .amount-field .label { font-size: 11px; }
+.card-head h2, .sheet h2, summary, .month-nav h2, .plain-line { letter-spacing: 0.01em; }
+.tile { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative; overflow: hidden; }
+.tile::after { content: ""; position: absolute; left: 0; top: 0; width: 3px; height: 100%; background: var(--border-strong); opacity: 0.6; }
+.tile:has(.dot.income)::after { background: var(--income); opacity: 1; }
+.tile:has(.dot.expense)::after { background: var(--spend); opacity: 1; }
+.tile:has(.dot.k401)::after { background: var(--k401); opacity: 1; }
+.dot { box-shadow: 0 0 8px currentColor; }
+.dot.income { color: var(--income); } .dot.expense { color: var(--spend); } .dot.k401 { color: var(--k401); } .dot.accent { color: var(--accent); }
+
+.btn { border: 1px solid var(--border); background: var(--surface-2); }
+.btn.primary { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-2))); color: var(--accent-ink); border-color: transparent; box-shadow: var(--glow); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.danger.solid { box-shadow: 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); }
+.link-btn { text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-xs); }
+
+.input, select.input, textarea.input { background: color-mix(in srgb, var(--surface-solid) 55%, transparent); border: 1px solid var(--border-strong); box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+.input:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft), var(--glow); }
+.amount-input { border-bottom: 2px solid var(--border-strong); background: transparent; box-shadow: none; }
+.amount-input:focus-visible { box-shadow: 0 12px 24px -16px var(--accent); }
+.amount-wrap .currency { font-family: var(--font-mono); color: var(--accent); }
+
+.seg { background: color-mix(in srgb, var(--surface-solid) 55%, transparent); border: 1px solid var(--border); }
+.seg button { font-size: var(--fs-xs); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip { border: 1px solid var(--border); background: color-mix(in srgb, var(--surface-solid) 50%, transparent); }
+.chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent); }
+
+.meter { background: color-mix(in srgb, var(--surface-solid) 60%, transparent); border: 1px solid var(--border); height: 12px; }
+.meter .fill { background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+.meter.warn .fill { background: linear-gradient(90deg, var(--warn), #ff8a3d); box-shadow: 0 0 12px color-mix(in srgb, var(--warn) 55%, transparent); }
+.meter.over .fill { background: linear-gradient(90deg, var(--danger), #ff2d55); box-shadow: 0 0 12px color-mix(in srgb, var(--danger) 55%, transparent); }
+.meter.good .fill { background: linear-gradient(90deg, var(--income), var(--accent)); box-shadow: 0 0 12px color-mix(in srgb, var(--income) 55%, transparent); }
+.bar-row .track { background: color-mix(in srgb, var(--surface-solid) 60%, transparent); border: 1px solid var(--border); height: 12px; border-radius: 3px; }
+.bar-row .track .fill { background: linear-gradient(90deg, var(--chart-accent), var(--accent)); border-radius: 0 3px 3px 0; }
+
+.tabbar { background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); }
+.tabbar::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); }
+.tab { position: relative; font-size: 10px; }
+.tab[aria-selected="true"]::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 36px; height: 2px; background: var(--accent); box-shadow: var(--glow); border-radius: 0 0 2px 2px; }
+.tab[aria-selected="true"] svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+
+.entry .cat-icon { background: color-mix(in srgb, var(--surface-solid) 60%, transparent); border: 1px solid var(--border); }
+.entry .cat-icon.income { border-color: color-mix(in srgb, var(--income) 50%, transparent); }
+.entry .cat-icon.k401 { border-color: color-mix(in srgb, var(--k401) 50%, transparent); }
+.day-head { background: transparent; }
+.banner { border-left: 3px solid var(--accent); }
+.toast { background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg), var(--glow); }
+.toast button { color: var(--accent); }
+:root[data-theme="dark"] .toast button, :root:not([data-theme="light"]) .toast button, :root[data-theme="light"] .toast button { color: var(--accent); }
+dialog::backdrop { background: rgba(2, 6, 16, 0.6); backdrop-filter: blur(4px); }
+.sheet { background: var(--surface); }
+.tooltip { background: var(--surface-solid); border-color: var(--border-strong); }
+.chart .crosshair { stroke: var(--accent); opacity: 0.7; }
+.chart .label-text { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0; }
+.note-box { border: 1px dashed var(--border-strong); background: transparent; }
+details.card > summary { text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm); }
+.plain-line strong { color: var(--accent); font-family: var(--font-mono); font-weight: 600; }
+.empty .icon { filter: grayscale(0.2); }
+.scanline { position: relative; }
+.hud-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+.stat { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; min-width: 0; }
+.stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat .v { font-family: var(--font-mono); font-weight: 600; font-size: var(--fs-base); white-space: nowrap; }
+.stat .s { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 380px) { .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.chart .band { opacity: 0.14; }
+.chart .band-edge { fill: none; stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.8; }
+@media (forced-colors: active) { .card::before, .card::after { display: none; } }
 </style>
 </head>
 <body>
@@ -680,7 +809,11 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   <!-- ================= RETIREMENT ================= -->
   <section class="view" id="view-retirement" role="tabpanel" aria-labelledby="tab-retirement">
     <section class="card" aria-labelledby="ret-h">
-      <div class="card-head"><h2 id="ret-h">How much do I need?</h2></div>
+      <div class="card-head"><h2 id="ret-h">How much do I need?</h2><span class="hint" id="ret-years"></span></div>
+      <div class="form-grid" style="margin-bottom: var(--sp-3)">
+        <div class="field"><label for="r-age">Current age</label><input class="input num" id="r-age" type="number" inputmode="numeric" min="10" max="99" step="1"></div>
+        <div class="field"><label for="r-target-age">Target retirement age</label><input class="input num" id="r-target-age" type="number" inputmode="numeric" min="11" max="100" step="1"></div>
+      </div>
       <div class="tiles four">
         <div class="tile"><div class="label">Target number</div><div class="value num" id="rt-target">—</div><div class="sub" id="rt-target-sub"></div></div>
         <div class="tile"><div class="label">Net worth</div><div class="value num" id="rt-networth">—</div><div class="sub" id="rt-networth-sub"></div></div>
@@ -698,10 +831,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     </section>
 
     <details class="card" open>
-      <summary>You</summary>
+      <summary>Spending &amp; contributions</summary>
       <div class="form-grid">
-        <div class="field"><label for="r-age">Current age</label><input class="input num" id="r-age" type="number" inputmode="numeric" min="10" max="99" step="1"></div>
-        <div class="field"><label for="r-target-age">Retire at</label><input class="input num" id="r-target-age" type="number" inputmode="numeric" min="11" max="100" step="1"></div>
         <div class="field span2">
           <label for="r-spending">Annual spending in retirement</label>
           <div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="r-spending" type="number" inputmode="decimal" min="0" step="100"></div>
@@ -725,6 +856,29 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       </div>
     </details>
 
+    <details class="card" open id="k401-fund-card">
+      <summary>401k fund &amp; forecast</summary>
+      <div class="form-grid">
+        <div class="field span2"><label for="k-fund">401k fund</label><select class="input" id="k-fund">
+          <option value="FXAIX">FXAIX · Fidelity 500 Index Fund</option>
+          <option value="LFIKX">LFIKX · MFS Lifetime 2055 Fund (R6)</option>
+          <option value="custom">Custom return rate</option>
+        </select><span class="help" id="k-fund-desc"></span></div>
+        <div class="field"><label for="k-return">Expected return / yr</label><div class="input-wrap"><input class="input has-suffix num" id="k-return" type="number" inputmode="decimal" min="-50" max="50" step="0.1"><span class="suffix">%</span></div></div>
+        <div class="field"><label for="k-inflation">Inflation / yr</label><div class="input-wrap"><input class="input has-suffix num" id="k-inflation" type="number" inputmode="decimal" min="0" max="30" step="0.1"><span class="suffix">%</span></div></div>
+      </div>
+      <div class="row between" style="margin-top:4px"><span class="help" id="k-return-help"></span><button type="button" class="link-btn xs" id="k-return-reset">Use fund history</button></div>
+      <div class="stat-grid" id="k-facts" style="margin-top: var(--sp-3)"></div>
+      <p class="xs muted" id="k-basis" style="margin-top: var(--sp-2)"></p>
+      <div class="card-head" style="margin-top: var(--sp-4)"><h2 id="ch6-h">Annual returns on record</h2><button class="table-toggle" data-table="ch6" aria-expanded="false">Table</button></div>
+      <div class="chart" id="chart-fund-hist"></div>
+      <div class="card-head" style="margin-top: var(--sp-4)"><h2 id="ch7-h">401k forecast</h2><button class="table-toggle" data-table="ch7" aria-expanded="false">Table</button></div>
+      <div class="chart" id="chart-fund-forecast"></div>
+      <p class="small text-2" id="k-forecast-line" style="margin-top: var(--sp-3)"></p>
+      <div class="row wrap" style="margin-top: var(--sp-3)"><button type="button" class="btn sm" id="k-apply">Use in projection</button></div>
+      <p class="xs muted" style="margin-top: var(--sp-2)">Historical returns are stored in this file (S&amp;P 500 total returns 1928–2025 from NYU Stern; FXAIX and LFIKX calendar-year returns from Fidelity/Yahoo and MFS). The forecast resamples those years at random 1,000 times; past returns do not predict future ones.</p>
+    </details>
+
     <details class="card" open>
       <summary>Debts <span class="xs muted" id="debt-summary" style="font-weight:400;margin-left:auto;margin-right:8px"></span></summary>
       <div id="debt-list"></div>
@@ -733,7 +887,13 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         <div class="form-grid">
           <div class="field span2"><label for="d-name">Name</label><input class="input" id="d-name" type="text" maxlength="40" placeholder="e.g. Car loan" required></div>
           <div class="field"><label for="d-balance">Balance</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-balance" type="number" inputmode="decimal" min="0" step="0.01" required></div></div>
-          <div class="field"><label for="d-rate">Interest rate</label><div class="input-wrap"><input class="input has-suffix num" id="d-rate" type="number" inputmode="decimal" min="0" max="999" step="0.01" required><span class="suffix">%</span></div></div>
+          <div class="field"><label for="d-rate">Interest rate (APR)</label><div class="input-wrap"><input class="input has-suffix num" id="d-rate" type="number" inputmode="decimal" min="0" max="999" step="0.01" required><span class="suffix">%</span></div></div>
+          <div class="field span2"><label for="d-compound">Interest option</label><select class="input" id="d-compound">
+            <option value="monthly">Compounds monthly (most loans)</option>
+            <option value="daily">Compounds daily (credit cards)</option>
+            <option value="simple">Simple interest on the original balance</option>
+            <option value="none">No interest (0% promo / interest-free)</option>
+          </select><span class="help" id="d-compound-help">Monthly interest = balance × APR ÷ 12.</span></div>
           <div class="field span2"><label for="d-payment">Monthly payment</label><div class="input-wrap"><span class="prefix">$</span><input class="input has-prefix num" id="d-payment" type="number" inputmode="decimal" min="0" step="0.01" required></div><div class="error" id="d-error" role="alert"></div></div>
         </div>
         <div class="row"><button type="button" class="btn ghost" id="d-cancel">Cancel</button><button type="submit" class="btn primary grow" id="d-save">Save debt</button></div>
@@ -840,6 +1000,23 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     retirement: { age: 30, targetAge: 65, spendingOverride: null, withdrawalRate: 4, returnRate: 6, taxRate: 15, contributionOverride: null }
   };
   var MAX_MONTHS = 1200; // 100 years
+  var COMPOUNDING = ['monthly', 'daily', 'simple', 'none'];
+
+  // ---------- historical return data (percent, calendar years) ----------
+  // S&P 500 total return incl. dividends, 1928-2025. Source: Aswath Damodaran, NYU Stern, histretSP (updated Jan 2026).
+  var SP500 = { start: 1928, returns: [43.81, -8.30, -25.12, -43.84, -8.64, 49.98, -1.19, 46.74, 31.94, -35.34, 29.28, -1.10, -10.67, -12.77, 19.17, 25.06, 19.03, 35.82, -8.43, 5.20, 5.70, 18.30, 30.81, 23.68, 18.15, -1.21, 52.56, 32.60, 7.44, -10.46, 43.72, 12.06, 0.34, 26.64, -8.81, 22.61, 16.42, 12.40, -9.97, 23.80, 10.81, -8.24, 3.56, 14.22, 18.76, -14.31, -25.90, 37.00, 23.83, -6.98, 6.51, 18.52, 31.74, -4.70, 20.42, 22.34, 6.15, 31.24, 18.49, 5.81, 16.54, 31.48, -3.06, 30.23, 7.49, 9.97, 1.33, 37.20, 22.68, 33.10, 28.34, 20.89, -9.03, -11.85, -21.97, 28.36, 10.74, 4.83, 15.61, 5.48, -36.55, 25.94, 14.82, 2.10, 15.89, 32.15, 13.52, 1.38, 11.77, 21.61, -4.23, 31.21, 18.02, 28.47, -18.04, 26.06, 24.88, 17.78] };
+  var FUNDS = {
+    FXAIX: { ticker: 'FXAIX', name: 'Fidelity 500 Index Fund', expense: 0.015, beta: 1, start: 2012,
+      // Calendar-year total returns, Yahoo Finance / Morningstar annual return history (share class launched May 2011; fund dates to 1988).
+      returns: [15.99, 32.37, 13.66, 1.38, 11.97, 21.81, -4.40, 31.47, 18.40, 28.69, -18.13, 26.29, 25.00, 17.86],
+      desc: 'Tracks the S&P 500: 500 large US companies, 100% stocks. Expense ratio 0.015%.',
+      basisNote: 'Long-run basis: S&P 500 total returns 1928–2025 minus the 0.015% fee, with the fund\u2019s own returns for 2012–2025.' },
+    LFIKX: { ticker: 'LFIKX', name: 'MFS Lifetime 2055 Fund (R6)', expense: 0.40, beta: 0.85, start: 2016,
+      // Calendar-year total returns at NAV for class R6 (inception Aug 29, 2016), mfs.com fund page as of 12/31/2025.
+      returns: [9.15, 21.32, -7.85, 27.04, 13.44, 20.58, -15.44, 17.01, 13.33, 16.45],
+      desc: 'Target-date 2055 fund of MFS funds: about 95% stocks (62% US, 27% international), 5% bonds, 10% real estate & commodities. Net expense ratio 0.40%, beta 0.85 vs the S&P 500.',
+      basisNote: 'Long-run basis: the fund\u2019s own returns for 2016–2025; earlier years estimated as S&P 500 × beta 0.85 minus the 0.40% fee.' }
+  };
 
   // ---------- money ----------
   function toCents(x) { var n = Number(x); if (!isFinite(n)) return 0; return Math.round(n * 100 + (n < 0 ? -1e-7 : 1e-7)); } // nudge past binary half-rounding (1.005 -> 101)
@@ -886,7 +1063,16 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   function num(v, fallback) { var n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? fallback : n; }
   function normalizeDebt(d) {
     d = d || {};
-    return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))) };
+    return { id: typeof d.id === 'string' && d.id ? d.id : uid(), name: typeof d.name === 'string' ? d.name.slice(0, 40) : 'Debt', balance: Math.max(0, round2(num(d.balance, 0))), rate: Math.max(0, num(d.rate, 0)), payment: Math.max(0, round2(num(d.payment, 0))), compounding: COMPOUNDING.indexOf(d.compounding) >= 0 ? d.compounding : 'monthly' };
+  }
+  /** Effective interest charged per month, as a fraction of the balance (or of the original balance for simple interest). */
+  function monthlyDebtRate(debt) {
+    var apr = Math.max(0, Number(debt.rate) || 0) / 100;
+    switch (debt.compounding) {
+      case 'none': return 0;
+      case 'daily': return Math.pow(1 + apr / 365, 365 / 12) - 1;
+      default: return apr / 12; // 'monthly' and 'simple' both charge apr/12 per month; simple applies it to the original balance
+    }
   }
   function normalizeState(raw, today) {
     raw = (raw && typeof raw === 'object') ? raw : {};
@@ -902,6 +1088,9 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       savingsBalance: Math.max(0, round2(num(raw.savingsBalance, 0))),
       otherInvestments: Math.max(0, round2(num(raw.otherInvestments, 0))),
       debts: Array.isArray(raw.debts) ? raw.debts.map(normalizeDebt) : [],
+      k401Fund: FUNDS[raw.k401Fund] || raw.k401Fund === 'custom' ? raw.k401Fund : 'FXAIX',
+      k401ReturnOverride: raw.k401ReturnOverride === null || raw.k401ReturnOverride === undefined || raw.k401ReturnOverride === '' ? null : num(raw.k401ReturnOverride, 0),
+      inflation: Math.min(30, Math.max(0, num(raw.inflation, 3))),
       retirement: {
         age: Math.min(99, Math.max(10, Math.round(num(r.age, rd.age)))),
         targetAge: Math.min(100, Math.max(11, Math.round(num(r.targetAge, rd.targetAge)))),
@@ -912,7 +1101,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         contributionOverride: r.contributionOverride === null || r.contributionOverride === undefined || r.contributionOverride === '' ? null : round2(num(r.contributionOverride, 0))
       },
       entries: entries,
-      theme: ['system', 'light', 'dark'].indexOf(raw.theme) >= 0 ? raw.theme : 'system'
+      theme: ['system', 'light', 'dark'].indexOf(raw.theme) >= 0 ? raw.theme : 'dark'
     };
   }
 
@@ -1022,13 +1211,13 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 
   // ---------- debt ----------
   function debtPayoff(debt, startISO) {
-    var balance = Math.max(0, round2(debt.balance)), payment = Math.max(0, round2(debt.payment)), apr = Math.max(0, Number(debt.rate) || 0);
-    var r = apr / 100 / 12;
+    var balance = Math.max(0, round2(debt.balance)), payment = Math.max(0, round2(debt.payment));
+    var r = monthlyDebtRate(debt); var simple = debt.compounding === 'simple';
     if (balance <= 0) return { months: 0, interest: 0, totalPaid: 0, payoffDate: startISO || null, neverPaysOff: false };
     if (payment <= 0 || payment <= balance * r) return { months: Infinity, interest: Infinity, totalPaid: Infinity, payoffDate: null, neverPaysOff: true };
-    var b = toCents(balance), p = toCents(payment), interest = 0, paid = 0, months = 0;
+    var b = toCents(balance), b0 = b, p = toCents(payment), interest = 0, paid = 0, months = 0;
     while (b > 0 && months < MAX_MONTHS) {
-      var i = Math.round(b * r); interest += i; b += i;
+      var i = Math.round((simple ? b0 : b) * r); interest += i; b += i;
       var pay = Math.min(p, b); paid += pay; b -= pay; months++;
     }
     if (b > 0) return { months: Infinity, interest: Infinity, totalPaid: Infinity, payoffDate: null, neverPaysOff: true };
@@ -1045,7 +1234,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   /** Simulate month by month. Returns the net-worth path. */
   function simulate(assets0, debts, contribution, mr, months, target) {
     var assets = assets0; var contrib = contribution;
-    var ds = (debts || []).map(function (d) { return { b: Math.max(0, d.balance), r: Math.max(0, d.rate) / 100 / 12, p: Math.max(0, d.payment) }; });
+    var ds = (debts || []).map(function (d) { return { b: Math.max(0, d.balance), b0: Math.max(0, d.balance), r: monthlyDebtRate(d), simple: d.compounding === 'simple', p: Math.max(0, d.payment) }; });
     function debtSum() { var s = 0; for (var i = 0; i < ds.length; i++) s += ds[i].b; return s; }
     var path = [{ m: 0, nw: assets - debtSum(), assets: assets, debt: debtSum() }];
     var reached = (assets - debtSum()) >= target - 1e-6 ? 0 : null;
@@ -1053,7 +1242,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       assets = assets * (1 + mr) + contrib;
       for (var i = 0; i < ds.length; i++) {
         var d = ds[i]; if (d.b <= 0) continue;
-        d.b += d.b * d.r;
+        d.b += (d.simple ? d.b0 : d.b) * d.r;
         var pay = Math.min(d.p, d.b); d.b -= pay;
         if (d.b <= 0.005) { d.b = 0; assets += (d.p - pay); contrib += d.p; } // freed payment rolls into contributions
       }
@@ -1095,7 +1284,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var projection = [];
     for (var y = 0; y <= years; y++) { var idx = Math.min(y * 12, sim.path.length - 1); projection.push({ year: y, age: age + y, netWorth: round2(sim.path[idx].nw) }); }
 
-    var debtInfo = debts.map(function (d) { var p = debtPayoff(d, inp.today); return { id: d.id, name: d.name, balance: d.balance, rate: d.rate, payment: d.payment, months: p.months, interest: p.interest, payoffDate: p.payoffDate, neverPaysOff: p.neverPaysOff }; })
+    var debtInfo = debts.map(function (d) { var p = debtPayoff(d, inp.today); return { id: d.id, name: d.name, balance: d.balance, rate: d.rate, payment: d.payment, compounding: d.compounding, months: p.months, interest: p.interest, payoffDate: p.payoffDate, neverPaysOff: p.neverPaysOff }; })
       .sort(function (a, b) { return b.rate - a.rate || b.balance - a.balance; });
     var totalInterest = 0, anyNever = false; debtInfo.forEach(function (d) { if (d.neverPaysOff) anyNever = true; else totalInterest += d.interest; });
 
@@ -1106,6 +1295,47 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       projection: projection, debts: debtInfo, totalInterest: round2(totalInterest), anyDebtNeverPaysOff: anyNever,
       contribution: contribution, annualSpending: annualSpending, monthlyRate: mr
     };
+  }
+
+  // ---------- funds: history, stats, forecast ----------
+  function sp500Series() { return SP500.returns.map(function (r, i) { return { year: SP500.start + i, r: r }; }); }
+  function fundSeries(key) { var f = FUNDS[key]; if (!f) return []; return f.returns.map(function (r, i) { return { year: f.start + i, r: r, actual: true }; }); }
+  /** Long-run series used for forecasting: the fund's own years where available, otherwise S&P 500 × beta − expense ratio. */
+  function fundBasisSeries(key) {
+    var f = FUNDS[key]; if (!f) return [];
+    var own = {}; fundSeries(key).forEach(function (p) { own[p.year] = p.r; });
+    return sp500Series().map(function (p) { return own[p.year] !== undefined ? { year: p.year, r: own[p.year], actual: true } : { year: p.year, r: round2(p.r * f.beta - f.expense), actual: false }; });
+  }
+  function seriesStats(series) {
+    var n = series.length; if (!n) return { years: 0, cagr: null, mean: null, stdev: null, best: null, worst: null, positiveShare: null, growth10k: null, from: null, to: null };
+    var prod = 1, sum = 0, best = series[0], worst = series[0], pos = 0;
+    series.forEach(function (p) { prod *= (1 + p.r / 100); sum += p.r; if (p.r > best.r) best = p; if (p.r < worst.r) worst = p; if (p.r > 0) pos++; });
+    var mean = sum / n; var v = 0; series.forEach(function (p) { v += (p.r - mean) * (p.r - mean); }); var stdev = Math.sqrt(v / (n > 1 ? n - 1 : 1));
+    return { years: n, cagr: (Math.pow(prod, 1 / n) - 1) * 100, mean: mean, stdev: stdev, best: best, worst: worst, positiveShare: pos / n, growth10k: round2(10000 * prod), from: series[0].year, to: series[n - 1].year };
+  }
+  function realRate(nominalPct, inflationPct) { return ((1 + nominalPct / 100) / (1 + inflationPct / 100) - 1) * 100; }
+  /** Deterministic balance path, monthly compounding, one point per year (year 0 = today). */
+  function forecastBalance(o) {
+    var bal = Math.max(0, num(o.balance, 0)), c = num(o.monthlyContribution, 0), years = Math.max(0, Math.round(num(o.years, 0)));
+    var mr = monthlyRate(num(o.annualReturnPct, 0)); var out = [{ year: 0, balance: round2(bal) }];
+    for (var y = 1; y <= years; y++) { for (var m = 0; m < 12; m++) bal = bal * (1 + mr) + c; out.push({ year: y, balance: round2(bal) }); }
+    return out;
+  }
+  function mulberry32(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  /** Bootstrap: resample annual returns from `returns` (percent) for each year; returns p10/p50/p90 per year. */
+  function bootstrapForecast(o) {
+    var rets = (o.returns || []).map(Number).filter(isFinite); var years = Math.max(0, Math.round(num(o.years, 0))); var runs = Math.max(1, Math.round(num(o.runs, 1000)));
+    var bal0 = Math.max(0, num(o.balance, 0)), c12 = num(o.monthlyContribution, 0) * 12;
+    if (!rets.length) return [];
+    var rnd = mulberry32(num(o.seed, 7));
+    var paths = []; for (var k = 0; k < runs; k++) { var b = bal0, path = [b]; for (var y = 1; y <= years; y++) { var r = rets[Math.floor(rnd() * rets.length)] / 100; b = b * (1 + r) + c12 * Math.sqrt(Math.max(0, 1 + r)); path.push(b); } paths.push(path); }
+    var out = [];
+    for (var yy = 0; yy <= years; yy++) {
+      var col = paths.map(function (p) { return p[yy]; }).sort(function (a, b) { return a - b; });
+      var q = function (f) { var i = Math.min(col.length - 1, Math.max(0, Math.round(f * (col.length - 1)))); return round2(col[i]); };
+      out.push({ year: yy, p10: q(0.1), p50: q(0.5), p90: q(0.9) });
+    }
+    return out;
   }
 
   // ---------- formatting (pure) ----------
@@ -1150,7 +1380,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     entriesInMonth: entriesInMonth, entriesInRange: entriesInRange, byType: byType, sortNewest: sortNewest,
     savingsRate: savingsRate, totals: totals, budgetStatus: budgetStatus, categoryBreakdown: categoryBreakdown, groupByDay: groupByDay, toCSV: toCSV,
     rangeForPreset: rangeForPreset, pickBucketMode: pickBucketMode, bucketKeys: bucketKeys, bucketize: bucketize, cumulative401k: cumulative401k, averages: averages,
-    debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
+    debtPayoff: debtPayoff, totalDebt: totalDebt, monthlyRate: monthlyRate, monthlyDebtRate: monthlyDebtRate, COMPOUNDING: COMPOUNDING,
+    SP500: SP500, FUNDS: FUNDS, sp500Series: sp500Series, fundSeries: fundSeries, fundBasisSeries: fundBasisSeries, seriesStats: seriesStats, realRate: realRate, forecastBalance: forecastBalance, bootstrapForecast: bootstrapForecast, mulberry32: mulberry32, annuityFactor: annuityFactor, simulate: simulate, retirementCalc: retirementCalc,
     fmtMoney: fmtMoney, fmtPct: fmtPct, fmtMonthKey: fmtMonthKey, fmtMonthShort: fmtMonthShort, fmtDate: fmtDate, fmtDateShort: fmtDateShort, fmtMonthsDuration: fmtMonthsDuration
   };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1622,6 +1853,11 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     var out = []; for (var v = lo; v <= hi + step / 2; v += step) out.push(Math.abs(v) < step / 1e6 ? 0 : v);
     return { lo: lo, hi: hi, ticks: out };
   }
+  function barPathDown(x, yTop, w, hgt, r) {
+    r = Math.min(r, w / 2, hgt); if (hgt <= 0) return '';
+    var yb = yTop + hgt;
+    return 'M' + x + ',' + yTop + ' V' + (yb - r) + ' Q' + x + ',' + yb + ' ' + (x + r) + ',' + yb + ' H' + (x + w - r) + ' Q' + (x + w) + ',' + yb + ' ' + (x + w) + ',' + (yb - r) + ' V' + yTop + ' Z';
+  }
   function barPath(x, yTop, w, hgt, r) {
     r = Math.min(r, w / 2, hgt);
     if (hgt <= 0) return '';
@@ -1639,7 +1875,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     A.clear(container);
     var n = cfg.slots.length;
     var W = Math.max(280, Math.floor(container.clientWidth || container.parentNode.clientWidth || 320)), H = cfg.height || 220;
-    var bars = cfg.bars || [], lines = cfg.lines || [], points = cfg.points || [], hlines = cfg.hlines || [], vmarks = cfg.vmarks || [];
+    var bars = cfg.bars || [], lines = cfg.lines || [], points = cfg.points || [], hlines = cfg.hlines || [], vmarks = cfg.vmarks || [], bands = cfg.bands || [];
     var vals = [];
     for (var i = 0; i < n; i++) {
       if (cfg.stacked) { var s = 0; bars.forEach(function (b) { s += Math.max(0, b.values[i] || 0); }); vals.push(s); }
@@ -1647,6 +1883,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       lines.forEach(function (l) { if (l.values[i] != null && isFinite(l.values[i])) vals.push(l.values[i]); });
     }
     points.forEach(function (p) { vals.push(p.value); }); hlines.forEach(function (l) { vals.push(l.value); });
+    bands.forEach(function (b) { for (var j = 0; j < n; j++) { if (b.upper[j] != null) vals.push(b.upper[j]); if (b.lower[j] != null) vals.push(b.lower[j]); } });
     var min = vals.length ? Math.min.apply(null, vals) : 0, max = vals.length ? Math.max.apply(null, vals) : 1;
     var tk = ticks(min, max, cfg.yTicks || 4);
     var yFormat = cfg.yFormat || function (v) { return String(v); };
@@ -1676,6 +1913,15 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
       gX.appendChild(sv('text', { x: xc(i), y: H - 6, 'text-anchor': 'middle', class: 'axis-text' }, [document.createTextNode(cfg.xLabel ? cfg.xLabel(i) : cfg.slots[i])]));
     }
     svg.appendChild(gX);
+    // bands (behind everything else)
+    bands.forEach(function (b) {
+      var up = '', lo = '';
+      for (var j = 0; j < n; j++) { if (b.upper[j] == null || b.lower[j] == null) continue; up += (up ? ' L' : 'M') + xc(j).toFixed(1) + ',' + y(b.upper[j]).toFixed(1); lo = 'L' + xc(j).toFixed(1) + ',' + y(b.lower[j]).toFixed(1) + ' ' + lo; }
+      if (!up) return;
+      svg.appendChild(sv('path', { d: up + ' ' + lo + 'Z', fill: b.color, class: 'band' }));
+      svg.appendChild(sv('path', { d: up, stroke: b.color, class: 'band-edge' }));
+      svg.appendChild(sv('path', { d: 'M' + lo.slice(1).trim(), stroke: b.color, class: 'band-edge' }));
+    });
     // bars
     var gBars = sv('g'); var barEls = [];
     if (bars.length) {
@@ -1699,7 +1945,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
             var v = b.values[i]; if (v == null || v === 0) return;
             var x0 = xc(i) - groupW / 2 + k * (bw2 + gap);
             var yt = v > 0 ? y(v) : y(0), hgt = Math.max(1, Math.abs(y(v) - y(0)));
-            var p = sv('path', { d: barPath(x0, yt, bw2, hgt, 4), fill: b.color, class: 'bar' }); gBars.appendChild(p); barEls.push({ i: i, el: p });
+            var fill = (v < 0 && b.negColor) ? b.negColor : b.color;
+            var p = sv('path', { d: v > 0 ? barPath(x0, yt, bw2, hgt, 4) : barPathDown(x0, yt, bw2, hgt, 4), fill: fill, class: 'bar' }); gBars.appendChild(p); barEls.push({ i: i, el: p });
           });
         }
       }
@@ -1773,7 +2020,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     // legend
     if (cfg.legend && cfg.legend.length > 1) {
       var lg = h('div', { class: 'legend' });
-      cfg.legend.forEach(function (l) { lg.appendChild(h('span', {}, [h('i', { class: l.kind === 'line' ? 'line' : '', style: 'background:' + l.color + (l.kind === 'dash' ? ';background:repeating-linear-gradient(90deg,' + l.color + ' 0 3px,transparent 3px 6px)' : '') }), l.name])); });
+      cfg.legend.forEach(function (l) { lg.appendChild(h('span', {}, [h('i', { class: l.kind === 'line' ? 'line' : '', style: 'background:' + l.color + (l.kind === 'dash' ? ';background:repeating-linear-gradient(90deg,' + l.color + ' 0 3px,transparent 3px 6px)' : l.kind === 'band' ? ';opacity:0.35' : '') }), l.name])); });
       container.appendChild(lg);
     }
     if (cfg.table) renderTable(container, cfg.table, cfg.tableKey);
@@ -1852,7 +2099,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     A.setText('rt-rate', tot.savingsRate === null ? '' : 'savings rate ' + C.fmtPct(tot.savingsRate));
     $('range-totals').querySelector('#rt-expense').parentNode.querySelector('.label').lastChild.textContent = sel ? 'Spending (filtered)' : 'Spending';
 
-    var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--accent');
+    var cInc = cssVar('--income'), cExp = cssVar('--spend'), cNet = cssVar('--text'), cK = cssVar('--k401'), cMatch = cssVar('--k401-match'), cAcc = cssVar('--chart-accent');
     var monthTitle = function (b) { return b.mode === 'week' ? 'Week of ' + C.fmtDate(b.key, null) : C.fmtMonthKey(b.key, true); };
     var xl = function (b) { return b.mode === 'week' ? C.fmtDateShort(b.key) : C.fmtMonthShort(b.key); };
 
@@ -1931,6 +2178,8 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 (function () {
   'use strict';
   var C = window.FinanceCore, A = window.App, $ = A.$, h = A.h, money = A.money, ui = A.ui;
+  var COMP_LABEL = { monthly: 'monthly compounding', daily: 'daily compounding', simple: 'simple interest', none: 'no interest' };
+  var COMP_HELP = { monthly: 'Monthly interest = balance × APR ÷ 12.', daily: 'Interest compounds every day, as most credit cards do. Slightly more than monthly.', simple: 'Interest = original balance × APR ÷ 12 each month, and never compounds.', none: 'No interest is charged. The APR is ignored.' };
   var saveTimer = null;
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(A.saveState, 300); }
   function numOrNull(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
@@ -1968,7 +2217,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     A.setText('r-k401-help', st.k401UpdatedAt ? 'Shared with Overview · updated ' + C.fmtDate(st.k401UpdatedAt, A.today()) : 'Shared with Overview');
   }
 
-  function bind(id, fn) { $(id).addEventListener('input', function () { fn(this.value); saveSoon(); renderOutputs(derived()); renderInputs(derived()); }); $(id).addEventListener('change', function () { fn(this.value); A.saveState(); A.render(); }); }
+  function bind(id, fn) { $(id).addEventListener('input', function () { fn(this.value); saveSoon(); var d = derived(); renderOutputs(d); renderInputs(d); renderFund(d); }); $(id).addEventListener('change', function () { fn(this.value); A.saveState(); A.render(); }); }
   bind('r-age', function (v) { var n = numOrNull(v); if (n !== null && n >= 10 && n <= 99) A.state.retirement.age = Math.round(n); });
   bind('r-target-age', function (v) { var n = numOrNull(v); if (n !== null && n >= 11 && n <= 100) A.state.retirement.targetAge = Math.round(n); });
   bind('r-spending', function (v) { var n = numOrNull(v); A.state.retirement.spendingOverride = n === null ? null : Math.max(0, C.round2(n)); });
@@ -1999,22 +2248,25 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
         setTimeout(function () { if (ui.debtArmed === d.id) { ui.debtArmed = null; A.render(); } }, 3500);
       });
       box.appendChild(h('div', { class: 'debt-row' }, [
-        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.rate + '% APR' }), h('span', { text: money(d.payment) + '/mo' }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
+        h('div', {}, [h('div', { class: 'name', text: d.name }), h('div', { class: 'meta num' }, [h('span', { text: money(d.balance) }), h('span', { text: d.compounding === 'none' ? 'no interest' : d.rate + '% APR · ' + COMP_LABEL[d.compounding] }), h('span', { text: money(d.payment) + '/mo' }), h('span', { class: p.neverPaysOff ? 'danger-text' : '', text: p.neverPaysOff ? 'never pays off' : 'paid off in ' + C.fmtMonthsDuration(p.months) })])]),
         h('div', { class: 'acts' }, [h('button', { type: 'button', class: 'btn sm', text: 'Edit', onclick: function () { openDebtForm(d); } }), del])
       ]));
     });
   }
   function openDebtForm(d) {
     ui.debtEditing = d ? d.id : 'new';
-    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : '';
+    $('d-id').value = d ? d.id : ''; $('d-name').value = d ? d.name : ''; $('d-balance').value = d ? d.balance : ''; $('d-rate').value = d ? d.rate : ''; $('d-payment').value = d ? d.payment : ''; $('d-compound').value = d ? d.compounding : 'monthly'; syncCompoundHelp();
     $('d-error').style.display = 'none'; $('debt-form').hidden = false; $('d-add').hidden = true; A.setText('d-save', d ? 'Save changes' : 'Add debt');
     $('d-name').focus();
   }
   function closeDebtForm() { ui.debtEditing = null; $('debt-form').hidden = true; $('d-add').hidden = false; }
+  function syncCompoundHelp() { var v = $('d-compound').value; A.setText('d-compound-help', COMP_HELP[v] || ''); $('d-rate').disabled = v === 'none'; }
+  $('d-compound').addEventListener('change', syncCompoundHelp);
   $('d-add').addEventListener('click', function () { openDebtForm(null); });
   $('d-cancel').addEventListener('click', closeDebtForm);
   $('debt-form').addEventListener('submit', function (ev) {
     ev.preventDefault();
+    var compounding = $('d-compound').value; if (compounding === 'none' && $('d-rate').value === '') $('d-rate').value = '0';
     var name = $('d-name').value.trim(), balance = Number($('d-balance').value), rate = Number($('d-rate').value), payment = Number($('d-payment').value);
     var err = '';
     if (!name) err = 'Give the debt a name.';
@@ -2023,7 +2275,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     else if (!($('d-payment').value !== '' && isFinite(payment) && payment >= 0)) err = 'Monthly payment must be 0 or more.';
     if (err) { var e = $('d-error'); e.textContent = err; e.style.display = 'block'; return; }
     var st = A.state; var id = $('d-id').value;
-    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment });
+    var debt = C.normalizeDebt({ id: id || undefined, name: name, balance: balance, rate: rate, payment: payment, compounding: compounding });
     var i = st.debts.findIndex(function (x) { return x.id === id; });
     if (i >= 0) st.debts[i] = debt; else st.debts.push(debt);
     closeDebtForm(); A.commit();
@@ -2035,6 +2287,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
   function fmtBig(x) { return isFinite(x) ? money(x, { compact: x >= 10000, whole: true }) : '—'; }
   function renderOutputs(d) {
     var st = A.state, r = st.retirement, c = d.calc, t0 = A.today();
+    A.setText('ret-years', r.targetAge > r.age ? (r.targetAge - r.age) + ' years to go' : 'at target age');
     A.setText('rt-target', fmtBig(c.target));
     A.setText('rt-target-sub', isFinite(c.target) ? money(c.annualSpending, { whole: true }) + '/yr ÷ ' + r.withdrawalRate + '%' : 'set a withdrawal rate');
     A.setText('rt-networth', money(c.netWorth, { compact: Math.abs(c.netWorth) >= 10000, whole: true }));
@@ -2064,7 +2317,7 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
 
     // projection chart
     var proj = c.projection; var box = $('chart-proj');
-    var cAcc = Charts.cssVar('--accent'), cText = Charts.cssVar('--text-2'), cGood = Charts.cssVar('--income');
+    var cAcc = Charts.cssVar('--chart-accent'), cText = Charts.cssVar('--text-2'), cGood = Charts.cssVar('--income');
     var year0 = +t0.slice(0, 4);
     var tbl = { caption: 'Projected net worth by year', columns: ['Age', 'Year', 'Net worth', 'Target'], rows: proj.map(function (p) { return [String(p.age), String(year0 + p.year), money(p.netWorth, { whole: true }), isFinite(c.target) ? money(c.target, { whole: true }) : '—']; }) };
     if (!isFinite(c.target) || proj.length < 2) { Charts.emptyChart(box, 'Add balances, contributions and a withdrawal rate to see a projection.', tbl, 'ch5'); return; }
@@ -2088,19 +2341,105 @@ details.card[open] > summary { margin-bottom: var(--sp-3); }
     t.appendChild(thead);
     var tb = h('tbody');
     c.debts.forEach(function (d) {
-      tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: d.name }), h('td', { class: 'num', text: money(d.balance) }), h('td', { class: 'num', text: d.rate + '%' }),
+      tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: d.name }), h('td', { class: 'num', text: money(d.balance, { whole: true }) }), h('td', { class: 'num' }, [d.compounding === 'none' ? '0%' : d.rate + '%', h('div', { class: 'xs muted', text: d.compounding === 'none' ? 'no interest' : d.compounding === 'simple' ? 'simple' : d.compounding })]),
         d.neverPaysOff ? h('td', { class: 'num danger-text', text: 'never' }) : h('td', { class: 'num' }, [C.fmtMonthKey(C.monthKey(d.payoffDate)), h('div', { class: 'xs muted', text: C.fmtMonthsDuration(d.months) })]),
-        h('td', { class: 'num', text: d.neverPaysOff ? '∞' : money(d.interest) })]));
+        h('td', { class: 'num', text: d.neverPaysOff ? '∞' : money(d.interest, { whole: true }) })]));
     });
-    tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: 'Total' }), h('td', { class: 'num', text: money(c.totalDebt) }), h('td'), h('td'), h('td', { class: 'num', text: c.anyDebtNeverPaysOff ? '∞' : money(c.totalInterest) })]));
+    tb.appendChild(h('tr', {}, [h('th', { scope: 'row', text: 'Total' }), h('td', { class: 'num', text: money(c.totalDebt, { whole: true }) }), h('td'), h('td'), h('td', { class: 'num', text: c.anyDebtNeverPaysOff ? '∞' : money(c.totalInterest, { whole: true }) })]));
     t.appendChild(tb);
   }
+
+
+  // ---------- 401k fund & forecast ----------
+  function fundDerived(d) {
+    var st = A.state, r = st.retirement; var key = st.k401Fund; var f = C.FUNDS[key];
+    var own = f ? C.fundSeries(key) : []; var basis = f ? C.fundBasisSeries(key) : [];
+    var ownStats = C.seriesStats(own), basisStats = C.seriesStats(basis);
+    var defaultReturn = f ? Math.round(basisStats.cagr * 10) / 10 : 7;
+    var expected = st.k401ReturnOverride === null ? defaultReturn : st.k401ReturnOverride;
+    var real = C.realRate(expected, st.inflation);
+    var years = Math.max(1, Math.min(70, r.targetAge - r.age));
+    var contrib = d.avg.k401;
+    var det = C.forecastBalance({ balance: st.k401Balance, monthlyContribution: contrib, years: years, annualReturnPct: expected });
+    var boot = f ? C.bootstrapForecast({ balance: st.k401Balance, monthlyContribution: contrib, years: years, returns: basis.map(function (p) { return p.r; }), runs: 1000, seed: 7 }) : [];
+    return { key: key, fund: f, own: own, basis: basis, ownStats: ownStats, basisStats: basisStats, defaultReturn: defaultReturn, expected: expected, real: real, years: years, contrib: contrib, det: det, boot: boot };
+  }
+  function renderFund(d) {
+    var st = A.state, r = st.retirement, fd = fundDerived(d), f = fd.fund, t0 = A.today();
+    if (document.activeElement !== $('k-fund')) $('k-fund').value = fd.key;
+    setIf('k-return', Math.round(fd.expected * 100) / 100); setIf('k-inflation', st.inflation);
+    A.setText('k-fund-desc', f ? f.desc : 'Enter the yearly return you expect. No historical data is used.');
+    A.setText('k-return-help', st.k401ReturnOverride === null
+      ? (f ? 'Long-run average of the historical basis (' + fd.basisStats.from + '–' + fd.basisStats.to + '). Real return after ' + st.inflation + '% inflation: ' + fd.real.toFixed(1) + '%.' : 'Default 7%. Real return after inflation: ' + fd.real.toFixed(1) + '%.')
+      : 'Your override. Real return after ' + st.inflation + '% inflation: ' + fd.real.toFixed(1) + '%.' + (f ? ' Fund history would give ' + fd.defaultReturn + '%.' : ''));
+    $('k-return-reset').hidden = st.k401ReturnOverride === null;
+    $('k-return-reset').textContent = f ? 'Use fund history' : 'Use default';
+    var facts = $('k-facts'); A.clear(facts);
+    function stat(k, v, s2) { facts.appendChild(h('div', { class: 'stat' }, [h('div', { class: 'k', text: k }), h('div', { class: 'v', text: v }), s2 ? h('div', { class: 's', text: s2 }) : null])); }
+    if (f) {
+      var os = fd.ownStats, bs = fd.basisStats;
+      stat('Fund CAGR', os.cagr.toFixed(1) + '%', os.from + '–' + os.to + ' (' + os.years + ' yrs)');
+      stat('Long-run CAGR', bs.cagr.toFixed(1) + '%', bs.from + '–' + bs.to + ' basis');
+      stat('Expense ratio', f.expense + '%', 'per year');
+      stat('Best year', (os.best.r > 0 ? '+' : '') + os.best.r.toFixed(1) + '%', String(os.best.year));
+      stat('Worst year', os.worst.r.toFixed(1) + '%', String(os.worst.year));
+      stat('Volatility', bs.stdev.toFixed(1) + '%', 'std dev of yearly returns');
+      A.setText('k-basis', f.basisNote + ' $10,000 invested at the start of ' + os.from + ' would be about ' + money(os.growth10k, { whole: true }) + ' at the end of ' + os.to + '.');
+    } else { A.setText('k-basis', 'Pick FXAIX or LFIKX to see their historical returns and a range of outcomes.'); }
+
+    // history chart
+    var cInc = Charts.cssVar('--income'), cExp = Charts.cssVar('--spend'), cAcc = Charts.cssVar('--chart-accent'), cText = Charts.cssVar('--text-2');
+    var own = fd.own; var box = $('chart-fund-hist');
+    var tblH = { caption: 'Annual returns', columns: ['Year', 'Return', 'Growth of $10K'], rows: (function () { var g = 10000; return own.map(function (p) { g = g * (1 + p.r / 100); return [String(p.year), (p.r > 0 ? '+' : '') + p.r.toFixed(2) + '%', money(g, { whole: true })]; }); })() };
+    if (!own.length) Charts.emptyChart(box, 'No historical data for a custom rate.', tblH, 'ch6');
+    else Charts.draw(box, {
+      slots: own.map(function (p) { return String(p.year); }), xLabel: function (i) { return String(own[i].year).slice(2); },
+      bars: [{ name: f.ticker + ' return', color: cInc, negColor: cExp, values: own.map(function (p) { return p.r; }) }],
+      yFormat: function (v) { return Math.round(v) + '%'; }, height: 180,
+      tooltip: function (i) { var p = own[i]; return { title: String(p.year), rows: [{ label: f.ticker, value: (p.r > 0 ? '+' : '') + p.r.toFixed(2) + '%', color: p.r >= 0 ? cInc : cExp }, { label: 'S&P 500', value: (function () { var sp = C.SP500.returns[p.year - C.SP500.start]; return sp === undefined ? '—' : (sp > 0 ? '+' : '') + sp.toFixed(2) + '%'; })() }] }; },
+      legend: [{ name: 'Positive year', color: cInc }, { name: 'Negative year', color: cExp }],
+      ariaLabel: f.ticker + ' annual returns by year. Use arrow keys to read values.', table: tblH, tableKey: 'ch6'
+    });
+
+    // forecast chart
+    var det = fd.det, boot = fd.boot; var fbox = $('chart-fund-forecast'); var year0 = +t0.slice(0, 4);
+    var tblF = { caption: '401k forecast', columns: ['Age', 'Year', 'Expected', '10th pct', 'Median', '90th pct'], rows: det.map(function (p, i) { var b = boot[i]; return [String(r.age + p.year), String(year0 + p.year), money(p.balance, { whole: true }), b ? money(b.p10, { whole: true }) : '—', b ? money(b.p50, { whole: true }) : '—', b ? money(b.p90, { whole: true }) : '—']; }) };
+    if (st.k401Balance <= 0 && fd.contrib <= 0) Charts.emptyChart(fbox, 'Set a 401k balance or log 401k contributions to forecast growth.', tblF, 'ch7');
+    else Charts.draw(fbox, {
+      slots: det.map(function (p) { return String(r.age + p.year); }), xLabel: function (i) { return String(r.age + det[i].year); },
+      bands: boot.length ? [{ color: cAcc, upper: boot.map(function (b) { return b.p90; }), lower: boot.map(function (b) { return b.p10; }) }] : [],
+      lines: [{ name: 'Expected', color: cAcc, values: det.map(function (p) { return p.balance; }), markers: det.length <= 20 }].concat(boot.length ? [{ name: 'Median', color: cText, dash: true, markers: false, values: boot.map(function (b) { return b.p50; }) }] : []),
+      yFormat: function (v) { return money(v, { compact: true, whole: true }); }, height: 230,
+      tooltip: function (i) { var p = det[i], b = boot[i]; var rows = [{ label: 'Expected (' + fd.expected.toFixed(1) + '%)', value: money(p.balance, { whole: true }), color: cAcc }]; if (b) rows.push({ label: 'Historical median', value: money(b.p50, { whole: true }), color: cText }, { label: '10th–90th pct', value: money(b.p10, { compact: true, whole: true }) + ' – ' + money(b.p90, { compact: true, whole: true }) }); return { title: 'Age ' + (r.age + p.year) + ' · ' + (year0 + p.year), rows: rows }; },
+      legend: [{ name: 'Expected', color: cAcc, kind: 'line' }].concat(boot.length ? [{ name: 'Historical median', color: cText, kind: 'dash' }, { name: '10th–90th percentile', color: cAcc, kind: 'band' }] : []),
+      ariaLabel: '401k balance forecast by age. Use arrow keys to read values.', table: tblF, tableKey: 'ch7'
+    });
+    var last = det[det.length - 1]; var lb = boot[boot.length - 1];
+    var todays = last.balance / Math.pow(1 + st.inflation / 100, fd.years);
+    var line = $('k-forecast-line'); A.clear(line);
+    if (st.k401Balance <= 0 && fd.contrib <= 0) line.textContent = '';
+    else {
+      line.appendChild(document.createTextNode('At ' + money(fd.contrib, { whole: true }) + '/month' + (f ? ' into ' + f.ticker : '') + ' and ' + fd.expected.toFixed(1) + '%/yr, your 401k could reach about '));
+      line.appendChild(h('strong', { class: 'num', text: money(last.balance, { compact: true, whole: true }) }));
+      line.appendChild(document.createTextNode(' by age ' + r.targetAge + ' (' + money(todays, { compact: true, whole: true }) + ' in today’s dollars at ' + st.inflation + '% inflation).'));
+      if (lb) line.appendChild(document.createTextNode(' Resampling ' + f.ticker + '’s historical basis gives a 10th–90th percentile range of ' + money(lb.p10, { compact: true, whole: true }) + ' to ' + money(lb.p90, { compact: true, whole: true }) + '.'));
+      if (fd.contrib <= 0) line.appendChild(document.createTextNode(' Log 401k contributions on the Add tab to include them.'));
+    }
+    var realR = Math.round(fd.real * 10) / 10;
+    $('k-apply').textContent = 'Use ' + realR + '% real return in the projection' + (Math.abs(realR - r.returnRate) < 0.05 ? ' (in use)' : '');
+    $('k-apply').disabled = Math.abs(realR - r.returnRate) < 0.05;
+    $('k-apply').onclick = function () { A.state.retirement.returnRate = realR; A.commit(); A.toast('Projection now uses ' + realR + '% real return'); };
+  }
+  $('k-fund').addEventListener('change', function () { A.state.k401Fund = this.value; A.state.k401ReturnOverride = null; A.commit(); });
+  bind('k-return', function (v) { var n = numOrNull(v); A.state.k401ReturnOverride = n === null ? null : Math.max(-50, Math.min(50, n)); });
+  bind('k-inflation', function (v) { var n = numOrNull(v); if (n !== null && n >= 0 && n <= 30) A.state.inflation = n; });
+  $('k-return-reset').addEventListener('click', function () { A.state.k401ReturnOverride = null; A.commit(); });
 
   A.renderers.retirement = function () {
     var d = derived();
     renderInputs(d); renderDebtList();
     if (ui.debtEditing === null) closeDebtForm();
-    renderOutputs(d);
+    renderOutputs(d); renderFund(d);
   };
 })();
 </script>

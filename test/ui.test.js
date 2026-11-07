@@ -58,12 +58,13 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
       await tab(page, 'retirement'); await page.click('#d-add'); await noOverflow(page, 'debt form');
     });
   }
-  await test('body background follows theme and the theme toggle wins over the OS', { browser, context: { colorScheme: 'dark' } }, async (page) => {
+  await test('dark is the default theme, the toggle switches to light and persists', { browser, context: { colorScheme: 'light' } }, async (page) => {
     const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    assert.strictEqual(dark, 'rgb(13, 13, 13)');
+    assert.strictEqual(dark, 'rgb(7, 10, 18)');
+    assert.strictEqual(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), 'dark');
     await page.click('#btn-settings'); await page.click('#theme-seg button[data-theme="light"]');
     const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    assert.strictEqual(light, 'rgb(244, 244, 241)');
+    assert.strictEqual(light, 'rgb(238, 242, 248)');
     await page.reload(); await page.waitForTimeout(100);
     assert.strictEqual(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light', 'theme persists');
   });
@@ -374,10 +375,10 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     await page.click('#d-add'); await page.fill('#d-name', 'Stuck'); await page.fill('#d-balance', '5000'); await page.fill('#d-rate', '30'); await page.fill('#d-payment', '50'); await page.click('#d-save'); await page.waitForTimeout(80);
     const rows = await page.$$eval('#debt-table tbody tr', trs => trs.map(tr => Array.from(tr.children).map(td => td.textContent.trim())));
     assert.deepStrictEqual(rows.map(r => r[0]), ['Card', 'Stuck', 'Car', 'Total']);
-    assert.ok(rows[0][3].includes('2 months')); assert.strictEqual(rows[0][4], '$15.00');
+    assert.ok(rows[0][3].includes('2 months')); assert.strictEqual(rows[0][4], '$15');
     assert.strictEqual(rows[1][3], 'never'); assert.strictEqual(rows[1][4], '∞');
-    assert.ok(rows[2][3].includes('10 months')); assert.strictEqual(rows[2][4], '$0.00');
-    assert.strictEqual(rows[3][1], '$6,100.00');
+    assert.ok(rows[2][3].includes('10 months')); assert.strictEqual(rows[2][4], '$0');
+    assert.strictEqual(rows[3][1], '$6,100');
     assert.ok((await text(page, '#debt-summary')).includes('3 debts'));
     assert.ok((await text(page, '#rt-networth-sub')).includes('$6,100 debt'));
     await page.click('.debt-row:has-text("Stuck") button:has-text("Edit")'); await page.fill('#d-payment', '500'); await page.click('#d-save'); await page.waitForTimeout(80);
@@ -388,6 +389,78 @@ const addEntry = async (page, { type = 'expense', amount, cat, note = '', date }
     assert.deepStrictEqual(await page.evaluate(() => App.state.debts.map(d => d.name)), ['Car', 'Stuck']);
     await page.reload(); await page.waitForTimeout(100);
     assert.strictEqual(await page.evaluate(() => App.state.debts.length), 2, 'debts persisted');
+  });
+
+
+  console.log('retirement: ages, interest options, 401k fund');
+  await test('current age and target age sit at the top of Retirement and drive the years-to-go hint', O, async (page) => {
+    await tab(page, 'retirement');
+    const inTop = await page.evaluate(() => { const card = document.querySelector('#view-retirement section.card'); return !!card.querySelector('#r-age') && !!card.querySelector('#r-target-age'); });
+    assert.ok(inTop, 'age inputs are inside the first card');
+    await page.fill('#r-age', '35'); await page.fill('#r-target-age', '60'); await page.waitForTimeout(100);
+    assert.strictEqual(await text(page, '#ret-years'), '25 years to go');
+    assert.deepStrictEqual(await page.evaluate(() => [App.state.retirement.age, App.state.retirement.targetAge]), [35, 60]);
+    assert.ok((await text(page, '#rt-gap')).includes('target age of 60'));
+  });
+  await test('debt interest option: compounding choice is saved and shown; 0% promo ignores the APR', O, async (page) => {
+    await tab(page, 'retirement');
+    await page.click('#d-add');
+    await page.selectOption('#d-compound', 'none');
+    assert.ok(await page.isDisabled('#d-rate'));
+    assert.ok((await text(page, '#d-compound-help')).includes('No interest'));
+    await page.fill('#d-name', 'Promo card'); await page.fill('#d-balance', '1200'); await page.fill('#d-payment', '100'); await page.click('#d-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.debts[0].compounding), 'none');
+    assert.ok((await text(page, '#debt-list')).includes('no interest'));
+    const row = await page.$$eval('#debt-table tbody tr', trs => trs.map(tr => tr.textContent.replace(/\s+/g, ' ')));
+    assert.ok(row[0].includes('1 year') && /\$0(\.00)?$/.test(row[0].trim()), row[0]);
+    await page.click('.debt-row:has-text("Promo card") button:has-text("Edit")');
+    assert.strictEqual(await page.inputValue('#d-compound'), 'none');
+    await page.selectOption('#d-compound', 'daily'); await page.fill('#d-rate', '24'); await page.click('#d-save'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.debts[0].compounding), 'daily');
+    assert.ok((await text(page, '#debt-list')).includes('daily compounding'));
+    await page.reload(); await page.waitForTimeout(100);
+    assert.strictEqual(await page.evaluate(() => App.state.debts[0].compounding), 'daily');
+  });
+  await test('401k fund selector shows FXAIX/LFIKX history, forecast band, and feeds the projection', O, async (page) => {
+    await page.fill('#k401-balance', '20000'); await page.click('#k401-save'); await page.waitForTimeout(50);
+    await tab(page, 'retirement');
+    assert.strictEqual(await page.inputValue('#k-fund'), 'FXAIX');
+    const fx = parseFloat(await page.inputValue('#k-return'));
+    const expectedFx = await page.evaluate(() => Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('FXAIX')).cagr * 10) / 10);
+    assert.strictEqual(fx, expectedFx);
+    assert.ok(await page.$('#chart-fund-hist svg'), 'history chart'); assert.ok(await page.$('#chart-fund-forecast svg'), 'forecast chart');
+    assert.ok(await page.$('#chart-fund-forecast svg .band'), 'percentile band drawn');
+    assert.strictEqual(await page.$$eval('#chart-fund-hist svg .bar', b => b.length), 14, 'one bar per FXAIX year');
+    assert.ok((await text(page, '#k-facts')).includes('0.015%'));
+    await page.selectOption('#k-fund', 'LFIKX'); await page.waitForTimeout(120);
+    const lf = parseFloat(await page.inputValue('#k-return'));
+    assert.ok(lf < fx, 'LFIKX long-run estimate is lower than FXAIX');
+    assert.strictEqual(await page.$$eval('#chart-fund-hist svg .bar', b => b.length), 10, 'one bar per LFIKX year');
+    assert.ok((await text(page, '#k-basis')).includes('beta 0.85'));
+    assert.ok((await text(page, '#k-forecast-line')).includes('LFIKX'));
+    // tooltip on the history chart shows the exact stored value for 2022
+    const svg = page.locator('#chart-fund-hist svg'); await svg.focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft');
+    assert.ok((await text(page, '#chart-fund-hist .tooltip')).includes('-15.44%'));
+    // apply real return to the projection
+    const before = await page.evaluate(() => App.state.retirement.returnRate);
+    await page.click('#k-apply'); await page.waitForTimeout(80);
+    const after = await page.evaluate(() => App.state.retirement.returnRate);
+    assert.notStrictEqual(before, after);
+    const real = await page.evaluate(() => Math.round(FinanceCore.realRate(Math.round(FinanceCore.seriesStats(FinanceCore.fundBasisSeries('LFIKX')).cagr * 10) / 10, 3) * 10) / 10);
+    assert.strictEqual(after, real);
+    assert.ok(await page.isDisabled('#k-apply'));
+    // override and reset
+    await page.fill('#k-return', '5'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.k401ReturnOverride), 5);
+    assert.ok(await page.isVisible('#k-return-reset'));
+    await page.click('#k-return-reset'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.evaluate(() => App.state.k401ReturnOverride), null);
+    await page.selectOption('#k-fund', 'custom'); await page.waitForTimeout(80);
+    assert.strictEqual(await page.inputValue('#k-return'), '7');
+    assert.ok((await text(page, '#chart-fund-hist')).includes('No historical data'));
+    await page.reload(); await page.waitForTimeout(100); await tab(page, 'retirement');
+    assert.strictEqual(await page.inputValue('#k-fund'), 'custom', 'fund choice persisted');
   });
 
   console.log('accessibility');
